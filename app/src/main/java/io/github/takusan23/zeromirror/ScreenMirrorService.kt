@@ -16,13 +16,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
+import io.github.takusan23.hlsserver.Server
 import io.github.takusan23.zeromirror.media.MediaContainer
 import io.github.takusan23.zeromirror.media.VideoEncoder
+import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.UniqueFileTool
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * ミラーリングサービス
@@ -46,6 +51,9 @@ class ScreenMirrorService : Service() {
     /** mp4に書き込むクラス */
     private var mediaContainer: MediaContainer? = null
 
+    /** サーバー これだけ別モジュール */
+    private val server by lazy { Server(hostingFolder = getExternalFilesDir(null)!!) }
+
     // 画面サイズ
     private var displayHeight = 0
     private var displayWidth = 0
@@ -57,19 +65,17 @@ class ScreenMirrorService : Service() {
     private val bitRate = 1_000_000 // 1Mbps
 
     /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
-    private val intervalMs = 5_000
+    private val intervalMs = 3_000
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val resultCode = intent?.getIntExtra(KEY_INTENT_RESULT_CODE, -1)
         val resultData = intent?.getParcelableExtra<Intent>(KEY_INTENT_RESULT_INTENT)
-
         displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
         displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
         // 今までのファイルを消す
         uniqueFileTool.deleteParentFolderChildren()
-
         // 通知発行
         notifyForegroundNotification()
 
@@ -80,10 +86,18 @@ class ScreenMirrorService : Service() {
             stopSelf()
         }
 
+        // IPアドレスを通知として出す
+        IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
+            notifyForegroundNotification("IPアドレス：$ipAddress")
+        }.launchIn(coroutineScope)
+
         // エンコーダーを開始
         coroutineScope.launch {
             startEncode()
         }
+
+        // サーバー開始
+        server.startServer()
 
         return START_NOT_STICKY
     }
@@ -95,6 +109,7 @@ class ScreenMirrorService : Service() {
         mediaContainer?.release()
         mediaProjection?.stop()
         virtualDisplay?.release()
+        server.stopServer()
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -107,8 +122,10 @@ class ScreenMirrorService : Service() {
         mediaContainer = MediaContainer(uniqueFileTool)
         // 前回のMediaFormat
         var mediaFormat: MediaFormat? = null
-        // mp4作成日時
+        // mp4ファイル作成日時
         var createdDateMs = System.currentTimeMillis()
+        // 送信するファイル
+        var resultFile: File? = null
 
         videoEncoder.start(
             onOutputBufferAvailable = { byteBuffer, bufferInfo ->
@@ -117,13 +134,21 @@ class ScreenMirrorService : Service() {
 
                 // 次のファイルにすべきならする
                 if (intervalMs < System.currentTimeMillis() - createdDateMs) {
+
+                    // 多分ちょっと待たないと静的ファイルとして配信できない？
+                    // ので次のファイル生成時に一個前のデータを送信するようにする
+                    if (resultFile != null) {
+                        // クライアント側へ通知する
+                        // WebSocketを使っている
+                        server.updateVideoFileName(resultFile!!.name)
+                    }
+
                     createdDateMs = System.currentTimeMillis()
                     // ファイルを完成させる
-                    val resultFile = mediaContainer!!.release()
+                    resultFile = mediaContainer!!.release()
                     mediaContainer!!.createContainer()
                     // MediaFormatをセットする
                     mediaContainer!!.setVideoFormat(mediaFormat!!)
-                    println("次のファイルになりました ${resultFile.path}")
                 }
             },
             onOutputFormatChanged = { format ->

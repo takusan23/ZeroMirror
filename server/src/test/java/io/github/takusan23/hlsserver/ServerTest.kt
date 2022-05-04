@@ -4,7 +4,7 @@ import org.junit.Test
 import java.io.File
 
 /** サーバー実行テスト */
-class HlsServerTest {
+class ServerTest {
 
     /** ポート番号 */
     private val portNumber = 10_000
@@ -13,7 +13,7 @@ class HlsServerTest {
     private val hostingFileList = File("""C:\Users\takusan23\Desktop\hls_2""")
 
     /** サーバー */
-    private val server = HlsServer(
+    private val server = Server(
         portNumber = portNumber,
         hostingFolder = hostingFileList
     )

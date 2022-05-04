@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぜろみらーくらいあんと</title>
+</head>
+
+<body>
+    <div align="center">
+        <p id="title">動画データの到着を待っています...</p>
+        <video id="video_player" width="300" controls autoplay />
+    </div>
+</body>
+
+<script>
+
+    // 一番上の文字
+    const titleElement = document.getElementById('title')
+    // 動画タグ
+    const videoElement = document.getElementById('video_player')
+
+    // WebSocket 接続を作成
+    const socket = new WebSocket(`ws://${location.host}/wsvideo`)
+
+    // 接続が開いたときのイベント
+    socket.addEventListener('open', function (event) {
+        socket.send('WebSocket接続がオープンしました。')
+    });
+
+    // メッセージの待ち受け
+    socket.addEventListener('message', function (event) {
+        console.log('動画データが到着しました。', event.data)
+        // 新しい動画の相対URL
+        const url = JSON.parse(event.data)["url"]
+        videoElement.src = url
+        videoElement.load()
+        videoElement.play()
+        // 上の文字を消す
+        titleElement.style.display = 'none'
+    });
+
+</script>
+
+</html>

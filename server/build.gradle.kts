@@ -15,6 +15,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.0.1")
     implementation("io.ktor:ktor-server-netty:2.0.1")
     implementation("ch.qos.logback:logback-classic:1.2.5")
+    implementation("io.ktor:ktor-server-websockets:2.0.1")
     // JUnit テストコード
     testImplementation("junit:junit:4.13.2")
 }

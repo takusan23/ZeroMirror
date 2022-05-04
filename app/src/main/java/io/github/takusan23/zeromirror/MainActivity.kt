@@ -34,6 +34,9 @@ class MainActivity : AppCompatActivity() {
             ScreenMirrorService.stopService(this)
         }
 
+        // val server = Server(hostingFolder = getExternalFilesDir(null)!!)
+        // server.startServer()
+
     }
 
     override fun onDestroy() {

@@ -44,9 +44,9 @@ android {
 
 dependencies {
 
+    implementation(project(":server"))
     // マルチモジュール構成になっている
     // 映像を配信するサーバー
-    implementation(project(":hlsserver"))
 
     // Coroutine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
