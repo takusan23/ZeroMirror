@@ -16,6 +16,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        viewBinding = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -51,6 +54,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.7.0")
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.1")
+    // Activity Result API
+    implementation("androidx.activity:activity-ktx:1.4.0")
+    implementation("androidx.fragment:fragment-ktx:1.4.1")
 
     implementation("com.google.android.material:material:1.5.0")
 

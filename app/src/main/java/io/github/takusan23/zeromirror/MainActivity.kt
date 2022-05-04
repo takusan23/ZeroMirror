@@ -1,45 +1,43 @@
 package io.github.takusan23.zeromirror
 
+import android.content.Context
+import android.media.projection.MediaProjectionManager
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import io.github.takusan23.hlsserver.HlsServer
-import io.github.takusan23.zeromirror.tool.IpAddressTool
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import java.io.File
+import io.github.takusan23.zeromirror.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private val PORT_NUMBER = 10_000
+    private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
+    private val viewBinding by lazy { ActivityMainBinding.inflate(layoutInflater) }
 
-    private lateinit var server: HlsServer
+    /** 権限コールバック */
+    private val mediaProjectionResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        // ミラーリングサービス開始
+        if (result.resultCode == RESULT_OK && result.data != null) {
+            ScreenMirrorService.startService(this, result.resultCode, result.data!!)
+        } else {
+            Toast.makeText(this, "開始が拒否されました、(ヽ´ω`)", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(viewBinding.root)
 
-        lifecycleScope.launch {
-
-            IpAddressTool.collectIpAddress(this@MainActivity).onEach {
-                println("http://$it:$PORT_NUMBER")
-            }.launchIn(this)
-
-            val file = getExternalFilesDir(null)
-            val videoFolder = File(file, "hls_2")
-            server = HlsServer(
-                portNumber = PORT_NUMBER,
-                hostingFolder = videoFolder
-            )
-            server.startServer()
-
+        viewBinding.activityMainStart.setOnClickListener {
+            mediaProjectionResult.launch(mediaProjectionManager.createScreenCaptureIntent())
+        }
+        viewBinding.activityMainStop.setOnClickListener {
+            ScreenMirrorService.stopService(this)
         }
 
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        server.stopServer()
+        ScreenMirrorService.stopService(this)
     }
 }
