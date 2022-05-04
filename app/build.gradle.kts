@@ -57,6 +57,8 @@ dependencies {
     // Activity Result API
     implementation("androidx.activity:activity-ktx:1.4.0")
     implementation("androidx.fragment:fragment-ktx:1.4.1")
+    // AndroidX WindowMetrics
+    implementation("androidx.window:window:1.1.0-alpha01")
 
     implementation("com.google.android.material:material:1.5.0")
 

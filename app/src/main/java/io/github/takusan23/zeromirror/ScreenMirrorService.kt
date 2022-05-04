@@ -1,5 +1,6 @@
 package io.github.takusan23.zeromirror
 
+import android.app.Activity
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -14,6 +15,7 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.zeromirror.tool.UniqueFileTool
 import kotlinx.coroutines.*
 
@@ -21,8 +23,6 @@ import kotlinx.coroutines.*
  * ミラーリングサービス
  */
 class ScreenMirrorService : Service() {
-
-    // 通知
 
     // ファイル関係
     private val uniqueFileTool by lazy { UniqueFileTool(getExternalFilesDir(null)!!, "videofile", "mp4") }
@@ -38,14 +38,17 @@ class ScreenMirrorService : Service() {
     /** 定期実行 */
     private val coroutineScope = CoroutineScope(Job())
 
-    var height = 2800
-    var width = 1400
-    var dpi = 1000
+    // 画面サイズ
+    private var displayHeight = 0
+    private var displayWidth = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        val resultCode = intent?.getIntExtra(INTENT_RESULT_CODE, -1)
-        val resultData = intent?.getParcelableExtra<Intent>(INTENT_RESULT_INTENT)
+        val resultCode = intent?.getIntExtra(KEY_INTENT_RESULT_CODE, -1)
+        val resultData = intent?.getParcelableExtra<Intent>(KEY_INTENT_RESULT_INTENT)
+
+        displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
+        displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
         // 通知発行
         notifyForegroundNotification()
@@ -115,7 +118,7 @@ class ScreenMirrorService : Service() {
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setVideoEncoder(MediaRecorder.VideoEncoder.H264)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setVideoSize(width, height)
+            setVideoSize(displayWidth, displayHeight)
             setOutputFile(uniqueFileTool.generateFile().path)
             prepare()
         }
@@ -125,9 +128,9 @@ class ScreenMirrorService : Service() {
     private fun createVirtualDisplay(): VirtualDisplay {
         return mediaProjection!!.createVirtualDisplay(
             "io.github.takusan23.zeromirror",
-            width,
-            height,
-            dpi,
+            displayWidth,
+            displayHeight,
+            this.resources.configuration.densityDpi,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             mediaRecorder!!.surface,
             null,
@@ -135,8 +138,12 @@ class ScreenMirrorService : Service() {
         )
     }
 
-    /** フォアグラウンドサービスの通知を発行する */
-    private fun notifyForegroundNotification() {
+    /**
+     * フォアグラウンドサービスの通知を発行する
+     *
+     * @param contentText 通知本文
+     */
+    private fun notifyForegroundNotification(contentText: String = "ブラウザから見れます") {
         // 通知チャンネル
         val notificationManagerCompat = NotificationManagerCompat.from(this)
         //通知チャンネルが存在しないときは登録する
@@ -149,7 +156,7 @@ class ScreenMirrorService : Service() {
         //通知作成
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
             setContentText("ぜろみらー起動中")
-            setContentTitle("ブラウザから見れます")
+            setContentTitle(contentText)
             setSmallIcon(R.drawable.ic_launcher_foreground)
         }.build()
         startForeground(NOTIFICATION_ID, notification)
@@ -164,24 +171,34 @@ class ScreenMirrorService : Service() {
         private const val NOTIFICATION_CHANNEL_ID = "running_screen_mirror_service"
 
         /** onActivityResult でもらえるCode */
-        private const val INTENT_RESULT_CODE = "intent_result_code"
+        private const val KEY_INTENT_RESULT_CODE = "key_intent_result_code"
 
         /** onActivityResult でもらえるIntent */
-        private const val INTENT_RESULT_INTENT = "intent_result_intent"
+        private const val KEY_INTENT_RESULT_INTENT = "key_intent_result_intent"
+
+        /** 画面の高さ */
+        private const val KEY_INTENT_HEIGHT = "key_intent_height"
+
+        /** 画面の幅 */
+        private const val KEY_INTENT_WIDTH = "key_intent_width"
 
         /**
          * ミラーリングサービスを開始させる
          *
-         * @param context [Context]
+         * @param activity [Activity]、画面サイズがほしいのでActivityです。
          * @param resultCode onActivityResult でもらえるCode
          * @param data onActivityResult でもらえるIntent
          */
-        fun startService(context: Context, resultCode: Int, data: Intent) {
-            val intent = Intent(context, ScreenMirrorService::class.java).apply {
-                putExtra(INTENT_RESULT_CODE, resultCode)
-                putExtra(INTENT_RESULT_INTENT, data)
+        fun startService(activity: Activity, resultCode: Int, data: Intent) {
+            // 画面サイズを出す、AndroidXによるバックポート付き
+            val metrics = WindowMetricsCalculator.getOrCreate().computeMaximumWindowMetrics(activity)
+            val intent = Intent(activity, ScreenMirrorService::class.java).apply {
+                putExtra(KEY_INTENT_RESULT_CODE, resultCode)
+                putExtra(KEY_INTENT_RESULT_INTENT, data)
+                putExtra(KEY_INTENT_HEIGHT, metrics.bounds.height())
+                putExtra(KEY_INTENT_WIDTH, metrics.bounds.width())
             }
-            ContextCompat.startForegroundService(context, intent)
+            ContextCompat.startForegroundService(activity, intent)
         }
 
         /**
