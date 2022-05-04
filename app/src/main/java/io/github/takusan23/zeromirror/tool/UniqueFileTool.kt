@@ -18,6 +18,11 @@ class UniqueFileTool(
     /** 作るたびにインクリメントする */
     private var count = 0
 
+    /** [parentFile]の中のファイルを消す */
+    fun deleteParentFolderChildren() {
+        parentFile.listFiles()?.forEach { it.delete() }
+    }
+
     /**
      * 連番なファイル名になった[File]を作成する
      *
@@ -27,6 +32,15 @@ class UniqueFileTool(
         return File(parentFile, "$baseName${count++}.$extension").apply {
             createNewFile()
         }
+    }
+
+    /**
+     * 現在の連番ファイルを取得する
+     *
+     * @return [File]
+     */
+    fun currentFile(): File {
+        return File(parentFile, "$baseName${count}.$extension")
     }
 
 }

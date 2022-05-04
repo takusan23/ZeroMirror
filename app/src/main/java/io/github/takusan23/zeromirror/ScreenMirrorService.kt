@@ -6,25 +6,32 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
-import android.media.MediaRecorder
+import android.media.MediaFormat
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
-import android.os.Build
 import android.os.IBinder
+import android.view.Surface
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
+import io.github.takusan23.zeromirror.media.MediaContainer
+import io.github.takusan23.zeromirror.media.VideoEncoder
 import io.github.takusan23.zeromirror.tool.UniqueFileTool
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * ミラーリングサービス
  */
 class ScreenMirrorService : Service() {
+    /** コルーチンスコープ */
+    private val coroutineScope = CoroutineScope(Job())
 
-    // ファイル関係
+    /** ファイル関係 */
     private val uniqueFileTool by lazy { UniqueFileTool(getExternalFilesDir(null)!!, "videofile", "mp4") }
 
     // ミラーリングで使う
@@ -32,15 +39,25 @@ class ScreenMirrorService : Service() {
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
 
-    /** 録画のクラス */
-    private var mediaRecorder: MediaRecorder? = null
+    /** エンコーダー */
+    private val videoEncoder by lazy { VideoEncoder() }
+    private var encoderSurface: Surface? = null
 
-    /** 定期実行 */
-    private val coroutineScope = CoroutineScope(Job())
+    /** mp4に書き込むクラス */
+    private var mediaContainer: MediaContainer? = null
 
     // 画面サイズ
     private var displayHeight = 0
     private var displayWidth = 0
+
+    /** フレームレート */
+    private val frameRate = 30
+
+    /** ビットレート */
+    private val bitRate = 1_000_000 // 1Mbps
+
+    /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
+    private val intervalMs = 5_000
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -50,14 +67,22 @@ class ScreenMirrorService : Service() {
         displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
         displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
+        // 今までのファイルを消す
+        uniqueFileTool.deleteParentFolderChildren()
+
         // 通知発行
         notifyForegroundNotification()
 
         // 起動できる場合は起動
         if (resultCode != null && resultData != null) {
-            startScreenMirrorService(resultCode, resultData)
+            setupScreenMirroring(resultCode, resultData)
         } else {
             stopSelf()
+        }
+
+        // エンコーダーを開始
+        coroutineScope.launch {
+            startEncode()
         }
 
         return START_NOT_STICKY
@@ -66,8 +91,8 @@ class ScreenMirrorService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
-        mediaRecorder?.stop()
-        mediaRecorder?.release()
+        videoEncoder.release()
+        mediaContainer?.release()
         mediaProjection?.stop()
         virtualDisplay?.release()
     }
@@ -76,52 +101,56 @@ class ScreenMirrorService : Service() {
         return null
     }
 
+    /** ミラーリング内容をエンコードして動画にする */
+    private suspend fun startEncode() {
+        // コンテナフォーマットに格納するクラス、mp4生成器
+        mediaContainer = MediaContainer(uniqueFileTool)
+        // 前回のMediaFormat
+        var mediaFormat: MediaFormat? = null
+        // mp4作成日時
+        var createdDateMs = System.currentTimeMillis()
+
+        videoEncoder.start(
+            onOutputBufferAvailable = { byteBuffer, bufferInfo ->
+                // データを書き込む
+                mediaContainer!!.writeVideoData(byteBuffer, bufferInfo)
+
+                // 次のファイルにすべきならする
+                if (intervalMs < System.currentTimeMillis() - createdDateMs) {
+                    createdDateMs = System.currentTimeMillis()
+                    // ファイルを完成させる
+                    val resultFile = mediaContainer!!.release()
+                    mediaContainer!!.createContainer()
+                    // MediaFormatをセットする
+                    mediaContainer!!.setVideoFormat(mediaFormat!!)
+                    println("次のファイルになりました ${resultFile.path}")
+                }
+            },
+            onOutputFormatChanged = { format ->
+                mediaFormat = format
+                mediaContainer!!.setVideoFormat(format)
+            }
+        )
+    }
+
     /**
      * ミラーリング開始
      *
      * @param resultCode onActivityResult のときのCode
      * @param resultData onActivityResult のときのIntent
      */
-    private fun startScreenMirrorService(resultCode: Int, resultData: Intent) {
+    private fun setupScreenMirroring(resultCode: Int, resultData: Intent) {
         mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-        // 画面録画
-        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(this)
-        } else {
-            MediaRecorder()
-        }
         // 初期化
-        setupMediaRecorder()
+        videoEncoder.prepareEncoder(
+            videoWidth = displayWidth,
+            videoHeight = displayHeight,
+            bitRate = bitRate,
+            frameRate = frameRate,
+            iFrameInterval = 1
+        )
+        encoderSurface = videoEncoder.createInputSurface()
         virtualDisplay = createVirtualDisplay()
-        mediaRecorder?.start()
-
-        // 録画開始、定期実行する
-        coroutineScope.launch {
-            while (isActive) {
-                delay(5_000)
-                mediaRecorder?.stop()
-                mediaRecorder?.reset()
-                // 次の用意
-                setupMediaRecorder()
-                virtualDisplay?.release()
-                virtualDisplay = createVirtualDisplay()
-                mediaRecorder?.start()
-            }
-        }
-    }
-
-    /** [mediaRecorder]の初期化をする */
-    private fun setupMediaRecorder() {
-        mediaRecorder?.apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setVideoSource(MediaRecorder.VideoSource.SURFACE)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setVideoSize(displayWidth, displayHeight)
-            setOutputFile(uniqueFileTool.generateFile().path)
-            prepare()
-        }
     }
 
     /** [VirtualDisplay]を作る、各初期化後に呼ぶ */
@@ -130,9 +159,9 @@ class ScreenMirrorService : Service() {
             "io.github.takusan23.zeromirror",
             displayWidth,
             displayHeight,
-            this.resources.configuration.densityDpi,
+            resources.configuration.densityDpi,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            mediaRecorder!!.surface,
+            encoderSurface!!,
             null,
             null
         )
