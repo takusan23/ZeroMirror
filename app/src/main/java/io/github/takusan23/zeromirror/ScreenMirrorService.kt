@@ -61,7 +61,7 @@ class ScreenMirrorService : Service() {
     private val audioEncoder by lazy { AudioEncoder() }
 
     /** mp4に書き込むクラス */
-    private val mediaContainer by lazy { MediaContainer(uniqueFileTool) }
+    private val mediaContainer by lazy { MediaContainer(this, uniqueFileTool) }
 
     // ポート番号
     private var portNumber = 10_000
@@ -77,7 +77,7 @@ class ScreenMirrorService : Service() {
     private val frameRate = 30
 
     /** ビットレート */
-    private val bitRate = 1_000_000 // 1Mbps
+    private val bitRate = 5_000_000 // 1Mbps
 
     /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
     private val intervalMs = 5_000
@@ -154,43 +154,29 @@ class ScreenMirrorService : Service() {
                 mediaContainer.getPrevVideoFile()?.also { prevVideoFile ->
                     // クライアント側へ通知する
                     // WebSocketを使っている
-                    server.updateVideoFileName(prevVideoFile.name)
+                    // server.updateVideoFileName(prevVideoFile.name)
                 }
 
                 createdDateMs = System.currentTimeMillis()
                 // ファイルを完成させる
                 mediaContainer.release()
-                mediaContainer.createContainer()
+                val resultFile = mediaContainer.startMix()
+                server.updateVideoFileName(resultFile.name)
 
+                mediaContainer.createContainer()
                 // 次のファイルの用意のため、MediaFormatをセットする
                 mediaContainer.setVideoFormat(videoEncoder.outputVideoFormat.value!!)
                 // 内部音声も取る場合は
                 if (availableInternalAudio()) {
                     mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.value!!)
                 }
-                mediaContainer.start()
             }
-        }
-
-        /**
-         * コンテナファイル(mp4)へデータを迎え入れる用意ができていればtrue。
-         * 内部音声を動画に含める場合、音声と映像の登録が両方終わっていないといけない
-         *
-         * @return [MediaContainer.writeVideoData]が利用できる場合はtrue
-         */
-        fun isPreparedWriteData(): Boolean {
-            // OutputFormatがあれば追加済み判定にする
-            return if (availableInternalAudio()) {
-                videoEncoder.outputVideoFormat.value != null && audioEncoder.outputAudioFormat.value != null
-            } else {
-                videoEncoder.outputVideoFormat.value != null
-            } && mediaContainer.isStarted
         }
 
         // 映像エンコーダー開始
         launch {
             videoEncoder.startVideoEncode { byteBuffer, bufferInfo ->
-                if (isPreparedWriteData()) {
+                if (mediaContainer.isVideoStart) {
                     // 書き込む
                     mediaContainer.writeVideoData(byteBuffer, bufferInfo)
                     // 次のファイルに切り替えるか
@@ -204,7 +190,7 @@ class ScreenMirrorService : Service() {
                 audioEncoder.startAudioEncode(
                     onRecordInput = { bytes -> audioRecord!!.read(bytes, 0, bytes.size) },
                     onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                        if (isPreparedWriteData()) {
+                        if (mediaContainer.isAudioStart) {
                             // 書き込む
                             mediaContainer.writeAudioData(byteBuffer, bufferInfo)
                             // 次のファイルに切り替えるか
@@ -223,8 +209,6 @@ class ScreenMirrorService : Service() {
         if (availableInternalAudio()) {
             mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.filterNotNull().first())
         }
-        // 開始する
-        mediaContainer.start()
     }
 
     /** ミラーリング用意 */
