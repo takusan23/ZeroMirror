@@ -20,6 +20,9 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     /** 映像を入れるインデックス番号 */
     private var videoTrackIndex = -1
 
+    /** 音声を入れるインデックス番号 */
+    private var audioTrackIndex = -1
+
     /** 一個前の映像データ、多分一つ前のデータを送信するようにしないとちゃんと再生できない？ */
     private var prevVideoFile: File? = null
 
@@ -29,7 +32,7 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     }
 
     /**
-     * 映像データを書き込む用意をする
+     * 映像データを書き込む用意をする（コンテナに映像トラックを追加する）
      *
      * @param mediaFormat [MediaCodec.getOutputFormat]を入れればいいと思うよ
      */
@@ -39,9 +42,24 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
         mediaMuxer!!.start()
     }
 
-    /** エンコードされたデータ（H.264）を書き込む */
+    /**
+     * 音声データを書き込む用意をする（コンテナに音声トラックを追加する）
+     *
+     * @param mediaFormat [MediaCodec.getOutputFormat]を入れればいいと思うよ
+     */
+    fun setAudioFormat(mediaFormat: MediaFormat) {
+        audioTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+        mediaMuxer!!.start()
+    }
+
+    /** エンコードされた映像データを書き込む */
     fun writeVideoData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
         mediaMuxer!!.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
+    }
+
+    /** エンコードされた音声データを書き込む */
+    fun writeAudioData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
+        mediaMuxer!!.writeSampleData(audioTrackIndex, byteBuffer, bufferInfo)
     }
 
     /** コンテナファイル（mp4）を作り直す */
