@@ -20,6 +20,9 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     /** 映像を入れるインデックス番号 */
     private var videoTrackIndex = -1
 
+    /** 一個前の映像データ、多分一つ前のデータを送信するようにしないとちゃんと再生できない？ */
+    private var prevVideoFile: File? = null
+
     init {
         // 最初のファイルを作る
         createContainer()
@@ -48,6 +51,13 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     }
 
     /**
+     * 一個前の動画ファイルを返す
+     *
+     * @return 一つ前の動画ファイル、ない場合はnull
+     */
+    fun getPrevVideoFile() = prevVideoFile
+
+    /**
      * 今のコンテナファイルのリソース開放を行う。
      * 次のファイル[createContainer]の前に行うこと。
      *
@@ -55,7 +65,8 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
      */
     fun release(): File {
         mediaMuxer?.release()
-        return uniqueFile.currentFile()
+        prevVideoFile = uniqueFile.currentFile()
+        return prevVideoFile!!
     }
 
 }

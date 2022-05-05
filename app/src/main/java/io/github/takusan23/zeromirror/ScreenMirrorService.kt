@@ -27,7 +27,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.io.File
 
 /**
  * ミラーリングサービス
@@ -51,8 +50,11 @@ class ScreenMirrorService : Service() {
     /** mp4に書き込むクラス */
     private var mediaContainer: MediaContainer? = null
 
+    // ポート番号
+    private var portNumber = 10_000
+
     /** サーバー これだけ別モジュール */
-    private val server by lazy { Server(hostingFolder = getExternalFilesDir(null)!!) }
+    private val server by lazy { Server(portNumber = portNumber, hostingFolder = getExternalFilesDir(null)!!) }
 
     // 画面サイズ
     private var displayHeight = 0
@@ -88,7 +90,8 @@ class ScreenMirrorService : Service() {
 
         // IPアドレスを通知として出す
         IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
-            notifyForegroundNotification("IPアドレス：$ipAddress")
+            notifyForegroundNotification("IPアドレス：http://$ipAddress:$portNumber")
+            println("ここから見れます：http://$ipAddress:$portNumber")
         }.launchIn(coroutineScope)
 
         // エンコーダーを開始
@@ -124,8 +127,6 @@ class ScreenMirrorService : Service() {
         var mediaFormat: MediaFormat? = null
         // mp4ファイル作成日時
         var createdDateMs = System.currentTimeMillis()
-        // 送信するファイル
-        var resultFile: File? = null
 
         videoEncoder.start(
             onOutputBufferAvailable = { byteBuffer, bufferInfo ->
@@ -137,15 +138,15 @@ class ScreenMirrorService : Service() {
 
                     // 多分ちょっと待たないと静的ファイルとして配信できない？
                     // ので次のファイル生成時に一個前のデータを送信するようにする
-                    if (resultFile != null) {
+                    mediaContainer?.getPrevVideoFile()?.also { prevVideoFile ->
                         // クライアント側へ通知する
                         // WebSocketを使っている
-                        server.updateVideoFileName(resultFile!!.name)
+                        server.updateVideoFileName(prevVideoFile.name)
                     }
 
                     createdDateMs = System.currentTimeMillis()
                     // ファイルを完成させる
-                    resultFile = mediaContainer!!.release()
+                    mediaContainer!!.release()
                     mediaContainer!!.createContainer()
                     // MediaFormatをセットする
                     mediaContainer!!.setVideoFormat(mediaFormat!!)
@@ -209,8 +210,8 @@ class ScreenMirrorService : Service() {
         }
         //通知作成
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
-            setContentText("ぜろみらー起動中")
-            setContentTitle(contentText)
+            setContentTitle("ぜろみらー起動中")
+            setContentText(contentText)
             setSmallIcon(R.drawable.ic_launcher_foreground)
         }.build()
         startForeground(NOTIFICATION_ID, notification)

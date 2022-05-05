@@ -12,10 +12,12 @@ java {
 dependencies {
     implementation(kotlin("stdlib"))
     // Ktor Webサーバー
-    implementation("io.ktor:ktor-server-core:2.0.1")
-    implementation("io.ktor:ktor-server-netty:2.0.1")
+    // Windows Defender にウイルス判定されて削除されるのでバージョンを下げる
+    val ktorVersion = "2.0.0"
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-websockets:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:1.2.5")
-    implementation("io.ktor:ktor-server-websockets:2.0.1")
     // JUnit テストコード
     testImplementation("junit:junit:4.13.2")
 }
