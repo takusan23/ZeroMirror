@@ -96,7 +96,7 @@ class ScreenMirrorService : Service() {
             setupScreenMirroring()
             // 内部音声を一緒にエンコードする場合
             if (availableInternalAudio()) {
-                //setupInternalAudioCapture()
+                setupInternalAudioCapture()
             }
         } else {
             stopSelf()
@@ -110,7 +110,7 @@ class ScreenMirrorService : Service() {
 
         // エンコーダーを開始
         coroutineScope.launch {
-            // startEncode()
+            startEncode()
         }
 
         // サーバー開始
@@ -174,20 +174,18 @@ class ScreenMirrorService : Service() {
 
         // 映像エンコーダー
         launch {
-/*
             videoEncoder.startVideoEncode(
                 onOutputBufferAvailable = { byteBuffer, bufferInfo ->
                     // データを書き込む
-                    mediaContainer!!.writeVideoData(byteBuffer, bufferInfo)
+                    // mediaContainer!!.writeVideoData(byteBuffer, bufferInfo)
                     // 次のファイルに切り替えるか
-                    onAfterContainerInput()
+                    // onAfterContainerInput()
                 },
                 onOutputFormatChanged = { format ->
                     videoMediaFormat = format
-                    mediaContainer!!.setVideoFormat(format)
+                    // mediaContainer!!.setVideoFormat(format)
                 }
             )
-*/
         }
         launch {
             // 音声エンコーダー
