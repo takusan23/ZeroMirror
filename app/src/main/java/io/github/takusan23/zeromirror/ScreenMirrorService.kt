@@ -8,7 +8,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
-import android.media.*
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioPlaybackCaptureConfiguration
+import android.media.AudioRecord
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
@@ -27,6 +30,8 @@ import io.github.takusan23.zeromirror.media.VideoEncoder
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.UniqueFileTool
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -56,7 +61,7 @@ class ScreenMirrorService : Service() {
     private val audioEncoder by lazy { AudioEncoder() }
 
     /** mp4に書き込むクラス */
-    private var mediaContainer: MediaContainer? = null
+    private val mediaContainer by lazy { MediaContainer(uniqueFileTool) }
 
     // ポート番号
     private var portNumber = 10_000
@@ -124,7 +129,7 @@ class ScreenMirrorService : Service() {
         coroutineScope.cancel()
         videoEncoder.release()
         audioEncoder.release()
-        mediaContainer?.release()
+        mediaContainer.release()
         mediaProjection?.stop()
         virtualDisplay?.release()
         server.stopServer()
@@ -136,12 +141,6 @@ class ScreenMirrorService : Service() {
 
     /** ミラーリング内容をエンコードして動画にする */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
-        // コンテナフォーマットに格納するクラス、mp4生成器
-        mediaContainer = MediaContainer(uniqueFileTool)
-        // 前回の映像MediaFormat
-        var videoMediaFormat: MediaFormat? = null
-        // 前回の音声MediaFormat、内部音声を収録しない場合はnullのまま
-        var audioMediaFormat: MediaFormat? = null
         // mp4ファイル作成日時
         var createdDateMs = System.currentTimeMillis()
 
@@ -152,7 +151,7 @@ class ScreenMirrorService : Service() {
 
                 // 多分ちょっと待たないと静的ファイルとして配信できない？
                 // ので次のファイル生成時に一個前のデータを送信するようにする
-                mediaContainer?.getPrevVideoFile()?.also { prevVideoFile ->
+                mediaContainer.getPrevVideoFile()?.also { prevVideoFile ->
                     // クライアント側へ通知する
                     // WebSocketを使っている
                     server.updateVideoFileName(prevVideoFile.name)
@@ -160,52 +159,72 @@ class ScreenMirrorService : Service() {
 
                 createdDateMs = System.currentTimeMillis()
                 // ファイルを完成させる
-                mediaContainer!!.release()
-                mediaContainer!!.createContainer()
+                mediaContainer.release()
+                mediaContainer.createContainer()
 
                 // 次のファイルの用意のため、MediaFormatをセットする
-                // mediaContainer!!.setVideoFormat(videoMediaFormat!!)
-                // 音声は収録しない場合あるので
-                if (audioMediaFormat != null) {
-                    mediaContainer!!.setAudioFormat(audioMediaFormat!!)
+                mediaContainer.setVideoFormat(videoEncoder.outputVideoFormat.value!!)
+                // 内部音声も取る場合は
+                if (availableInternalAudio()) {
+                    mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.value!!)
                 }
+                mediaContainer.start()
             }
         }
 
-        // 映像エンコーダー
-        launch {
-            videoEncoder.startVideoEncode(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                    // データを書き込む
-                    // mediaContainer!!.writeVideoData(byteBuffer, bufferInfo)
-                    // 次のファイルに切り替えるか
-                    // onAfterContainerInput()
-                },
-                onOutputFormatChanged = { format ->
-                    videoMediaFormat = format
-                    // mediaContainer!!.setVideoFormat(format)
-                }
-            )
+        /**
+         * コンテナファイル(mp4)へデータを迎え入れる用意ができていればtrue。
+         * 内部音声を動画に含める場合、音声と映像の登録が両方終わっていないといけない
+         *
+         * @return [MediaContainer.writeVideoData]が利用できる場合はtrue
+         */
+        fun isPreparedWriteData(): Boolean {
+            // OutputFormatがあれば追加済み判定にする
+            return if (availableInternalAudio()) {
+                videoEncoder.outputVideoFormat.value != null && audioEncoder.outputAudioFormat.value != null
+            } else {
+                videoEncoder.outputVideoFormat.value != null
+            } && mediaContainer.isStarted
         }
+
+        // 映像エンコーダー開始
         launch {
-            // 音声エンコーダー
-            // 内部音声を収録する場合
-            if (availableInternalAudio()) {
+            videoEncoder.startVideoEncode { byteBuffer, bufferInfo ->
+                if (isPreparedWriteData()) {
+                    // 書き込む
+                    mediaContainer.writeVideoData(byteBuffer, bufferInfo)
+                    // 次のファイルに切り替えるか
+                    onAfterContainerInput()
+                }
+            }
+        }
+        // 内部音声も収録する場合は内部音声用エンコーダーも起動
+        if (availableInternalAudio()) {
+            launch {
                 audioEncoder.startAudioEncode(
                     onRecordInput = { bytes -> audioRecord!!.read(bytes, 0, bytes.size) },
                     onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                        // データを書き込む
-                        mediaContainer!!.writeAudioData(byteBuffer, bufferInfo)
-                        // 次のファイルに切り替えるか
-                        onAfterContainerInput()
-                    },
-                    onOutputFormatChanged = { format ->
-                        audioMediaFormat = format
-                        mediaContainer!!.setAudioFormat(format)
+                        if (isPreparedWriteData()) {
+                            // 書き込む
+                            mediaContainer.writeAudioData(byteBuffer, bufferInfo)
+                            // 次のファイルに切り替えるか
+                            onAfterContainerInput()
+                        }
                     }
                 )
             }
         }
+
+        // 出力フォーマットをMediaMuxerへ入れる、これらはエンコーダーが開始してないと貰えない
+        // 最初に流れてくるので
+        mediaContainer.setVideoFormat(videoEncoder.outputVideoFormat.filterNotNull().first())
+        // 音声エンコーダー
+        // 内部音声を収録する場合
+        if (availableInternalAudio()) {
+            mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.filterNotNull().first())
+        }
+        // 開始する
+        mediaContainer.start()
     }
 
     /** ミラーリング用意 */
@@ -253,7 +272,7 @@ class ScreenMirrorService : Service() {
         val audioFormat = AudioFormat.Builder().apply {
             setEncoding(AudioFormat.ENCODING_PCM_16BIT)
             setSampleRate(44_100)
-            setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
+            setChannelMask(AudioFormat.CHANNEL_IN_MONO)
         }.build()
         audioRecord = AudioRecord.Builder().apply {
             setAudioPlaybackCaptureConfig(playbackConfig)
@@ -270,8 +289,9 @@ class ScreenMirrorService : Service() {
      *
      * @return 内部音声を取る場合はtrue
      */
-    private fun availableInternalAudio() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-            && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    private fun availableInternalAudio() =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     /**
      * フォアグラウンドサービスの通知を発行する

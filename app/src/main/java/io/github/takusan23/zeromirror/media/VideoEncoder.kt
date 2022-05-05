@@ -4,6 +4,8 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -13,10 +15,15 @@ import java.nio.ByteBuffer
  *
  * 入力Surface から H.264 をエンコードする。
  */
-class VideoEncoder {
+class VideoEncoder() {
+
+    private val _outputVideoFormat = MutableStateFlow<MediaFormat?>(null)
 
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
+
+    /** 出力のフォーマットが流れてきます */
+    val outputVideoFormat = _outputVideoFormat as StateFlow<MediaFormat?>
 
     /**
      * H.264 エンコーダーを初期化する
@@ -58,12 +65,10 @@ class VideoEncoder {
     /**
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
      *
-     * @param onOutputBufferAvailable H.264に圧縮されたデータが流れてきた際に呼ばれる
-     * @param onOutputFormatChanged フォーマットが貰えます、MediaMuxerへセットしてください
+     * @param onOutputBufferAvailable H.264にエンコードされたデータが流れてきます
      */
     suspend fun startVideoEncode(
         onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
-        onOutputFormatChanged: (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         // 多分使い回す
         val bufferInfo = MediaCodec.BufferInfo()
@@ -87,7 +92,7 @@ class VideoEncoder {
                             // MediaMuxerへ映像トラックを追加するのはこのタイミングで行う
                             // このタイミングでやると固有のパラメーターがセットされたMediaFormatが手に入る(csd-0 とか)
                             // 映像がぶっ壊れている場合（緑で塗りつぶされてるとか）は多分このあたりが怪しい
-                            onOutputFormatChanged(mediaCodec!!.outputFormat)
+                            _outputVideoFormat.value = mediaCodec!!.outputFormat
                         }
                     }
                     // 返却
@@ -104,8 +109,12 @@ class VideoEncoder {
 
     /** リソースを開放する */
     fun release() {
-        mediaCodec?.stop()
-        mediaCodec?.release()
+        try {
+            mediaCodec?.stop()
+            mediaCodec?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     companion object {

@@ -4,18 +4,27 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 
-/** 内部音声が生のまま送られてくるので、AACにエンコードする */
+/**
+ * 内部音声が生のまま送られてくるので、AACにエンコードする。
+ */
 class AudioEncoder {
+
+    private val _outputAudioFormat = MutableStateFlow<MediaFormat?>(null)
 
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
 
     /** サンプリングレート、エンコードの際に使うので */
     private var sampleRate: Int = 44_100
+
+    /** 出力のフォーマットが流れてきます */
+    val outputAudioFormat = _outputAudioFormat as StateFlow<MediaFormat?>
 
     /**
      * AACエンコーダーを初期化する
@@ -26,7 +35,7 @@ class AudioEncoder {
      */
     fun prepareEncoder(
         sampleRate: Int = 44_100,
-        channelCount: Int = 2,
+        channelCount: Int = 1,
         bitRate: Int = 192_000,
     ) {
         this@AudioEncoder.sampleRate = sampleRate
@@ -44,13 +53,11 @@ class AudioEncoder {
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
      *
      * @param onRecordInput ByteArrayを渡すので、音声データを入れて、サイズを返してください
-     * @param onOutputFormatChanged フォーマットが貰えます、MediaMuxerへセットしてください
-     * @param onOutputBufferAvailable AACにエンコードされたデータが貰えます
+     * @param onOutputBufferAvailable AACにエンコードされたデータが流れてきます
      */
     suspend fun startAudioEncode(
         onRecordInput: (ByteArray) -> Int,
         onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
-        onOutputFormatChanged: (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         val bufferInfo = MediaCodec.BufferInfo()
         // MediaFormatを渡したらtrue
@@ -92,10 +99,8 @@ class AudioEncoder {
                             // ファイルに書き込む...
                             onOutputBufferAvailable(outputBuffer, bufferInfo)
                         } else if (!isNotifyMediaFormat) {
-                            // 多分映像データより先に呼ばれる
                             isNotifyMediaFormat = true
-                            // MediaMuxerへ音声トラックを追加するのはこのタイミングで行う
-                            onOutputFormatChanged(mediaCodec!!.outputFormat)
+                            _outputAudioFormat.value = mediaCodec!!.outputFormat
                         }
                     }
                     // 返却
@@ -109,8 +114,12 @@ class AudioEncoder {
 
     /** リソースを開放する */
     fun release() {
-        mediaCodec?.stop()
-        mediaCodec?.release()
+        try {
+            mediaCodec?.stop()
+            mediaCodec?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     companion object {

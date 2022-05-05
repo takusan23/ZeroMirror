@@ -26,6 +26,10 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     /** 一個前の映像データ、多分一つ前のデータを送信するようにしないとちゃんと再生できない？ */
     private var prevVideoFile: File? = null
 
+    /** 実行中かどうか */
+    var isStarted = false
+        private set
+
     init {
         // 最初のファイルを作る
         createContainer()
@@ -39,7 +43,6 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
     fun setVideoFormat(mediaFormat: MediaFormat) {
         // 映像がぶっ壊れている場合（緑で塗りつぶされてるとか）は多分このあたりが怪しい
         videoTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
-        mediaMuxer!!.start()
     }
 
     /**
@@ -49,6 +52,11 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
      */
     fun setAudioFormat(mediaFormat: MediaFormat) {
         audioTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+    }
+
+    /** [MediaMuxer]を開始する、[writeVideoData]等の前に呼ぶ */
+    fun start() {
+        isStarted = true
         mediaMuxer!!.start()
     }
 
@@ -82,6 +90,7 @@ class MediaContainer(private val uniqueFile: UniqueFileTool) {
      * @return 完成した[File]
      */
     fun release(): File {
+        isStarted = false
         mediaMuxer?.release()
         prevVideoFile = uniqueFile.currentFile()
         return prevVideoFile!!
