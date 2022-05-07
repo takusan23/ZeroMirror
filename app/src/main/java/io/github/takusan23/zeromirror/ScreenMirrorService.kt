@@ -116,6 +116,7 @@ class ScreenMirrorService : Service() {
     @SuppressLint("NewApi")
     override fun onDestroy() {
         super.onDestroy()
+        captureVideoManager.deleteParentFolderChildren()
         coroutineScope.cancel()
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
@@ -141,14 +142,12 @@ class ScreenMirrorService : Service() {
         while (isActive) {
             delay(intervalMs)
             // ファイルの書き込みをやめる
-            println("書き込み停止:${System.currentTimeMillis()}")
             val videoFilePath = screenVideoEncoder!!.stopWriteContainer()
             val audioFilePath = if (availableInternalAudio()) {
                 internalAudioEncoder!!.stopWriteContainer()
             } else null
 
             // 一つのファイルにする
-            println("合成開始:${System.currentTimeMillis()}")
             val mixedFile = captureVideoManager.generateFile()
             TrackMixer.startMix(
                 mergeFileList = listOfNotNull(videoFilePath, audioFilePath),
@@ -158,7 +157,6 @@ class ScreenMirrorService : Service() {
             server.updateVideoFileName(mixedFile.name)
 
             // 次のコンテナファイルを用意する
-            println("次のファイルへ:${System.currentTimeMillis()}")
             screenVideoEncoder!!.resetContainerFile()
             if (availableInternalAudio()) {
                 internalAudioEncoder!!.resetContainerFile()

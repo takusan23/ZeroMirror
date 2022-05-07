@@ -44,6 +44,7 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
     /** MediaFormatキャッシュしておく */
     private var outputMediaFormat: MediaFormat? = null
 
+    /** 書込み可能な状態の場合はtrue */
     private var isWritable = false
 
     init {
@@ -88,20 +89,15 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
         videoEncoder.startVideoEncode(
             onOutputBufferAvailable = { byteBuffer, bufferInfo ->
                 // エンコードされたデータが来る
-                if (!isWritable) {
-                    return@startVideoEncode
+                if (isWritable) {
+                    // 書き込む...
+                    mediaMuxer!!.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
                 }
-                // 書き込む...
-                mediaMuxer!!.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
             },
             onOutputFormatAvailable = {
                 outputMediaFormat = it
-                // 初回時はここでトラック追加
-                if (videoTrackIndex == INIT_INDEX_NUMBER) {
-                    videoTrackIndex = mediaMuxer!!.addTrack(outputMediaFormat!!)
-                    mediaMuxer!!.start()
-                    isWritable = true
-                }
+                // 初回時はここで初期化
+                addTrackAndStart()
             }
         )
     }
@@ -112,10 +108,8 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
      * @return ファイルパス
      */
     fun stopWriteContainer(): String {
-        // null 入れてエンコーダーの結果を書き込まないように
         isWritable = false
         mediaMuxer!!.stop()
-        mediaMuxer = null
         videoTrackIndex = INIT_INDEX_NUMBER
         return mp4File.path
     }
@@ -123,17 +117,10 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
     /** コンテナファイルを初期化する */
     fun resetContainerFile() {
         // 前回のファイルを消してから
-        mp4File.apply {
-            delete()
-            createNewFile()
-        }
+        mp4File.delete()
         mediaMuxer = MediaMuxer(mp4File.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-        // MediaFormatがキャッシュされていれば追加
-        if (outputMediaFormat != null) {
-            videoTrackIndex = mediaMuxer!!.addTrack(outputMediaFormat!!)
-            mediaMuxer!!.start()
-            isWritable = true
-        }
+        // 2個目以降のファイルはここで初期化出来る
+        addTrackAndStart()
     }
 
     /** 終了時に呼ぶ */
@@ -142,6 +129,15 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
         mediaMuxer?.release()
         virtualDisplay?.release()
         encoderSurface?.release()
+    }
+
+    /** [mediaMuxer]へ[outputMediaFormat]を追加して、[MediaMuxer]をスタートする */
+    private fun addTrackAndStart() {
+        if (videoTrackIndex == INIT_INDEX_NUMBER && outputMediaFormat != null) {
+            videoTrackIndex = mediaMuxer!!.addTrack(outputMediaFormat!!)
+            mediaMuxer!!.start()
+            isWritable = true
+        }
     }
 
     companion object {
