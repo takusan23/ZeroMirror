@@ -4,26 +4,20 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 
 /**
- * 動画エンコーダー。MediaCodec何も分からん
+ * 動画エンコーダー
+ * MediaCodecを使いやすくしただけ
  *
  * 入力Surface から H.264 をエンコードする。
  */
-class VideoEncoder() {
-
-    private val _outputVideoFormat = MutableStateFlow<MediaFormat?>(null)
+class VideoEncoder {
 
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
-
-    /** 出力のフォーマットが流れてきます */
-    val outputVideoFormat = _outputVideoFormat as StateFlow<MediaFormat?>
 
     /**
      * H.264 エンコーダーを初期化する
@@ -66,14 +60,14 @@ class VideoEncoder() {
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
      *
      * @param onOutputBufferAvailable H.264にエンコードされたデータが流れてきます
+     * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun startVideoEncode(
         onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
+        onOutputFormatAvailable: (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         // 多分使い回す
         val bufferInfo = MediaCodec.BufferInfo()
-        // MediaFormatを渡したらtrue
-        var isNotifyMediaFormat = false
         mediaCodec?.start()
 
         try {
@@ -86,13 +80,12 @@ class VideoEncoder() {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
                             // ファイルに書き込む...
                             onOutputBufferAvailable(outputBuffer, bufferInfo)
-                        } else if (!isNotifyMediaFormat) {
+                        } else {
                             // 多分映像データより先に呼ばれる
-                            isNotifyMediaFormat = true
                             // MediaMuxerへ映像トラックを追加するのはこのタイミングで行う
                             // このタイミングでやると固有のパラメーターがセットされたMediaFormatが手に入る(csd-0 とか)
                             // 映像がぶっ壊れている場合（緑で塗りつぶされてるとか）は多分このあたりが怪しい
-                            _outputVideoFormat.value = mediaCodec!!.outputFormat
+                            onOutputFormatAvailable(mediaCodec!!.outputFormat)
                         }
                     }
                     // 返却

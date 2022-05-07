@@ -6,32 +6,21 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioPlaybackCaptureConfiguration
-import android.media.AudioRecord
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
-import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.hlsserver.Server
-import io.github.takusan23.zeromirror.media.AudioEncoder
-import io.github.takusan23.zeromirror.media.MediaContainer
-import io.github.takusan23.zeromirror.media.VideoEncoder
+import io.github.takusan23.zeromirror.media.InternalAudioEncoder
+import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.tool.IpAddressTool
-import io.github.takusan23.zeromirror.tool.UniqueFileTool
+import io.github.takusan23.zeromirror.tool.TrackMixer
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -42,32 +31,24 @@ class ScreenMirrorService : Service() {
     /** コルーチンスコープ */
     private val coroutineScope = CoroutineScope(Job())
 
-    /** ファイル関係 */
-    private val uniqueFileTool by lazy { UniqueFileTool(getExternalFilesDir(null)!!, "videofile", "mp4") }
+    /** 生成したファイルを管理する */
+    private val captureVideoManager by lazy { CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME) }
+
+    /** サーバー これだけ別モジュール */
+    private val server by lazy { Server(portNumber = portNumber, hostingFolder = getExternalFilesDir(null)!!) }
 
     // ミラーリングで使う
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
     private var mediaProjection: MediaProjection? = null
-    private var virtualDisplay: VirtualDisplay? = null
 
-    /** 映像エンコーダー */
-    private val videoEncoder by lazy { VideoEncoder() }
-    private var encoderSurface: Surface? = null
+    /** 画面を録画してエンコードするクラス */
+    private var screenVideoEncoder: ScreenVideoEncoder? = null
 
-    /** 内部音声を取るのに使う */
-    private var audioRecord: AudioRecord? = null
-
-    /** 内部音声エンコーダー */
-    private val audioEncoder by lazy { AudioEncoder() }
-
-    /** mp4に書き込むクラス */
-    private val mediaContainer by lazy { MediaContainer(this, uniqueFileTool) }
+    /** 内部音声を収録してエンコードするクラス、Android 10未満では利用できないので使ってはいけない */
+    private var internalAudioEncoder: InternalAudioEncoder? = null
 
     // ポート番号
     private var portNumber = 10_000
-
-    /** サーバー これだけ別モジュール */
-    private val server by lazy { Server(portNumber = portNumber, hostingFolder = getExternalFilesDir(null)!!) }
 
     // 画面サイズ
     private var displayHeight = 0
@@ -80,7 +61,7 @@ class ScreenMirrorService : Service() {
     private val bitRate = 5_000_000 // 1Mbps
 
     /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
-    private val intervalMs = 5_000
+    private val intervalMs = 5_000L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -90,18 +71,28 @@ class ScreenMirrorService : Service() {
         displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
         // 今までのファイルを消す
-        uniqueFileTool.deleteParentFolderChildren()
+        captureVideoManager.deleteParentFolderChildren()
         // 通知発行
         notifyForegroundNotification()
 
         // 起動できる場合は起動
         if (resultCode != null && resultData != null) {
+
             mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
             // 画面ミラーリング
-            setupScreenMirroring()
+            screenVideoEncoder = ScreenVideoEncoder(getExternalFilesDir(null)!!, resources.configuration.densityDpi, mediaProjection!!)
+            screenVideoEncoder!!.prepareEncoder(
+                videoWidth = displayWidth,
+                videoHeight = displayHeight,
+                bitRate = bitRate,
+                frameRate = frameRate,
+                iFrameInterval = 1
+            )
+
             // 内部音声を一緒にエンコードする場合
             if (availableInternalAudio()) {
-                setupInternalAudioCapture()
+                internalAudioEncoder = InternalAudioEncoder(getExternalFilesDir(null)!!, mediaProjection!!)
+                internalAudioEncoder!!.prepareEncoder()
             }
         } else {
             stopSelf()
@@ -114,9 +105,7 @@ class ScreenMirrorService : Service() {
         }.launchIn(coroutineScope)
 
         // エンコーダーを開始
-        coroutineScope.launch {
-            startEncode()
-        }
+        coroutineScope.launch { startEncode() }
 
         // サーバー開始
         server.startServer()
@@ -124,14 +113,13 @@ class ScreenMirrorService : Service() {
         return START_NOT_STICKY
     }
 
+    @SuppressLint("NewApi")
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
-        videoEncoder.release()
-        audioEncoder.release()
-        mediaContainer.release()
+        screenVideoEncoder?.release()
+        internalAudioEncoder?.release()
         mediaProjection?.stop()
-        virtualDisplay?.release()
         server.stopServer()
     }
 
@@ -139,133 +127,43 @@ class ScreenMirrorService : Service() {
         return null
     }
 
-    /** ミラーリング内容をエンコードして動画にする */
+    /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
-        // mp4ファイル作成日時
-        var createdDateMs = System.currentTimeMillis()
 
-        /** コンテナファイルへデータを入れたら呼ぶ */
-        fun onAfterContainerInput() {
-            // 次のファイルにすべきならする
-            if (intervalMs < System.currentTimeMillis() - createdDateMs) {
-
-                // 多分ちょっと待たないと静的ファイルとして配信できない？
-                // ので次のファイル生成時に一個前のデータを送信するようにする
-                mediaContainer.getPrevVideoFile()?.also { prevVideoFile ->
-                    // クライアント側へ通知する
-                    // WebSocketを使っている
-                    // server.updateVideoFileName(prevVideoFile.name)
-                }
-
-                createdDateMs = System.currentTimeMillis()
-                // ファイルを完成させる
-                mediaContainer.release()
-                val resultFile = mediaContainer.startMix()
-                server.updateVideoFileName(resultFile.name)
-
-                mediaContainer.createContainer()
-                // 次のファイルの用意のため、MediaFormatをセットする
-                mediaContainer.setVideoFormat(videoEncoder.outputVideoFormat.value!!)
-                // 内部音声も取る場合は
-                if (availableInternalAudio()) {
-                    mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.value!!)
-                }
-            }
-        }
-
-        // 映像エンコーダー開始
-        launch {
-            videoEncoder.startVideoEncode { byteBuffer, bufferInfo ->
-                if (mediaContainer.isVideoStart) {
-                    // 書き込む
-                    mediaContainer.writeVideoData(byteBuffer, bufferInfo)
-                    // 次のファイルに切り替えるか
-                    onAfterContainerInput()
-                }
-            }
-        }
-        // 内部音声も収録する場合は内部音声用エンコーダーも起動
+        // 内部録画エンコーダー
+        launch { screenVideoEncoder!!.start() }
+        // 内部音声エンコーダー
         if (availableInternalAudio()) {
-            launch {
-                audioEncoder.startAudioEncode(
-                    onRecordInput = { bytes -> audioRecord!!.read(bytes, 0, bytes.size) },
-                    onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                        if (mediaContainer.isAudioStart) {
-                            // 書き込む
-                            mediaContainer.writeAudioData(byteBuffer, bufferInfo)
-                            // 次のファイルに切り替えるか
-                            onAfterContainerInput()
-                        }
-                    }
-                )
+            launch { internalAudioEncoder!!.start() }
+        }
+
+        // intervalMs秒待機したら新しいファイルにする
+        while (isActive) {
+            delay(intervalMs)
+            // ファイルの書き込みをやめる
+            println("書き込み停止:${System.currentTimeMillis()}")
+            val videoFilePath = screenVideoEncoder!!.stopWriteContainer()
+            val audioFilePath = if (availableInternalAudio()) {
+                internalAudioEncoder!!.stopWriteContainer()
+            } else null
+
+            // 一つのファイルにする
+            println("合成開始:${System.currentTimeMillis()}")
+            val mixedFile = captureVideoManager.generateFile()
+            TrackMixer.startMix(
+                mergeFileList = listOfNotNull(videoFilePath, audioFilePath),
+                resultFile = mixedFile
+            )
+            // クライアント側にWebSocketでファイルが出来たことを通知する
+            server.updateVideoFileName(mixedFile.name)
+
+            // 次のコンテナファイルを用意する
+            println("次のファイルへ:${System.currentTimeMillis()}")
+            screenVideoEncoder!!.resetContainerFile()
+            if (availableInternalAudio()) {
+                internalAudioEncoder!!.resetContainerFile()
             }
         }
-
-        // 出力フォーマットをMediaMuxerへ入れる、これらはエンコーダーが開始してないと貰えない
-        // 最初に流れてくるので
-        mediaContainer.setVideoFormat(videoEncoder.outputVideoFormat.filterNotNull().first())
-        // 音声エンコーダー
-        // 内部音声を収録する場合
-        if (availableInternalAudio()) {
-            mediaContainer.setAudioFormat(audioEncoder.outputAudioFormat.filterNotNull().first())
-        }
-    }
-
-    /** ミラーリング用意 */
-    private fun setupScreenMirroring() {
-        // 初期化
-        videoEncoder.prepareEncoder(
-            videoWidth = displayWidth,
-            videoHeight = displayHeight,
-            bitRate = bitRate,
-            frameRate = frameRate,
-            iFrameInterval = 1
-        )
-        encoderSurface = videoEncoder.createInputSurface()
-        virtualDisplay = createVirtualDisplay()
-    }
-
-    /** [VirtualDisplay]を作る、各初期化後に呼ぶ */
-    private fun createVirtualDisplay(): VirtualDisplay {
-        return mediaProjection!!.createVirtualDisplay(
-            "io.github.takusan23.zeromirror",
-            displayWidth,
-            displayHeight,
-            resources.configuration.densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            encoderSurface!!,
-            null,
-            null
-        )
-    }
-
-    /**
-     * Android 10 以降は念願の内部音声を録音出来るようになったので
-     *
-     * マイク権限（RECORD_AUDIO）があることを確認してください。
-     */
-    @SuppressLint("MissingPermission")
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun setupInternalAudioCapture() {
-        // 内部音声取るのに使う
-        val playbackConfig = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!).apply {
-            addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-            addMatchingUsage(AudioAttributes.USAGE_GAME)
-            addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-        }.build()
-        val audioFormat = AudioFormat.Builder().apply {
-            setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            setSampleRate(44_100)
-            setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-        }.build()
-        audioRecord = AudioRecord.Builder().apply {
-            setAudioPlaybackCaptureConfig(playbackConfig)
-            setAudioFormat(audioFormat)
-        }.build()
-        // 音声エンコーダー
-        audioEncoder.prepareEncoder()
-        // 録音開始
-        audioRecord?.startRecording()
     }
 
     /**
@@ -302,6 +200,9 @@ class ScreenMirrorService : Service() {
     }
 
     companion object {
+
+        /** クライアントに見せる最終的な動画のファイル名 */
+        private const val VIDEO_FILE_NAME = "videofile"
 
         /** 通知ID */
         private const val NOTIFICATION_ID = 4545

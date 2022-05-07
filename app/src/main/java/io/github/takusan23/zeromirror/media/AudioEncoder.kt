@@ -4,27 +4,23 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 
 /**
- * 内部音声が生のまま送られてくるので、AACにエンコードする。
+ * 音声エンコーダー
+ * MediaCodecを使いやすくしただけ
+ *
+ * 内部音声が生のまま（PCM）送られてくるので、AACにエンコードする。
  */
 class AudioEncoder {
-
-    private val _outputAudioFormat = MutableStateFlow<MediaFormat?>(null)
 
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
 
     /** サンプリングレート、エンコードの際に使うので */
     private var sampleRate: Int = 44_100
-
-    /** 出力のフォーマットが流れてきます */
-    val outputAudioFormat = _outputAudioFormat as StateFlow<MediaFormat?>
 
     /**
      * AACエンコーダーを初期化する
@@ -54,14 +50,14 @@ class AudioEncoder {
      *
      * @param onRecordInput ByteArrayを渡すので、音声データを入れて、サイズを返してください
      * @param onOutputBufferAvailable AACにエンコードされたデータが流れてきます
+     * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun startAudioEncode(
         onRecordInput: (ByteArray) -> Int,
         onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
+        onOutputFormatAvailable: (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         val bufferInfo = MediaCodec.BufferInfo()
-        // MediaFormatを渡したらtrue
-        var isNotifyMediaFormat = false
         mediaCodec!!.start()
 
         // 経過時間の計算、AOSPの内部音声コードをそのままパクります
@@ -71,7 +67,6 @@ class AudioEncoder {
 
         try {
             while (isActive) {
-                // 入力
                 // もし -1 が返ってくれば configure() が間違ってる
                 val inputBufferId = mediaCodec!!.dequeueInputBuffer(TIMEOUT_US)
                 if (inputBufferId >= 0) {
@@ -98,9 +93,9 @@ class AudioEncoder {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
                             // ファイルに書き込む...
                             onOutputBufferAvailable(outputBuffer, bufferInfo)
-                        } else if (!isNotifyMediaFormat) {
-                            isNotifyMediaFormat = true
-                            _outputAudioFormat.value = mediaCodec!!.outputFormat
+                        } else {
+                            // たぶんこっちのほうが先に呼ばれる
+                            onOutputFormatAvailable(mediaCodec!!.outputFormat)
                         }
                     }
                     // 返却
