@@ -11,16 +11,43 @@
 <body>
     <div align="center">
         <p id="title">動画データの到着を待っています...</p>
-        <video id="video_player" width="300" controls autoplay />
+        <button id="cache_button">切り替えを安定させる（遅延が増えます）</button>
+        <video id="video_player" width="300" controls autoplay></video>
     </div>
 </body>
 
 <script>
+    //@ts-check
 
     // 一番上の文字
     const titleElement = document.getElementById('title')
-    // 動画タグ
+    // 動画プレイヤー
     const videoElement = document.getElementById('video_player')
+    // キャッシュボタン
+    const cacheButton = document.getElementById('cache_button')
+
+    // 動画をキャッシュするか
+    let isAvailableCache = false
+    // isAvailableCache 有効の場合は 動画をキャッシュしたらここにBlobURLが入る
+    // isAvailableCache 無効の場合は WebSocketから流れてきたアドレスが直接はいる
+    let rawUrlOrPreloadedUrl = ''
+
+    // ボタンを押したら切り替える
+    cacheButton.onclick = () => {
+        isAvailableCache = !isAvailableCache
+    }
+
+    // 再生終了イベント
+    videoElement.onended = () => {
+        // BlobURL有効時でも初回時は開放しない
+        if (videoElement.src === '' && isAvailableCache) {
+            URL.revokeObjectURL(videoElement.src)
+        }
+        // 一つ前の動画をロードする
+        videoElement.src = rawUrlOrPreloadedUrl
+        videoElement.load()
+        videoElement.play()
+    }
 
     // WebSocket 接続を作成
     const socket = new WebSocket(`ws://${location.host}/wsvideo`)
@@ -28,19 +55,32 @@
     // 接続が開いたときのイベント
     socket.addEventListener('open', function (event) {
         socket.send('WebSocket接続がオープンしました。')
-    });
+    })
 
     // メッセージの待ち受け
     socket.addEventListener('message', function (event) {
         console.log('動画データが到着しました。', event.data)
         // 新しい動画の相対URL
         const url = JSON.parse(event.data)["url"]
-        videoElement.src = url
-        videoElement.load()
-        videoElement.play()
+        if (isAvailableCache) {
+            // キャッシュする場合
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    // 今の動画 の blob URL を作成する
+                    rawUrlOrPreloadedUrl = URL.createObjectURL(blob)
+                    // 動画ロードを終了イベントに書いてるので発火する
+                    videoElement.onended.call()
+                })
+        } else {
+            // キャッシュしない
+            rawUrlOrPreloadedUrl = url
+            // 動画ロードを終了イベントに書いてるので発火する
+            videoElement.onended.call()
+        }
         // 上の文字を消す
         titleElement.style.display = 'none'
-    });
+    })
 
 </script>
 
