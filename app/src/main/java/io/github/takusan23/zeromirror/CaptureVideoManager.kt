@@ -10,10 +10,12 @@ import java.io.File
  *
  * @param parentFile 保存先
  * @param baseName ファイル名先頭につけるやつ
+ * @param extension 拡張子
  */
 class CaptureVideoManager(
     private val parentFile: File,
     private val baseName: String,
+    private val extension: String = "mp4",
 ) {
 
     /** 作るたびにインクリメントする */
@@ -38,16 +40,16 @@ class CaptureVideoManager(
      */
     suspend fun generateFile(): File {
         deleteNotHoldFile()
-        currentFile = File(parentFile, "$baseName${count++}.mp4").apply { createNewFile() }
+        currentFile = File(parentFile, "$baseName${count++}.$extension").apply { createNewFile() }
         fileList.add(currentFile!!)
         return currentFile!!
     }
 
     /** 保持数を超えたファイルを消す */
     private suspend fun deleteNotHoldFile() = withContext(Dispatchers.IO) {
-        val size = fileList.size
-        if (FILE_HOLD_COUNT < size) {
-            fileList.subList(FILE_HOLD_COUNT, size).forEach { it.delete() }
+        val deleteItemSize = fileList.size - FILE_HOLD_COUNT
+        if (deleteItemSize >= 0) {
+            fileList.take(deleteItemSize).forEach { it.delete() }
         }
     }
 

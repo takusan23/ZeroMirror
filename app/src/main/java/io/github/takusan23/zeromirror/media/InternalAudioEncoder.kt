@@ -12,12 +12,11 @@ import java.io.File
 /**
  * 内部音声をPCMで取り出して、AACでエンコードする
  *
- * @param parentFolder 音声ファイル保存先
  * @param mediaProjection [MediaProjection]、内部音声を収録するのに使います。
  */
 @SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.Q)
-class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection) {
+class InternalAudioEncoder(mediaProjection: MediaProjection) {
 
     /** 音声エンコーダー、MediaCodecをラップした */
     private val audioEncoder = AudioEncoder()
@@ -29,7 +28,7 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
     private var audioRecord: AudioRecord? = null
 
     /** AACファイル */
-    private val aacFile = File(parentFolder, AUDIO_FILE_NAME)
+    private var aacFile: File? = null
 
     /** 音声トラックの番号、-1はまだ追加してない */
     private var audioTrackIndex = INIT_INDEX_NUMBER
@@ -42,7 +41,7 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
 
     init {
         // 内部音声取るのに使う
-        val playbackConfig = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!).apply {
+        val playbackConfig = AudioPlaybackCaptureConfiguration.Builder(mediaProjection).apply {
             addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             addMatchingUsage(AudioAttributes.USAGE_GAME)
             addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
@@ -57,8 +56,6 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
             setAudioFormat(audioFormat)
         }.build()
         audioRecord!!.startRecording()
-        // MediaMuxer初期化
-        resetContainerFile()
     }
 
     /**
@@ -89,7 +86,13 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
                 // エンコード後のデータ
                 if (isWritable) {
                     // 書き込む...
-                    mediaMuxer!!.writeSampleData(audioTrackIndex, byteBuffer, bufferInfo)
+                    // なんか例外が出る、コンテナファイルを切り替えてるせいなのかもしれない
+                    // java.lang.IllegalStateException: writeSampleData returned an error
+                    try {
+                        mediaMuxer!!.writeSampleData(audioTrackIndex, byteBuffer, bufferInfo)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             },
             onOutputFormatAvailable = {
@@ -103,18 +106,23 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
     /**
      * aacファイルへの書き込みを辞める
      *
-     * @return ファイルパス
+     * @return 書き込んでいたファイル
      */
-    fun stopWriteContainer(): String {
+    fun stopWriteContainer(): File {
         isWritable = false
         mediaMuxer?.stop()
         audioTrackIndex = INIT_INDEX_NUMBER
-        return aacFile.path
+        return aacFile!!
     }
 
-    /** コンテナファイルを初期化する */
-    fun resetContainerFile() {
+    /**
+     * コンテナファイルを初期化する
+     *
+     * @param aacFile AACを書き込むファイル
+     */
+    suspend fun createContainer(aacFile: File) = withContext(Dispatchers.Default) {
         // 前回のファイルを消してから
+        this@InternalAudioEncoder.aacFile = aacFile
         aacFile.delete()
         mediaMuxer = MediaMuxer(aacFile.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         // 2個目以降のファイルはここで初期化出来る
@@ -139,9 +147,6 @@ class InternalAudioEncoder(parentFolder: File, mediaProjection: MediaProjection)
     }
 
     companion object {
-        /** 音声ファイル名 */
-        private const val AUDIO_FILE_NAME = "temp_audio.aac"
-
         /** インデックス番号初期値 */
         private const val INIT_INDEX_NUMBER = -1
     }

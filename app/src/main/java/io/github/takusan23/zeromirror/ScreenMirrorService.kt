@@ -23,6 +23,7 @@ import io.github.takusan23.zeromirror.tool.TrackMixer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import java.io.File
 
 /**
  * ミラーリングサービス
@@ -35,7 +36,7 @@ class ScreenMirrorService : Service() {
     private val captureVideoManager by lazy { CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME) }
 
     /** サーバー これだけ別モジュール */
-    private val server by lazy { Server(portNumber = portNumber, hostingFolder = getExternalFilesDir(null)!!) }
+    private val server by lazy { Server(portNumber, getExternalFilesDir(null)!!) }
 
     // ミラーリングで使う
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
@@ -61,7 +62,7 @@ class ScreenMirrorService : Service() {
     private val bitRate = 5_000_000 // 1Mbps
 
     /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
-    private val intervalMs = 5_000L
+    private val intervalMs = 2_000L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -77,10 +78,9 @@ class ScreenMirrorService : Service() {
 
         // 起動できる場合は起動
         if (resultCode != null && resultData != null) {
-
             mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
             // 画面ミラーリング
-            screenVideoEncoder = ScreenVideoEncoder(getExternalFilesDir(null)!!, resources.configuration.densityDpi, mediaProjection!!)
+            screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!)
             screenVideoEncoder!!.prepareEncoder(
                 videoWidth = displayWidth,
                 videoHeight = displayHeight,
@@ -88,10 +88,9 @@ class ScreenMirrorService : Service() {
                 frameRate = frameRate,
                 iFrameInterval = 1
             )
-
             // 内部音声を一緒にエンコードする場合
             if (availableInternalAudio()) {
-                internalAudioEncoder = InternalAudioEncoder(getExternalFilesDir(null)!!, mediaProjection!!)
+                internalAudioEncoder = InternalAudioEncoder(mediaProjection!!)
                 internalAudioEncoder!!.prepareEncoder()
             }
         } else {
@@ -116,7 +115,7 @@ class ScreenMirrorService : Service() {
     @SuppressLint("NewApi")
     override fun onDestroy() {
         super.onDestroy()
-        captureVideoManager.deleteParentFolderChildren()
+       // captureVideoManager.deleteParentFolderChildren()
         coroutineScope.cancel()
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
@@ -130,7 +129,6 @@ class ScreenMirrorService : Service() {
 
     /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
-
         // 内部録画エンコーダー
         launch { screenVideoEncoder!!.start() }
         // 内部音声エンコーダー
@@ -138,29 +136,40 @@ class ScreenMirrorService : Service() {
             launch { internalAudioEncoder!!.start() }
         }
 
-        // intervalMs秒待機したら新しいファイルにする
+        // コルーチンの中なので whileループ できます
         while (isActive) {
-            delay(intervalMs)
-            // ファイルの書き込みをやめる
-            val videoFilePath = screenVideoEncoder!!.stopWriteContainer()
-            val audioFilePath = if (availableInternalAudio()) {
-                internalAudioEncoder!!.stopWriteContainer()
-            } else null
 
-            // 一つのファイルにする
-            val mixedFile = captureVideoManager.generateFile()
-            TrackMixer.startMix(
-                mergeFileList = listOfNotNull(videoFilePath, audioFilePath),
-                resultFile = mixedFile
-            )
-            // クライアント側にWebSocketでファイルが出来たことを通知する
-            server.updateVideoFileName(mixedFile.name)
-
-            // 次のコンテナファイルを用意する
-            screenVideoEncoder!!.resetContainerFile()
+            // それぞれ格納するファイルを用意
             if (availableInternalAudio()) {
-                internalAudioEncoder!!.resetContainerFile()
+                // 後で映像と音声を合成するので同じファイルに書き込む
+                screenVideoEncoder!!.createContainer(File(getExternalFilesDir(null), SCREEN_CAPTURE_FILE_NAME))
+                internalAudioEncoder!!.createContainer(File(getExternalFilesDir(null), INTERNAL_RECORD_FILE_NAME))
+            } else {
+                // ここで書き込んだファイルを直接クライアントに返すので重要
+                screenVideoEncoder!!.createContainer(captureVideoManager.generateFile())
             }
+
+            // intervalMs秒待機したら新しいファイルにする
+            delay(intervalMs)
+
+            // 内部音声を合成するか、合成せずに映像だけ返すか
+            // 内部音声はAndroid10以降のみなので実装は必須
+            val publishFile = if (availableInternalAudio()) {
+                // ファイルの書き込みをやめる
+                val videoFilePath = screenVideoEncoder!!.stopWriteContainer().path
+                val audioFilePath = internalAudioEncoder!!.stopWriteContainer().path
+                // 一つのファイルにする
+                captureVideoManager.generateFile().also { mixedFile ->
+                    TrackMixer.startMix(
+                        mergeFileList = listOf(videoFilePath, audioFilePath),
+                        resultFile = mixedFile
+                    )
+                }
+            } else {
+                screenVideoEncoder!!.stopWriteContainer()
+            }
+            // クライアント側にWebSocketでファイルが出来たことを通知する
+            server.updateVideoFileName(publishFile.name)
         }
     }
 
@@ -199,8 +208,14 @@ class ScreenMirrorService : Service() {
 
     companion object {
 
-        /** クライアントに見せる最終的な動画のファイル名 */
-        private const val VIDEO_FILE_NAME = "videofile"
+        /** 内部録画だけのファイルの名前 */
+        private const val SCREEN_CAPTURE_FILE_NAME = "screen.mp4"
+
+        /** 内部音声を記録するだけのファイルの名前 */
+        private const val INTERNAL_RECORD_FILE_NAME = "internal.aac"
+
+        /** クライアントに見せる最終的な動画のファイル名、拡張子はあとから付ける */
+        private const val VIDEO_FILE_NAME = "publish"
 
         /** 通知ID */
         private const val NOTIFICATION_ID = 4545

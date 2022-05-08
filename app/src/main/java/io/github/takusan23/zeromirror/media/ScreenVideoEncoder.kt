@@ -6,6 +6,7 @@ import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.projection.MediaProjection
 import android.view.Surface
+import io.github.takusan23.zeromirror.CaptureVideoManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -15,13 +16,14 @@ import java.io.File
  *
  * 次のファイルにする流れ
  *
- * [stopWriteContainer] -> 音声と結合する -> [resetContainerFile] -> ふりだしにもどる
+ * [stopWriteContainer] -> 音声と結合する -> [createContainer] -> ふりだしにもどる
  *
- * @param parentFolder 動画保存先
+ * 画面録画のみを配信する機能があるためこのクラスでも[CaptureVideoManager]を使っている
+ *
  * @param displayDpi DPI
  * @param mediaProjection [MediaProjection]、内部音声を収録するのに使います。
  */
-class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, private val mediaProjection: MediaProjection) {
+class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjection: MediaProjection) {
 
     /** 映像エンコーダー、MediaCodecをラップした */
     private val videoEncoder = VideoEncoder()
@@ -30,7 +32,7 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
     private var mediaMuxer: MediaMuxer? = null
 
     /** mp4ファイル */
-    private val mp4File = File(parentFolder, VIDEO_FILE_NAME)
+    private var h264File: File? = null
 
     /** 画面録画に使う */
     private var virtualDisplay: VirtualDisplay? = null
@@ -46,10 +48,6 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
 
     /** 書込み可能な状態の場合はtrue */
     private var isWritable = false
-
-    init {
-        resetContainerFile()
-    }
 
     /**
      * H.264 エンコーダーを初期化する
@@ -91,7 +89,13 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
                 // エンコードされたデータが来る
                 if (isWritable) {
                     // 書き込む...
-                    mediaMuxer!!.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
+                    // なんか例外が出る、コンテナファイルを切り替えてるせいなのかもしれない
+                    // java.lang.IllegalStateException: writeSampleData returned an error
+                    try {
+                        mediaMuxer!!.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             },
             onOutputFormatAvailable = {
@@ -105,20 +109,25 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
     /**
      * mp4ファイルへの書き込みを辞める
      *
-     * @return ファイルパス
+     * @return 書き込んでいたファイル、[createContainer]を呼んでない場合はnull
      */
-    fun stopWriteContainer(): String {
+    fun stopWriteContainer(): File {
         isWritable = false
         mediaMuxer!!.stop()
         videoTrackIndex = INIT_INDEX_NUMBER
-        return mp4File.path
+        return h264File!!
     }
 
-    /** コンテナファイルを初期化する */
-    fun resetContainerFile() {
-        // 前回のファイルを消してから
-        mp4File.delete()
-        mediaMuxer = MediaMuxer(mp4File.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+    /**
+     * コンテナファイルを初期化する
+     *
+     * @param h264File 書き込むファイル
+     */
+    suspend fun createContainer(h264File: File) = withContext(Dispatchers.Default) {
+        // 一応消しておく
+        this@ScreenVideoEncoder.h264File = h264File
+        h264File.delete()
+        mediaMuxer = MediaMuxer(h264File.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         // 2個目以降のファイルはここで初期化出来る
         addTrackAndStart()
     }
@@ -141,9 +150,6 @@ class ScreenVideoEncoder(parentFolder: File, private val displayDpi: Int, privat
     }
 
     companion object {
-        /** 映像ファイル名 */
-        private const val VIDEO_FILE_NAME = "temp_video.mp4"
-
         /** インデックス番号初期値 */
         private const val INIT_INDEX_NUMBER = -1
     }
