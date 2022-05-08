@@ -11,7 +11,7 @@
 <body>
     <div align="center">
         <p id="title">動画データの到着を待っています...</p>
-        <button id="cache_button">切り替えを安定させる（遅延が増えます）</button>
+        <p><button id="cache_button">切り替えを安定させる（実験的）</button></p>
         <video id="video_player" width="300" controls autoplay></video>
     </div>
 </body>
@@ -26,21 +26,20 @@
     // キャッシュボタン
     const cacheButton = document.getElementById('cache_button')
 
-    // 動画をキャッシュするか
-    let isAvailableCache = false
-    // isAvailableCache 有効の場合は 動画をキャッシュしたらここにBlobURLが入る
-    // isAvailableCache 無効の場合は WebSocketから流れてきたアドレスが直接はいる
+    // 動画をすべてダウンロードしてから再生するか
+    let isFullVideoDl = false
+    // BlobURLか動画へアクセスできる相対URLが手に入る
     let rawUrlOrPreloadedUrl = ''
 
     // ボタンを押したら切り替える
     cacheButton.onclick = () => {
-        isAvailableCache = !isAvailableCache
+        isFullVideoDl = !isFullVideoDl
     }
 
     // 再生終了イベント
     videoElement.onended = () => {
         // BlobURL有効時でも初回時は開放しない
-        if (videoElement.src === '' && isAvailableCache) {
+        if (videoElement.src === '' && isFullVideoDl) {
             URL.revokeObjectURL(videoElement.src)
         }
         // 一つ前の動画をロードする
@@ -62,18 +61,17 @@
         console.log('動画データが到着しました。', event.data)
         // 新しい動画の相対URL
         const url = JSON.parse(event.data)["url"]
-        if (isAvailableCache) {
-            // キャッシュする場合
+        if (isFullVideoDl) {
+            // ダウンロードしてから再生する場合
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
-                    // 今の動画 の blob URL を作成する
+                    // 今回の動画の BlobURL を作成する
                     rawUrlOrPreloadedUrl = URL.createObjectURL(blob)
-                    // 動画ロードを終了イベントに書いてるので発火する
                     videoElement.onended.call()
                 })
         } else {
-            // キャッシュしない
+            // そのまま渡す
             rawUrlOrPreloadedUrl = url
             // 動画ロードを終了イベントに書いてるので発火する
             videoElement.onended.call()
