@@ -1,3 +1,5 @@
+val composeVersion = "1.2.0-alpha08"
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -28,6 +30,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = composeVersion
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -60,9 +68,19 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.4.1")
     // AndroidX WindowMetrics
     implementation("androidx.window:window:1.1.0-alpha01")
+    implementation("com.google.android.material:material:1.6.0")
 
-    implementation("com.google.android.material:material:1.5.0")
-
+    // JetpackCompose
+    implementation("androidx.compose.ui:ui:$composeVersion")
+    implementation("androidx.compose.material:material:$composeVersion")
+    implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+    implementation("androidx.compose.runtime:runtime-livedata:$composeVersion")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
+    implementation("androidx.navigation:navigation-compose:2.4.1")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.20.0")
+    // Compose + Material You
+    implementation("androidx.compose.material3:material3:1.0.0-alpha10")
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     testImplementation("junit:junit:4.13.2")

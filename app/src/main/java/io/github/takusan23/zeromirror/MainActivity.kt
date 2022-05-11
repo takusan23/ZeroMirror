@@ -4,11 +4,13 @@ import android.content.Context
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import io.github.takusan23.zeromirror.databinding.ActivityMainBinding
+import io.github.takusan23.zeromirror.ui.screen.MainScreen
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
     private val viewBinding by lazy { ActivityMainBinding.inflate(layoutInflater) }
@@ -25,17 +27,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(viewBinding.root)
 
-        viewBinding.activityMainStart.setOnClickListener {
-            mediaProjectionResult.launch(mediaProjectionManager.createScreenCaptureIntent())
+        setContent {
+            MainScreen()
         }
-        viewBinding.activityMainStop.setOnClickListener {
-            ScreenMirrorService.stopService(this)
-        }
-
-        // val server = Server(hostingFolder = getExternalFilesDir(null)!!)
-        // server.startServer()
 
     }
 
