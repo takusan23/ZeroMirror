@@ -23,7 +23,7 @@ fun MainScreen() {
         // メイン画面のルーティング
         val mainScreenNavigation = rememberNavController()
 
-        Surface(color = MaterialTheme.colorScheme.surface) {
+        Surface(color = MaterialTheme.colorScheme.background) {
             NavHost(navController = mainScreenNavigation, startDestination = MainScreenNavigationLinks.StartScreen) {
                 // 最初に出す画面
                 composable(MainScreenNavigationLinks.StartScreen) {

@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -16,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.tool.IpAddressTool
-import io.github.takusan23.zeromirror.ui.components.ConnectCard
-import io.github.takusan23.zeromirror.ui.components.MirrorFloatingActionButton
-import io.github.takusan23.zeromirror.ui.components.MirroringNoticeCard
-import io.github.takusan23.zeromirror.ui.components.StreamEncodeStatusUI
+import io.github.takusan23.zeromirror.ui.components.CurrentTimeTitle
+import io.github.takusan23.zeromirror.ui.components.LiveStreamStatusUI
+import io.github.takusan23.zeromirror.ui.components.MirroringButton
+import io.github.takusan23.zeromirror.ui.components.UrlCard
 
 /**
  * ホーム画面、ミラーリングの開始など。
@@ -31,27 +29,21 @@ fun HomeScreen() {
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
 
-    Scaffold(
-        floatingActionButton = {
-            MirrorFloatingActionButton {
-                // 押したとき...
-            }
-        }
-    ) {
+    Scaffold {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            LargeTopAppBar(
-                title = { Text(text = "管理画面") }
-            )
 
-            // ミラーリング注意してね
-            MirroringNoticeCard(
+            // 現在時刻
+            CurrentTimeTitle(modifier = Modifier.fillMaxWidth())
+
+            // 開始 / 終了 ボタン
+            MirroringButton(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp)
+                    .padding(10.dp),
             )
 
             // URL表示
-            ConnectCard(
+            UrlCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp),
@@ -59,7 +51,11 @@ fun HomeScreen() {
             )
 
             // エンコーダー
-            StreamEncodeStatusUI()
+            LiveStreamStatusUI(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+            )
         }
     }
 }
