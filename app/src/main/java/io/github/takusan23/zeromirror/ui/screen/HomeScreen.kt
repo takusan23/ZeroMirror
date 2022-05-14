@@ -1,5 +1,12 @@
 package io.github.takusan23.zeromirror.ui.screen
 
+import android.app.Activity
+import android.content.Context
+import android.media.projection.MediaProjectionManager
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,11 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import io.github.takusan23.zeromirror.ScreenMirrorService
+import io.github.takusan23.zeromirror.setting.dataStore
 import io.github.takusan23.zeromirror.tool.IpAddressTool
-import io.github.takusan23.zeromirror.ui.components.CurrentTimeTitle
-import io.github.takusan23.zeromirror.ui.components.LiveStreamStatusUI
-import io.github.takusan23.zeromirror.ui.components.MirroringButton
-import io.github.takusan23.zeromirror.ui.components.UrlCard
+import io.github.takusan23.zeromirror.ui.components.*
 
 /**
  * ホーム画面、ミラーリングの開始など。
@@ -26,8 +32,23 @@ import io.github.takusan23.zeromirror.ui.components.UrlCard
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
+
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
+    // DataStore、SharedPreferenceの代替
+    val dataStore = context.dataStore.data.collectAsState(initial = null)
+
+    // 権限を求めてサービスを起動する
+    val mediaProjectionManager = remember { context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
+    val requestCapture = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        // ミラーリングサービス開始
+        if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
+            // Activity 以外は無いはず...
+            ScreenMirrorService.startService((context as Activity), result.resultCode, result.data!!)
+        } else {
+            Toast.makeText(context, "開始が拒否されました、(ヽ´ω`)", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -40,6 +61,14 @@ fun HomeScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp),
+                onStartClick = {
+                    // キャプチャー権限を求める
+                    requestCapture.launch(mediaProjectionManager.createScreenCaptureIntent())
+                },
+                onStopClick = {
+                    // 終了させる
+                    ScreenMirrorService.stopService(context)
+                }
             )
 
             // URL表示
@@ -50,8 +79,15 @@ fun HomeScreen() {
                 url = "http://${idAddress.value}:2828"
             )
 
+            // 内部音声にはマイク権限
+            InternalAudioPermissionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+            )
+
             // エンコーダー
-            LiveStreamStatusUI(
+            StreamInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp),

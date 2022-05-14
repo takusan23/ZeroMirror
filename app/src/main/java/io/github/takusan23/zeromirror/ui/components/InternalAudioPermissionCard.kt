@@ -13,11 +13,11 @@ import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 
 /**
- * 更新間隔、ビットレート、fpsとかを表示する
+ * 内部音声
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LiveStreamStatusUI(modifier: Modifier = Modifier) {
+fun InternalAudioPermissionCard(modifier: Modifier = Modifier) {
     OutlinedCard(modifier = modifier) {
         Column(
             modifier = Modifier
@@ -26,7 +26,7 @@ fun LiveStreamStatusUI(modifier: Modifier = Modifier) {
         ) {
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = "ミラーリング 情報",
+                text = "Android 10 以降 内部音声を共有できます",
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -34,22 +34,8 @@ fun LiveStreamStatusUI(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.size(10.dp))
 
             Column(modifier = Modifier.padding(5.dp)) {
-                Text(color = MaterialTheme.colorScheme.primary, text = "更新間隔")
-                Text(text = "3秒")
+                Text(text = "画面共有に内部の音声を含めることができます。内部音声を含めるためには、マイク権限が必要ですのでお願いします。")
             }
-            Column(modifier = Modifier.padding(5.dp)) {
-                Text(color = MaterialTheme.colorScheme.primary, text = "映像 ビットレート")
-                Text(text = "5Mbps")
-            }
-            Column(modifier = Modifier.padding(5.dp)) {
-                Text(color = MaterialTheme.colorScheme.primary, text = "映像 フレームレート")
-                Text(text = "30")
-            }
-            Column(modifier = Modifier.padding(5.dp)) {
-                Text(color = MaterialTheme.colorScheme.primary, text = "音声 ビットレート")
-                Text(text = "192kbps")
-            }
-
             OutlinedButton(
                 modifier = Modifier
                     .align(Alignment.End),
@@ -57,7 +43,7 @@ fun LiveStreamStatusUI(modifier: Modifier = Modifier) {
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                Text(text = "設定を変更する")
+                Text(text = "マイクの権限を付与")
             }
         }
     }

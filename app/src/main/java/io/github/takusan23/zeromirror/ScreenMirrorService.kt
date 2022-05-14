@@ -59,10 +59,10 @@ class ScreenMirrorService : Service() {
     private val frameRate = 30
 
     /** ビットレート */
-    private val bitRate = 5_000_000 // 1Mbps
+    private val bitRate = 1_000_000 // 1Mbps
 
     /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
-    private val intervalMs = 2_000L
+    private val intervalMs = 3_000L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -115,7 +115,6 @@ class ScreenMirrorService : Service() {
     @SuppressLint("NewApi")
     override fun onDestroy() {
         super.onDestroy()
-       // captureVideoManager.deleteParentFolderChildren()
         coroutineScope.cancel()
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
@@ -175,6 +174,7 @@ class ScreenMirrorService : Service() {
 
     /**
      * 内部音声の収録に対応している場合はtrueを返す
+     * 内部音声の権限がある場合は取れる
      *
      * @return 内部音声を取る場合はtrue
      */
