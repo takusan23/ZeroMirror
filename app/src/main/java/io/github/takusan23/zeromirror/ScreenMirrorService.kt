@@ -5,10 +5,8 @@ import android.app.Activity
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
@@ -16,19 +14,22 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.hlsserver.Server
+import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
-import io.github.takusan23.zeromirror.tool.IpAddressTool
+import io.github.takusan23.zeromirror.tool.PermissionTool
 import io.github.takusan23.zeromirror.tool.TrackMixer
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
 import java.io.File
 
 /**
  * ミラーリングサービス
  */
 class ScreenMirrorService : Service() {
+
+    private val TAG = ScreenMirrorService::class.simpleName
+
     /** コルーチンスコープ */
     private val coroutineScope = CoroutineScope(Job())
 
@@ -36,7 +37,7 @@ class ScreenMirrorService : Service() {
     private val captureVideoManager by lazy { CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME) }
 
     /** サーバー これだけ別モジュール */
-    private val server by lazy { Server(portNumber, getExternalFilesDir(null)!!) }
+    private var server: Server? = null
 
     // ミラーリングで使う
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
@@ -48,21 +49,12 @@ class ScreenMirrorService : Service() {
     /** 内部音声を収録してエンコードするクラス、Android 10未満では利用できないので使ってはいけない */
     private var internalAudioEncoder: InternalAudioEncoder? = null
 
-    // ポート番号
-    private var portNumber = 10_000
+    /** ミラーリング情報、ビットレートとか */
+    private var mirroringSettingData: MirroringSettingData? = null
 
     // 画面サイズ
     private var displayHeight = 0
     private var displayWidth = 0
-
-    /** フレームレート */
-    private val frameRate = 30
-
-    /** ビットレート */
-    private val bitRate = 1_000_000 // 1Mbps
-
-    /** 何秒間隔でmp4ファイルに切り出すか、ミリ秒 */
-    private val intervalMs = 3_000L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -71,43 +63,44 @@ class ScreenMirrorService : Service() {
         displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
         displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
-        // 今までのファイルを消す
-        captureVideoManager.deleteParentFolderChildren()
-        // 通知発行
-        notifyForegroundNotification()
+        coroutineScope.launch {
+            // 今までのファイルを消す
+            captureVideoManager.deleteParentFolderChildren()
+            // 通知発行
+            notifyForegroundNotification()
+            // 設定を読み出す
+            mirroringSettingData = MirroringSettingData.loadDataStore(this@ScreenMirrorService).first()
 
-        // 起動できる場合は起動
-        if (resultCode != null && resultData != null) {
-            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-            // 画面ミラーリング
-            screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!)
-            screenVideoEncoder!!.prepareEncoder(
-                videoWidth = displayWidth,
-                videoHeight = displayHeight,
-                bitRate = bitRate,
-                frameRate = frameRate,
-                iFrameInterval = 1
-            )
-            // 内部音声を一緒にエンコードする場合
-            if (availableInternalAudio()) {
-                internalAudioEncoder = InternalAudioEncoder(mediaProjection!!)
-                internalAudioEncoder!!.prepareEncoder()
+            // 起動できる場合は起動
+            if (resultCode != null && resultData != null) {
+                mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
+                // 画面ミラーリング
+                screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!)
+                screenVideoEncoder!!.prepareEncoder(
+                    videoWidth = displayWidth,
+                    videoHeight = displayHeight,
+                    bitRate = mirroringSettingData!!.videoBitRate,
+                    frameRate = mirroringSettingData!!.videoFrameRate,
+                    iFrameInterval = 1
+                )
+                // 内部音声を一緒にエンコードする場合
+                if (availableInternalAudio()) {
+                    internalAudioEncoder = InternalAudioEncoder(mediaProjection!!)
+                    internalAudioEncoder!!.prepareEncoder(
+                        bitRate = mirroringSettingData!!.audioBitRate
+                    )
+                }
+            } else {
+                stopSelf()
             }
-        } else {
-            stopSelf()
+
+            // エンコーダーは別スレッドで
+            launch { startEncode() }
+
+            // サーバー開始
+            server = Server(mirroringSettingData!!.portNumber, getExternalFilesDir(null)!!)
+            server?.startServer()
         }
-
-        // IPアドレスを通知として出す
-        IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
-            notifyForegroundNotification("IPアドレス：http://$ipAddress:$portNumber")
-            println("ここから見れます：http://$ipAddress:$portNumber")
-        }.launchIn(coroutineScope)
-
-        // エンコーダーを開始
-        coroutineScope.launch { startEncode() }
-
-        // サーバー開始
-        server.startServer()
 
         return START_NOT_STICKY
     }
@@ -119,7 +112,7 @@ class ScreenMirrorService : Service() {
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
         mediaProjection?.stop()
-        server.stopServer()
+        server?.stopServer()
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -149,7 +142,7 @@ class ScreenMirrorService : Service() {
             }
 
             // intervalMs秒待機したら新しいファイルにする
-            delay(intervalMs)
+            delay(mirroringSettingData?.intervalMs!!)
 
             // 内部音声を合成するか、合成せずに映像だけ返すか
             // 内部音声はAndroid10以降のみなので実装は必須
@@ -168,19 +161,19 @@ class ScreenMirrorService : Service() {
                 screenVideoEncoder!!.stopWriteContainer()
             }
             // クライアント側にWebSocketでファイルが出来たことを通知する
-            server.updateVideoFileName(publishFile.name)
+            server?.updateVideoFileName(publishFile.name)
         }
     }
 
     /**
-     * 内部音声の収録に対応している場合はtrueを返す
-     * 内部音声の権限がある場合は取れる
+     * 内部音声を収録する場合はtrue、Android 10以降とか見てる
      *
      * @return 内部音声を取る場合はtrue
      */
     private fun availableInternalAudio() =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        PermissionTool.isAndroidQAndHigher()
+                && PermissionTool.isGrantedRecordPermission(this)
+                && mirroringSettingData?.isRecordInternalAudio == true
 
     /**
      * フォアグラウンドサービスの通知を発行する

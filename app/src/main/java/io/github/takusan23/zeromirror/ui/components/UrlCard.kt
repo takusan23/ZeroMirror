@@ -14,12 +14,16 @@ import androidx.compose.ui.unit.sp
  *
  * @param modifier [Modifier]
  * @param url 視聴用URL
+ * @param onShareClick 共有押したとき
+ * @param onOpenBrowserClick ブラウザーで開く押したとき
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UrlCard(
     modifier: Modifier = Modifier,
     url: String,
+    onShareClick: () -> Unit,
+    onOpenBrowserClick: () -> Unit,
 ) {
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -42,12 +46,12 @@ fun UrlCard(
 
             Row {
                 Button(
-                    onClick = { }
+                    onClick = onShareClick
                 ) { Text(text = "共有") }
                 Spacer(modifier = Modifier.size(10.dp))
 
                 OutlinedButton(
-                    onClick = { }
+                    onClick = onOpenBrowserClick
                 ) { Text(text = "ブラウザで確認する") }
             }
         }

@@ -14,13 +14,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
+import io.github.takusan23.zeromirror.data.MirroringSettingData
 
 /**
  * 更新間隔、ビットレート、fpsとかを表示する
+ *
+ * @param modifier [Modifier]
+ * @param mirroringData [MirroringSettingData]
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StreamInfo(modifier: Modifier = Modifier) {
+fun StreamInfo(
+    modifier: Modifier = Modifier,
+    mirroringData: MirroringSettingData,
+) {
     Column(modifier = modifier) {
         Text(
             modifier = Modifier.padding(5.dp),
@@ -33,23 +40,23 @@ fun StreamInfo(modifier: Modifier = Modifier) {
 
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = "内部音声を含める (Android 10 以降)")
-            Text(text = "有効")
+            Text(text = if (mirroringData.isRecordInternalAudio) "有効" else "無効")
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "更新間隔")
-            Text(text = "3秒")
+            Text(fontSize = 20.sp, text = "更新間隔 (秒)")
+            Text(text = (mirroringData.intervalMs / 1000).toInt().toString())
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "映像ビットレート")
-            Text(text = "5Mbps")
+            Text(fontSize = 20.sp, text = "映像ビットレート (kbps)")
+            Text(text = (mirroringData.videoBitRate / 1000).toString())
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "映像フレームレート")
-            Text(text = "30fps")
+            Text(fontSize = 20.sp, text = "映像フレームレート (fps)")
+            Text(text = mirroringData.videoFrameRate.toString())
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "音声ビットレート")
-            Text(text = "192kbps")
+            Text(fontSize = 20.sp, text = "音声ビットレート (kbps)")
+            Text(text = (mirroringData.audioBitRate / 1000).toString())
         }
 
         OutlinedButton(

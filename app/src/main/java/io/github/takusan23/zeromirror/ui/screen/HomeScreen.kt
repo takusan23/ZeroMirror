@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.ScreenMirrorService
+import io.github.takusan23.zeromirror.data.MirroringSettingData
+import io.github.takusan23.zeromirror.tool.IntentTool
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
 import io.github.takusan23.zeromirror.ui.components.*
@@ -35,6 +37,9 @@ fun HomeScreen() {
 
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
+
+    // ミラーリング情報
+    val mirroringData = remember { MirroringSettingData.loadDataStore(context) }.collectAsState(initial = null)
 
     // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
     val isGrantedRecordAudio = remember {
@@ -76,13 +81,22 @@ fun HomeScreen() {
                 }
             )
 
-            // URL表示
-            UrlCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                url = "http://${idAddress.value}:2828"
-            )
+            if (mirroringData.value != null && idAddress.value != null) {
+                // URLを作る
+                val url = "http://${idAddress.value}:${mirroringData.value?.portNumber}"
+                UrlCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    url = url,
+                    onShareClick = {
+                        context.startActivity(IntentTool.createShareIntent(url))
+                    },
+                    onOpenBrowserClick = {
+                        context.startActivity(IntentTool.createOpenBrowserIntent(url))
+                    }
+                )
+            }
 
             // 内部音声にはマイク権限
             if (isGrantedRecordAudio.value) {
@@ -107,11 +121,14 @@ fun HomeScreen() {
                 ),
             ) {
                 // エンコーダー
-                StreamInfo(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                )
+                if (mirroringData.value != null) {
+                    StreamInfo(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        mirroringData = mirroringData.value!!
+                    )
+                }
             }
         }
     }

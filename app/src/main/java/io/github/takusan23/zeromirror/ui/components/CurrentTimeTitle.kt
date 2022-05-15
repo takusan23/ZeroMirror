@@ -26,7 +26,7 @@ fun CurrentTimeTitle(modifier: Modifier = Modifier) {
     val currentTime = remember { mutableStateOf(0L) }
     LaunchedEffect(key1 = Unit, block = {
         while (isActive) {
-            delay(100L)
+            delay(1000L)
             currentTime.value = System.currentTimeMillis()
         }
     })
