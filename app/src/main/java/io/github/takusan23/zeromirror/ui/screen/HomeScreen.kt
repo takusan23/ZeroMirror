@@ -12,17 +12,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.ScreenMirrorService
-import io.github.takusan23.zeromirror.setting.dataStore
 import io.github.takusan23.zeromirror.tool.IpAddressTool
+import io.github.takusan23.zeromirror.tool.PermissionTool
 import io.github.takusan23.zeromirror.ui.components.*
 
 /**
@@ -35,8 +35,13 @@ fun HomeScreen() {
 
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
-    // DataStore、SharedPreferenceの代替
-    val dataStore = context.dataStore.data.collectAsState(initial = null)
+
+    // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
+    val isGrantedRecordAudio = remember {
+        mutableStateOf(if (PermissionTool.isAndroidQAndHigher()) {
+            !PermissionTool.isGrantedRecordPermission(context)
+        } else false)
+    }
 
     // 権限を求めてサービスを起動する
     val mediaProjectionManager = remember { context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
@@ -80,18 +85,34 @@ fun HomeScreen() {
             )
 
             // 内部音声にはマイク権限
-            InternalAudioPermissionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-            )
+            if (isGrantedRecordAudio.value) {
+                InternalAudioPermissionCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    permissionResult = { isGranted ->
+                        // trueなら非表示にするためfalseを入れる
+                        isGrantedRecordAudio.value = !isGranted
+                    }
+                )
+            }
 
-            // エンコーダー
-            StreamInfoCard(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp),
-            )
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+            ) {
+                // エンコーダー
+                StreamInfo(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                )
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package io.github.takusan23.zeromirror.ui.components
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -14,10 +16,22 @@ import io.github.takusan23.zeromirror.R
 
 /**
  * 内部音声
+ *
+ * @param modifier [Modifier]
+ * @param permissionResult trueが流れてきたら権限ゲットだぜ
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InternalAudioPermissionCard(modifier: Modifier = Modifier) {
+fun InternalAudioPermissionCard(
+    modifier: Modifier = Modifier,
+    permissionResult: (Boolean) -> Unit,
+) {
+
+    /** 権限コールバック */
+    val permissionRequest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGrant ->
+        permissionResult(isGrant)
+    }
+
     OutlinedCard(modifier = modifier) {
         Column(
             modifier = Modifier
@@ -39,7 +53,9 @@ fun InternalAudioPermissionCard(modifier: Modifier = Modifier) {
             OutlinedButton(
                 modifier = Modifier
                     .align(Alignment.End),
-                onClick = { }
+                onClick = {
+                    permissionRequest.launch(android.Manifest.permission.RECORD_AUDIO)
+                }
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
