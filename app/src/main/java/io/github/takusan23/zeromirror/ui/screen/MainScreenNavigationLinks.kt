@@ -9,4 +9,10 @@ object MainScreenNavigationLinks {
     /** 最初に表示する画面 */
     const val StartScreen = "start_screen"
 
+    /** 設定画面 */
+    const val SettingScreen = "setting_screen"
+
+    /** 画面共有の設定 */
+    const val SettingMirroringSettingScreen = "setting_mirroring_setting_screen"
+
 }

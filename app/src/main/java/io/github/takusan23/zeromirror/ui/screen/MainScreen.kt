@@ -8,6 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.example.compose.ZeroMirrorTheme
+import io.github.takusan23.zeromirror.ui.screen.setting.MirroringSettingScreen
+import io.github.takusan23.zeromirror.ui.screen.setting.SettingScreen
 import io.github.takusan23.zeromirror.ui.tool.SetNavigationBarColor
 import io.github.takusan23.zeromirror.ui.tool.SetStatusBarColor
 
@@ -37,7 +39,21 @@ fun MainScreen() {
                 }
                 // ホーム画面
                 composable(MainScreenNavigationLinks.HomeScreen) {
-                    HomeScreen()
+                    HomeScreen(
+                        onSettingClick = { mainScreenNavigation.navigate(MainScreenNavigationLinks.SettingScreen) },
+                        onNavigate = { mainScreenNavigation.navigate(it) }
+                    )
+                }
+                // 設定画面
+                composable(MainScreenNavigationLinks.SettingScreen) {
+                    SettingScreen(
+                        onBack = { mainScreenNavigation.popBackStack() },
+                        onNavigate = { mainScreenNavigation.navigate(it) }
+                    )
+                }
+                // 画面共有設定
+                composable(MainScreenNavigationLinks.SettingMirroringSettingScreen) {
+                    MirroringSettingScreen(onBack = { mainScreenNavigation.popBackStack() })
                 }
             }
         }

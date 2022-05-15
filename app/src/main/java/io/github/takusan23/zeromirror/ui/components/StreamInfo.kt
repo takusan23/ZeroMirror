@@ -21,17 +21,19 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
  *
  * @param modifier [Modifier]
  * @param mirroringData [MirroringSettingData]
+ * @param onSettingClick
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StreamInfo(
     modifier: Modifier = Modifier,
     mirroringData: MirroringSettingData,
+    onSettingClick: () -> Unit,
 ) {
     Column(modifier = modifier) {
         Text(
             modifier = Modifier.padding(5.dp),
-            text = "ミラーリング 情報",
+            text = "画面共有 情報",
             style = TextStyle(fontWeight = FontWeight.Bold),
             fontSize = 20.sp,
             color = LocalContentColor.current
@@ -62,7 +64,7 @@ fun StreamInfo(
         OutlinedButton(
             modifier = Modifier
                 .align(Alignment.End),
-            onClick = { }
+            onClick = onSettingClick
         ) {
             Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))

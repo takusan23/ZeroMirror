@@ -29,10 +29,16 @@ import io.github.takusan23.zeromirror.ui.components.*
 
 /**
  * ホーム画面、ミラーリングの開始など。
+ *
+ * @param onSettingClick 設定を押したとき
+ * @param onNavigate 画面遷移の際に呼ばれる、パスが渡されます
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onSettingClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+) {
     val context = LocalContext.current
 
     // IPアドレスをFlowで受け取る
@@ -64,7 +70,10 @@ fun HomeScreen() {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
 
             // 現在時刻
-            CurrentTimeTitle(modifier = Modifier.fillMaxWidth())
+            CurrentTimeTitle(
+                modifier = Modifier.fillMaxWidth(),
+                onSettingClick = onSettingClick
+            )
 
             // 開始 / 終了 ボタン
             MirroringButton(
@@ -126,7 +135,8 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(10.dp),
-                        mirroringData = mirroringData.value!!
+                        mirroringData = mirroringData.value!!,
+                        onSettingClick = { onNavigate(MainScreenNavigationLinks.SettingMirroringSettingScreen) }
                     )
                 }
             }

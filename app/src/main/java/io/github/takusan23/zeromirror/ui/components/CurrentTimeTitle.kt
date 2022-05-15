@@ -1,13 +1,13 @@
 package io.github.takusan23.zeromirror.ui.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import io.github.takusan23.zeromirror.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
@@ -19,11 +19,15 @@ import java.util.*
  * いま何時！そうねだいだいたいねえ～♪
  *
  * @param modifier [Modifier]
+ * @param onSettingClick 設定押したとき
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrentTimeTitle(modifier: Modifier = Modifier) {
-    val currentTime = remember { mutableStateOf(0L) }
+fun CurrentTimeTitle(
+    modifier: Modifier = Modifier,
+    onSettingClick: () -> Unit,
+) {
+    val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(key1 = Unit, block = {
         while (isActive) {
             delay(1000L)
@@ -37,6 +41,11 @@ fun CurrentTimeTitle(modifier: Modifier = Modifier) {
             こんにちは
             今の時間 ${timeToFormat(currentTime.value)}
         """.trimIndent())
+        },
+        actions = {
+            IconButton(onClick = onSettingClick) {
+                Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
+            }
         }
     )
 }
