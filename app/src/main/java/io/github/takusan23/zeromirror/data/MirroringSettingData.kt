@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
  * @param audioBitRate 音声ビットレート、ビット
  * @param videoFrameRate 映像フレームレート、fps
  * @param intervalMs 動画を切り出す間隔、ミリ秒
- * @param isRecordInternalAudio 内部音声を入れる場合はtrue
+ * @param isRecordInternalAudio 内部音声を入れる場合はtrue、権限があるかどうかまでは見ていません。
  */
 data class MirroringSettingData(
     val portNumber: Int,

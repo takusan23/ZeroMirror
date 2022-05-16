@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -15,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
+import io.github.takusan23.zeromirror.tool.DisplayConverter
+import io.github.takusan23.zeromirror.tool.PermissionTool
 
 /**
  * 更新間隔、ビットレート、fpsとかを表示する
@@ -30,6 +34,11 @@ fun StreamInfo(
     mirroringData: MirroringSettingData,
     onSettingClick: () -> Unit,
 ) {
+    val context = LocalContext.current
+
+    // 権限があるか
+    val isPermissionGranted = remember(mirroringData) { PermissionTool.isGrantedRecordPermission(context) }
+
     Column(modifier = modifier) {
         Text(
             modifier = Modifier.padding(5.dp),
@@ -43,22 +52,25 @@ fun StreamInfo(
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = "内部音声を含める (Android 10 以降)")
             Text(text = if (mirroringData.isRecordInternalAudio) "有効" else "無効")
+            if (!isPermissionGranted) {
+                Text(text = "(マイクの権限が付与されていないため、利用できません)")
+            }
         }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = "更新間隔 (秒)")
             Text(text = (mirroringData.intervalMs / 1000).toInt().toString())
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "映像ビットレート (kbps)")
-            Text(text = (mirroringData.videoBitRate / 1000).toString())
+            Text(fontSize = 20.sp, text = "映像ビットレート")
+            Text(text = DisplayConverter.convert(mirroringData.videoBitRate))
         }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = "映像フレームレート (fps)")
             Text(text = mirroringData.videoFrameRate.toString())
         }
         Column(modifier = Modifier.padding(5.dp)) {
-            Text(fontSize = 20.sp, text = "音声ビットレート (kbps)")
-            Text(text = (mirroringData.audioBitRate / 1000).toString())
+            Text(fontSize = 20.sp, text = "音声ビットレート")
+            Text(text = DisplayConverter.convert(mirroringData.audioBitRate))
         }
 
         OutlinedButton(

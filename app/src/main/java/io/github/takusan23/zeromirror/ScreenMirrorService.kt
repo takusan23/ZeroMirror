@@ -17,10 +17,13 @@ import io.github.takusan23.hlsserver.Server
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
+import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
 import io.github.takusan23.zeromirror.tool.TrackMixer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.io.File
 
 /**
@@ -93,6 +96,11 @@ class ScreenMirrorService : Service() {
             } else {
                 stopSelf()
             }
+
+            // IPアドレスを通知として出す
+            IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
+                notifyForegroundNotification("IPアドレス：http://$ipAddress:${mirroringSettingData!!.portNumber}")
+            }.launchIn(coroutineScope)
 
             // エンコーダーは別スレッドで
             launch { startEncode() }

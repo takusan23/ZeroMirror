@@ -13,10 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -26,6 +23,7 @@ import io.github.takusan23.zeromirror.tool.IntentTool
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
 import io.github.takusan23.zeromirror.ui.components.*
+import kotlinx.coroutines.launch
 
 /**
  * ホーム画面、ミラーリングの開始など。
@@ -40,10 +38,10 @@ fun HomeScreen(
     onNavigate: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
-
     // ミラーリング情報
     val mirroringData = remember { MirroringSettingData.loadDataStore(context) }.collectAsState(initial = null)
 
@@ -116,6 +114,11 @@ fun HomeScreen(
                     permissionResult = { isGranted ->
                         // trueなら非表示にするためfalseを入れる
                         isGrantedRecordAudio.value = !isGranted
+                        // 内部音声を収録する設定を有効にする
+                        scope.launch {
+                            val updatedData = mirroringData.value?.copy(isRecordInternalAudio = true) ?: return@launch
+                            MirroringSettingData.setDataStore(context, updatedData)
+                        }
                     }
                 )
             }
