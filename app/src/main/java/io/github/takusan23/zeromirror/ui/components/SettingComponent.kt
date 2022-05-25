@@ -2,6 +2,7 @@ package io.github.takusan23.zeromirror.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -9,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
@@ -63,6 +65,64 @@ fun SettingItem(
 }
 
 /**
+ * スイッチ付きの設定項目
+ *
+ * @param modifier [Modifier]
+ * @param title タイトル
+ * @param description 説明
+ * @param iconRes アイコンリソースID
+ * @param isEnable スイッチをONにするか
+ * @param onValueChange 切り替え時に呼ばれる
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwitchSettingItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    description: String? = null,
+    iconRes: Int,
+    isEnable: Boolean,
+    onValueChange: (Boolean) -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color.Transparent,
+        onClick = { onValueChange(!isEnable) }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(end = 10.dp),
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text(
+                    text = title,
+                    modifier = Modifier.padding(bottom = 5.dp),
+                    fontSize = 20.sp
+                )
+                if (description != null) {
+                    Text(text = description)
+                }
+            }
+            AndroidSnowConeSwitch(
+                modifier = Modifier.padding(10.dp),
+                isEnable = isEnable,
+                onValueChange = onValueChange
+            )
+        }
+    }
+}
+
+/**
  * 入力機能がある設定項目
  *
  * @param modifier [Modifier]
@@ -82,6 +142,7 @@ fun TextBoxSettingItem(
     description: String? = null,
     inputUnderText: String? = null,
     iconRes: Int,
+    keyboardType: KeyboardType = KeyboardType.Number,
     onValueChange: (String) -> Unit,
 ) {
     Surface(
@@ -111,6 +172,7 @@ fun TextBoxSettingItem(
                     label = { Text(text = label) },
                     onValueChange = onValueChange,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
                 )
 
                 if (inputUnderText != null) {

@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.takusan23.zeromirror.R
 
 /**
  * ミラーリング視聴用URLを表示する
@@ -45,14 +47,18 @@ fun UrlCard(
             )
 
             Row {
-                Button(
-                    onClick = onShareClick
-                ) { Text(text = "共有") }
+                Button(onClick = onShareClick) {
+                    Icon(painter = painterResource(id = R.drawable.ic_outline_share_24), contentDescription = null)
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(text = "共有")
+                }
                 Spacer(modifier = Modifier.size(10.dp))
 
-                OutlinedButton(
-                    onClick = onOpenBrowserClick
-                ) { Text(text = "ブラウザで確認する") }
+                OutlinedButton(onClick = onOpenBrowserClick) {
+                    Icon(painter = painterResource(id = R.drawable.ic_outline_open_in_browser_24), contentDescription = null)
+                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(text = "ブラウザで確認する")
+                }
             }
         }
     }

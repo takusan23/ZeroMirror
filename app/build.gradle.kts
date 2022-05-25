@@ -69,7 +69,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.4.0")
     implementation("androidx.fragment:fragment-ktx:1.4.1")
     // AndroidX WindowMetrics
-    implementation("androidx.window:window:1.1.0-alpha01")
+    implementation("androidx.window:window:1.1.0-alpha02")
     implementation("com.google.android.material:material:1.6.0")
 
     // JetpackCompose
@@ -82,7 +82,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.4.1")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.20.0")
     // Compose + Material You
-    implementation("androidx.compose.material3:material3:1.0.0-alpha10")
+    implementation("androidx.compose.material3:material3:1.0.0-alpha12")
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     testImplementation("junit:junit:4.13.2")

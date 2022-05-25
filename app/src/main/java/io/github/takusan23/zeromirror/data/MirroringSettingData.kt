@@ -29,19 +29,19 @@ data class MirroringSettingData(
     companion object {
 
         /** デフォルトポート番号 */
-        private const val DEFAULT_PORT_NUMBER = 2828
+         const val DEFAULT_PORT_NUMBER = 2828
 
         /** デフォルトファイル生成間隔 */
-        private const val DEFAULT_INTERVAL_MS = 5_000L
+        const val DEFAULT_INTERVAL_MS = 5_000L
 
         /** デフォルト映像ビットレート */
-        private const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
+        const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
 
         /** デフォルト音声ビットレート */
-        private const val DEFAULT_AUDIO_BIT_RATE = 128_000
+        const val DEFAULT_AUDIO_BIT_RATE = 128_000
 
         /** デフォルト映像フレームレート */
-        private const val DEFAULT_VIDEO_FRAME_RATE = 30
+        const val DEFAULT_VIDEO_FRAME_RATE = 30
 
         /**
          * データストアから読み出してデータクラスを返す

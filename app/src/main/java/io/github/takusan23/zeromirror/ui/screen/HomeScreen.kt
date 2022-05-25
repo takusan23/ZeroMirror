@@ -65,7 +65,11 @@ fun HomeScreen(
     }
 
     Scaffold {
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier
+                .padding(it)
+                .verticalScroll(rememberScrollState())
+        ) {
 
             // 現在時刻
             CurrentTimeTitle(
