@@ -53,7 +53,7 @@ fun SettingScreen(
                         title = "このアプリについて",
                         iconRes = R.drawable.ic_outline_info_24,
                         description = "オープンソースです",
-                        onClick = { }
+                        onClick = { onNavigate(MainScreenNavigationLinks.SettingAboutSettingScreen) }
                     )
                 }
             }
