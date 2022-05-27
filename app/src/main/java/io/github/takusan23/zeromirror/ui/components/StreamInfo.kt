@@ -76,7 +76,7 @@ fun StreamInfo(
         OutlinedButton(
             modifier = Modifier
                 .align(Alignment.End),
-            onClick = onSettingClick
+            onClick = onSettingClick,
         ) {
             Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))

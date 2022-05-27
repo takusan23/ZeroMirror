@@ -1,14 +1,17 @@
 package io.github.takusan23.zeromirror.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
@@ -34,12 +37,13 @@ fun AboutTopCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Icon(
+            Image(
                 modifier = Modifier
                     .padding(10.dp)
-                    .size(40.dp),
-                painter = painterResource(id = R.drawable.ic_outline_videocam_24),
-                contentDescription = null
+                    .size(80.dp),
+                painter = painterResource(id = R.drawable.zeromirror_android),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
             )
 
             Text(
@@ -51,12 +55,13 @@ fun AboutTopCard(
             )
             Text(
                 modifier = Modifier.padding(5.dp),
+                textAlign = TextAlign.Center,
                 text = "ブラウザーがあれば使えるお手軽ミラーリングアプリ"
             )
 
             Button(
                 modifier = Modifier.padding(5.dp),
-                onClick = { }
+                onClick = onGitHubClick
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_open_in_browser_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
