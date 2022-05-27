@@ -15,4 +15,7 @@ object MainScreenNavigationLinks {
     /** 画面共有の設定 */
     const val SettingMirroringSettingScreen = "setting_mirroring_setting_screen"
 
+    /** このアプリについて */
+    const val SettingAboutSettingScreen = "setting_about_setting_screen"
+
 }

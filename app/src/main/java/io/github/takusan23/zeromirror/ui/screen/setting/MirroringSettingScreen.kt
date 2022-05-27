@@ -17,7 +17,7 @@ import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.tool.DisplayConverter
 import io.github.takusan23.zeromirror.ui.components.SwitchSettingItem
-import io.github.takusan23.zeromirror.ui.components.TextBoxSettingItem
+import io.github.takusan23.zeromirror.ui.components.TextBoxInitValueSettingItem
 import kotlinx.coroutines.launch
 
 /**
@@ -91,37 +91,43 @@ fun MirroringSettingScreen(
             if (mirroringData.value != null) {
                 Card(modifier = Modifier.padding(10.dp)) {
 
-                    TextBoxSettingItem(
+                    TextBoxInitValueSettingItem(
                         label = "動画の更新頻度 (秒)",
-                        inputValue = (mirroringData.value!!.intervalMs / 1000).toString(),
+                        initValue = (mirroringData.value!!.intervalMs / 1000).toString(),
                         description = "短くするとブラウザに流れる映像との遅延が短くなります",
                         iconRes = R.drawable.ic_outline_timer_24,
-                        onValueChange = { intervalMs ->
-                            // 更新する
-                            updateSetting { it.copy(intervalMs = (intervalMs.toLongOrNull() ?: 0) * 1000) }
+                        onValueChange = {
+                            it.toLongOrNull()?.also { intervalMs ->
+                                // 更新する
+                                updateSetting { it.copy(intervalMs = intervalMs * 1000) }
+                            }
                         }
                     )
 
                     Divider()
 
-                    TextBoxSettingItem(
+                    TextBoxInitValueSettingItem(
                         label = "映像ビットレート (Kbps)",
                         description = "サイズが大きくなる代わりに画質が上がるはずです",
-                        inputValue = (mirroringData.value!!.videoBitRate / 1000).toString(),
+                        initValue = (mirroringData.value!!.videoBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.videoBitRate),
                         iconRes = R.drawable.ic_outline_videocam_24,
-                        onValueChange = { videoBitRate ->
-                            updateSetting { it.copy(videoBitRate = (videoBitRate.toIntOrNull() ?: 0) * 1000) }
+                        onValueChange = {
+                            it.toIntOrNull()?.also { videoBitRate ->
+                                updateSetting { it.copy(videoBitRate = videoBitRate * 1000) }
+                            }
                         }
                     )
 
-                    TextBoxSettingItem(
+                    TextBoxInitValueSettingItem(
                         label = "映像フレームレート",
-                        inputValue = mirroringData.value!!.videoFrameRate.toString(),
+                        initValue = mirroringData.value!!.videoFrameRate.toString(),
                         description = "映像の滑らかさですね",
                         iconRes = R.drawable.ic_outline_videocam_24,
-                        onValueChange = { videoFps ->
-                            updateSetting { it.copy(videoFrameRate = videoFps.toIntOrNull() ?: 30) }
+                        onValueChange = {
+                            it.toIntOrNull()?.also { videoFps ->
+                                updateSetting { it.copy(videoFrameRate = videoFps) }
+                            }
                         }
                     )
 
@@ -137,26 +143,30 @@ fun MirroringSettingScreen(
                         }
                     )
 
-                    TextBoxSettingItem(
+                    TextBoxInitValueSettingItem(
                         label = "音声ビットレート (Kbps)",
                         description = "音質です",
-                        inputValue = (mirroringData.value!!.audioBitRate / 1000).toString(),
+                        initValue = (mirroringData.value!!.audioBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.audioBitRate),
                         iconRes = R.drawable.ic_outline_audiotrack_24,
-                        onValueChange = { audioBitRate ->
-                            updateSetting { it.copy(audioBitRate = (audioBitRate.toIntOrNull() ?: 128) * 1000) }
+                        onValueChange = {
+                            it.toIntOrNull()?.also { audioBitRate ->
+                                updateSetting { it.copy(audioBitRate = audioBitRate * 1000) }
+                            }
                         }
                     )
 
                     Divider()
 
-                    TextBoxSettingItem(
+                    TextBoxInitValueSettingItem(
                         label = "ポート番号",
                         description = "基本的にはいじる必要はないと思います",
-                        inputValue = mirroringData.value!!.portNumber.toString(),
+                        initValue = mirroringData.value!!.portNumber.toString(),
                         iconRes = R.drawable.ic_outline_open_in_browser_24,
-                        onValueChange = { portNumber ->
-                            updateSetting { it.copy(portNumber = portNumber.toIntOrNull() ?: MirroringSettingData.DEFAULT_PORT_NUMBER) }
+                        onValueChange = {
+                            it.toIntOrNull()?.also { portNumber ->
+                                updateSetting { it.copy(portNumber = portNumber) }
+                            }
                         }
                     )
                 }

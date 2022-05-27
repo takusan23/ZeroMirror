@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -121,6 +123,46 @@ fun SwitchSettingItem(
         }
     }
 }
+
+/**
+ * 初期値のみ受け付ける、あえて内部で値を保持している
+ * あとは変更時のみ呼ばれる
+ *
+ * @param modifier [Modifier]
+ * @param label タイトル
+ * @param description 説明
+ * @param inputUnderText 入力の下にある説明
+ * @param iconRes アイコンのリソース画像
+ * @param initValue 設定初期値
+ * @param onValueChange 変更時に呼ばれる
+ */
+@Composable
+fun TextBoxInitValueSettingItem(
+    modifier: Modifier = Modifier,
+    label: String,
+    initValue: String,
+    description: String? = null,
+    inputUnderText: String? = null,
+    iconRes: Int,
+    keyboardType: KeyboardType = KeyboardType.Number,
+    onValueChange: (String) -> Unit,
+) {
+    val value = remember { mutableStateOf(initValue) }
+    TextBoxSettingItem(
+        modifier = modifier,
+        label = label,
+        inputValue = value.value,
+        description = description,
+        inputUnderText = inputUnderText,
+        iconRes = iconRes,
+        keyboardType = keyboardType,
+        onValueChange = { changeValue ->
+            value.value = changeValue
+            onValueChange(changeValue)
+        },
+    )
+}
+
 
 /**
  * 入力機能がある設定項目
