@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.example.compose.ZeroMirrorTheme
 import io.github.takusan23.zeromirror.ui.screen.setting.AboutSettingScreen
+import io.github.takusan23.zeromirror.ui.screen.setting.LicenseScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.MirroringSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.SettingScreen
 import io.github.takusan23.zeromirror.ui.tool.SetNavigationBarColor
@@ -59,6 +60,10 @@ fun MainScreen() {
                 // このアプリについて
                 composable(MainScreenNavigationLinks.SettingAboutSettingScreen) {
                     AboutSettingScreen(onBack = { mainScreenNavigation.popBackStack() })
+                }
+                // ライセンス
+                composable(MainScreenNavigationLinks.SettingLicenseSettingScreen) {
+                    LicenseScreen(onBack = { mainScreenNavigation.popBackStack() })
                 }
             }
         }

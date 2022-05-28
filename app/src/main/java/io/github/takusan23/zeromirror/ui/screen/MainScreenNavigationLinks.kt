@@ -18,4 +18,7 @@ object MainScreenNavigationLinks {
     /** このアプリについて */
     const val SettingAboutSettingScreen = "setting_about_setting_screen"
 
+    /** ライセンス */
+    const val SettingLicenseSettingScreen = "setting_license_setting_screen"
+
 }

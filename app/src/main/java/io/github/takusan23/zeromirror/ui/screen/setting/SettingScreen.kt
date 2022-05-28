@@ -56,6 +56,15 @@ fun SettingScreen(
                         onClick = { onNavigate(MainScreenNavigationLinks.SettingAboutSettingScreen) }
                     )
                 }
+                item {
+                    SettingItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = "ライセンス",
+                        iconRes = R.drawable.ic_outline_info_24,
+                        description = "ありがとうございます！！！",
+                        onClick = { onNavigate(MainScreenNavigationLinks.SettingLicenseSettingScreen) }
+                    )
+                }
             }
         }
     }

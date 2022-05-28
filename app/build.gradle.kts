@@ -13,7 +13,7 @@ android {
         minSdk = 21
         targetSdk = 31
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,12 +52,11 @@ android {
 
 dependencies {
 
-    implementation(project(":server"))
     // マルチモジュール構成になっている
     // 映像を配信するサーバー
+    implementation(project(":server"))
 
     // Coroutine
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
 
     implementation("androidx.core:core-ktx:1.7.0")

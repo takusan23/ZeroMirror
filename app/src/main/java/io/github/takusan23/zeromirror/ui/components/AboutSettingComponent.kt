@@ -40,7 +40,7 @@ fun AboutTopCard(
             Image(
                 modifier = Modifier
                     .padding(10.dp)
-                    .size(80.dp),
+                    .size(100.dp),
                 painter = painterResource(id = R.drawable.zeromirror_android),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
