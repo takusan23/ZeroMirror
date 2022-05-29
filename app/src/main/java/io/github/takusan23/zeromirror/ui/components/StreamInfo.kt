@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -18,27 +16,23 @@ import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.tool.DisplayConverter
-import io.github.takusan23.zeromirror.tool.PermissionTool
 
 /**
  * 更新間隔、ビットレート、fpsとかを表示する
  *
  * @param modifier [Modifier]
  * @param mirroringData [MirroringSettingData]
- * @param onSettingClick
+ * @param isGrantedAudioPermission 録音権限があればtrue
+ * @param onSettingClick 設定遷移ボタンを押したときに呼ばれる
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StreamInfo(
     modifier: Modifier = Modifier,
     mirroringData: MirroringSettingData,
+    isGrantedAudioPermission: Boolean,
     onSettingClick: () -> Unit,
 ) {
-    val context = LocalContext.current
-
-    // 権限があるか
-    val isPermissionGranted = remember(mirroringData) { PermissionTool.isGrantedRecordPermission(context) }
-
     Column(modifier = modifier) {
         Text(
             modifier = Modifier.padding(5.dp),
@@ -52,7 +46,7 @@ fun StreamInfo(
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = "内部音声を含める (Android 10 以降)")
             Text(text = if (mirroringData.isRecordInternalAudio) "有効" else "無効")
-            if (!isPermissionGranted) {
+            if (isGrantedAudioPermission) {
                 Text(text = "(マイクの権限が付与されていないため、利用できません)")
             }
         }

@@ -26,4 +26,7 @@ object SettingKeyObject {
 
     /** 内部音声を収録するか */
     val IS_RECORD_INTERNAL_AUDIO = booleanPreferencesKey("is_record_internal_audio")
+
+    /** 初回起動時の はじめまして画面 を表示させたことがあるか（二回目以降はtrueになる） */
+    val IS_ALREADY_FIRST_SCREEN = booleanPreferencesKey("is_already_first_screen")
 }

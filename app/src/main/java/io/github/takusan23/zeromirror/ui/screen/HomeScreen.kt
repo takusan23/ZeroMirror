@@ -143,6 +143,7 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .padding(10.dp),
                         mirroringData = mirroringData.value!!,
+                        isGrantedAudioPermission = isGrantedRecordAudio.value,
                         onSettingClick = { onNavigate(MainScreenNavigationLinks.SettingMirroringSettingScreen) }
                     )
                 }

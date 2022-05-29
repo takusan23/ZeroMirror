@@ -22,13 +22,9 @@ import io.github.takusan23.zeromirror.R
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StartScreen(onNextClick: () -> Unit) {
+fun HelloScreen(onNextClick: () -> Unit) {
     Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text(text = "はじめまして、ぜろみらーです。") }
-            )
-        }
+        topBar = { LargeTopAppBar(title = { Text(text = "はじめまして、ぜろみらーです。") }) }
     ) {
         Column(
             modifier = Modifier
@@ -40,8 +36,7 @@ fun StartScreen(onNextClick: () -> Unit) {
             Image(
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
-                    .aspectRatio(1f)
-                    .padding(10.dp),
+                    .aspectRatio(1f),
                 painter = painterResource(id = R.drawable.first_screen_android),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
@@ -52,8 +47,8 @@ fun StartScreen(onNextClick: () -> Unit) {
                 textAlign = TextAlign.Center,
                 text = """
                     |このアプリは画面を共有するアプリです（ミラーリング）。
-                    |同じWi-Fiに接続しているPCやスマホからこのスマホの画面を共有できます。
-                    |しかもブラウザで開くだけ。
+                    |同じWi-Fiに接続しているパソコンやスマホからこのスマホの画面を共有できます。
+                    |使い方もURLを他の端末のブラウザで開くだけ。
                     |映像の切り替え時に一瞬読み込みがあるのは仕様です。
                 """.trimMargin()
             )
