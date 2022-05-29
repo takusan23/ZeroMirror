@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.ui.components.SettingItem
 import io.github.takusan23.zeromirror.ui.screen.MainScreenNavigationLinks
@@ -27,7 +28,7 @@ fun SettingScreen(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text(text = "設定画面") },
+                title = { Text(text = stringResource(id = R.string.setting_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
@@ -41,27 +42,27 @@ fun SettingScreen(
                 item {
                     SettingItem(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "画質、更新頻度の設定",
+                        title = stringResource(id = R.string.setting_stream_title),
                         iconRes = R.drawable.ic_outline_videocam_24,
-                        description = "ビットレートとか",
+                        description = stringResource(id = R.string.setting_stream_description),
                         onClick = { onNavigate(MainScreenNavigationLinks.SettingMirroringSettingScreen) }
                     )
                 }
                 item {
                     SettingItem(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "このアプリについて",
+                        title = stringResource(id = R.string.setting_about_this_app_title),
                         iconRes = R.drawable.ic_outline_info_24,
-                        description = "オープンソースです",
+                        description = stringResource(id = R.string.setting_about_this_app_description),
                         onClick = { onNavigate(MainScreenNavigationLinks.SettingAboutSettingScreen) }
                     )
                 }
                 item {
                     SettingItem(
                         modifier = Modifier.fillMaxWidth(),
-                        title = "ライセンス",
+                        title = stringResource(id = R.string.setting_license_title),
                         iconRes = R.drawable.ic_outline_info_24,
-                        description = "ありがとうございます！！！",
+                        description = stringResource(id = R.string.setting_license_description),
                         onClick = { onNavigate(MainScreenNavigationLinks.SettingLicenseSettingScreen) }
                     )
                 }

@@ -56,7 +56,7 @@ fun AboutTopCard(
             Text(
                 modifier = Modifier.padding(5.dp),
                 textAlign = TextAlign.Center,
-                text = "ブラウザーがあれば使えるお手軽ミラーリングアプリ"
+                text = stringResource(id = R.string.about_this_app_message)
             )
 
             Button(
@@ -65,7 +65,7 @@ fun AboutTopCard(
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_open_in_browser_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                Text(text = "GitHubで開く (オープンソース)")
+                Text(text = stringResource(id = R.string.about_this_app_open_github))
             }
         }
     }
@@ -89,13 +89,13 @@ fun AboutInfoListCard(
     Column(modifier = modifier) {
         SettingItem(
             title = appVersion,
-            description = "バージョン",
+            description = stringResource(id = R.string.about_this_app_version),
             iconRes = R.drawable.ic_outline_info_24,
             onClick = { }
         )
         SettingItem(
             title = twitterId,
-            description = "Twitter",
+            description = stringResource(id = R.string.about_this_app_twitter),
             iconRes = R.drawable.ic_outline_info_24,
             onClick = { onTwitterClick() }
         )

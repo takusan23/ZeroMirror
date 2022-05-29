@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.R
@@ -27,7 +28,7 @@ fun HelloScreen(onNextClick: () -> Unit, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text(text = "はじめまして、ぜろみらーです。") },
+                title = { Text(text = stringResource(id = R.string.hello_sceren_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
@@ -55,17 +56,12 @@ fun HelloScreen(onNextClick: () -> Unit, onBack: () -> Unit) {
             Text(
                 modifier = Modifier.padding(10.dp),
                 textAlign = TextAlign.Center,
-                text = """
-                    |このアプリは画面を共有するアプリです（ミラーリング）。
-                    |同じWi-Fiに接続しているパソコンやスマホからこのスマホの画面を共有できます。
-                    |使い方もURLを他の端末のブラウザで開くだけ。
-                    |映像の切り替え時に一瞬読み込みがあるのは仕様です。
-                """.trimMargin()
+                text = stringResource(id = R.string.hello_screen_message)
             )
             Button(
                 modifier = Modifier.padding(top = 10.dp),
                 onClick = onNextClick
-            ) { Text(text = "はじめる") }
+            ) { Text(text = stringResource(id = R.string.hello_screen_start)) }
         }
     }
 }

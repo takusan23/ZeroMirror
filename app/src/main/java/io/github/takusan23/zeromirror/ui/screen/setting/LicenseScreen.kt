@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
@@ -20,9 +21,7 @@ import io.github.takusan23.zeromirror.R
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LicenseScreen(
-    onBack: () -> Unit,
-) {
+fun LicenseScreen(onBack: () -> Unit) {
     val licenseList = listOf(
         coroutine,
         ktor,
@@ -32,7 +31,7 @@ fun LicenseScreen(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text(text = "ライセンス") },
+                title = { Text(text = stringResource(id = R.string.setting_license_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)

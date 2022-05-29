@@ -1,4 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ぜろみらー</string>
+    <string name="hello_sceren_title">はじめまして  せろみらーです。</string>
+    <string name="hello_screen_message">このアプリは画面を共有するアプリです（ミラーリング）。\n
+同じWi-Fiに接続しているパソコンやスマホからこのスマホの画面を共有できます。\n
+使い方もURLを他の端末のブラウザで開くだけ。\n
+映像の切り替え時に一瞬読み込みがあるのは仕様です。</string>
+    <string name="hello_screen_start">はじめる</string>
+    <string name="setting_screen_title">設定画面</string>
+    <string name="setting_stream_title">画面共有(ミラーリング)の設定</string>
+    <string name="setting_stream_description">更新頻度、ビットレートやFPSの設定</string>
+    <string name="setting_about_this_app_title">このアプリについて</string>
+    <string name="setting_about_this_app_description">オープンソースです</string>
+    <string name="setting_license_title">ライセンス</string>
+    <string name="setting_license_description">ありがとうございます！！！</string>
+    <string name="about_this_app_message">ブラウザを用意するだけ\nお手軽画面共有(ミラーリング)アプリ</string>
+    <string name="about_this_app_open_github">GitHubで開く (オープンソース)</string>
+    <string name="about_this_app_version">バージョン</string>
+    <string name="about_this_app_twitter">Twitter</string>
+    <string name="notification_channel_title">ぜろみらー起動中通知</string>
+    <string name="zeromirror_service_notification_title">ぜろみらー実行中</string>
+    <string name="zeromirror_service_notification_content">ブラウザから見れます</string>
+    <string name="ip_address">IPアドレス</string>
+    <string name="mirroring_setting_video_interval_title">動画の更新頻度 (秒)</string>
+    <string name="mirroring_setting_reset_message">本当にリセットしますか</string>
+    <string name="mirroring_setting_reset">リセット</string>
+    <string name="mirroring_setting_video_interval_description">短くすると、ブラウザに再生される動画との遅延が短くなります。</string>
+    <string name="mirroring_setting_video_bitrate_title">映像ビットレート (Kbps)</string>
+    <string name="mirroring_setting_video_bitrate_description">動画のサイズが大きくなる代わりに、画質が向上するはずです。</string>
+    <string name="mirroring_setting_video_fps_title">映像フレームレート (fps)</string>
+    <string name="mirroring_setting_video_fps_description">動画の滑らかさです。</string>
+    <string name="mirroring_setting_internal_audio_title">内部音声を収録する</string>
+    <string name="mirroring_setting_internal_audio_description">Android 10 以降を利用している場合は、端末の音声を動画に合成できるようになります。 マイクの権限が必要です。</string>
+    <string name="mirroring_setting_audio_bitrate_title">音声ビットレート (Kbps)</string>
+    <string name="mirroring_setting_audio_bitrate_description">音質です。</string>
+    <string name="mirroring_setting_port_title">ポート番号</string>
+    <string name="mirroring_setting_port_description">基本的にデフォルトのままでいいと思います。</string>
 </resources>

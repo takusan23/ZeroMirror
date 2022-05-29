@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
@@ -27,9 +28,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MirroringSettingScreen(
-    onBack: () -> Unit = {},
-) {
+fun MirroringSettingScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val mirroringData = remember { MirroringSettingData.loadDataStore(context) }.collectAsState(initial = null)
@@ -63,7 +62,7 @@ fun MirroringSettingScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             LargeTopAppBar(
-                title = { Text(text = "画面共有の設定") },
+                title = { Text(text = stringResource(id = R.string.setting_stream_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
@@ -73,7 +72,7 @@ fun MirroringSettingScreen(
                     IconButton(onClick = {
                         // Snackbar で本当に消していいか
                         scope.launch {
-                            val result = snackbarHostState.showSnackbar("本当にリセットしますか", "リセット")
+                            val result = snackbarHostState.showSnackbar(context.getString(R.string.mirroring_setting_reset_message), context.getString(R.string.mirroring_setting_reset))
                             if (result == SnackbarResult.ActionPerformed) {
                                 resetMirrorSetting()
                             }
@@ -92,9 +91,9 @@ fun MirroringSettingScreen(
                 Card(modifier = Modifier.padding(10.dp)) {
 
                     TextBoxInitValueSettingItem(
-                        label = "動画の更新頻度 (秒)",
+                        label = stringResource(id = R.string.mirroring_setting_video_interval_title),
+                        description = stringResource(id = R.string.mirroring_setting_video_interval_description),
                         initValue = (mirroringData.value!!.intervalMs / 1000).toString(),
-                        description = "短くするとブラウザに流れる映像との遅延が短くなります",
                         iconRes = R.drawable.ic_outline_timer_24,
                         onValueChange = {
                             it.toLongOrNull()?.also { intervalMs ->
@@ -107,8 +106,8 @@ fun MirroringSettingScreen(
                     Divider()
 
                     TextBoxInitValueSettingItem(
-                        label = "映像ビットレート (Kbps)",
-                        description = "サイズが大きくなる代わりに画質が上がるはずです",
+                        label = stringResource(id = R.string.mirroring_setting_video_bitrate_title),
+                        description = stringResource(id = R.string.mirroring_setting_video_bitrate_description),
                         initValue = (mirroringData.value!!.videoBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.videoBitRate),
                         iconRes = R.drawable.ic_outline_videocam_24,
@@ -120,9 +119,9 @@ fun MirroringSettingScreen(
                     )
 
                     TextBoxInitValueSettingItem(
-                        label = "映像フレームレート",
+                        label = stringResource(id = R.string.mirroring_setting_video_fps_title),
+                        description = stringResource(id = R.string.mirroring_setting_video_fps_description),
                         initValue = mirroringData.value!!.videoFrameRate.toString(),
-                        description = "映像の滑らかさですね",
                         iconRes = R.drawable.ic_outline_videocam_24,
                         onValueChange = {
                             it.toIntOrNull()?.also { videoFps ->
@@ -134,8 +133,8 @@ fun MirroringSettingScreen(
                     Divider()
 
                     SwitchSettingItem(
-                        title = "内部音声を含める",
-                        description = "Android 10 以降",
+                        title = stringResource(id = R.string.mirroring_setting_internal_audio_title),
+                        description = stringResource(id = R.string.mirroring_setting_internal_audio_description),
                         iconRes = R.drawable.ic_outline_audiotrack_24,
                         isEnable = mirroringData.value!!.isRecordInternalAudio,
                         onValueChange = { isChecked ->
@@ -144,8 +143,8 @@ fun MirroringSettingScreen(
                     )
 
                     TextBoxInitValueSettingItem(
-                        label = "音声ビットレート (Kbps)",
-                        description = "音質です",
+                        label = stringResource(id = R.string.mirroring_setting_audio_bitrate_title),
+                        description = stringResource(id = R.string.mirroring_setting_audio_bitrate_description),
                         initValue = (mirroringData.value!!.audioBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.audioBitRate),
                         iconRes = R.drawable.ic_outline_audiotrack_24,
@@ -159,8 +158,8 @@ fun MirroringSettingScreen(
                     Divider()
 
                     TextBoxInitValueSettingItem(
-                        label = "ポート番号",
-                        description = "基本的にはいじる必要はないと思います",
+                        label = stringResource(id = R.string.mirroring_setting_port_title),
+                        description = stringResource(id = R.string.mirroring_setting_port_description),
                         initValue = mirroringData.value!!.portNumber.toString(),
                         iconRes = R.drawable.ic_outline_open_in_browser_24,
                         onValueChange = {

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -30,9 +31,6 @@ import java.io.File
  * ミラーリングサービス
  */
 class ScreenMirrorService : Service() {
-
-    private val TAG = ScreenMirrorService::class.simpleName
-
     /** コルーチンスコープ */
     private val coroutineScope = CoroutineScope(Job())
 
@@ -99,7 +97,8 @@ class ScreenMirrorService : Service() {
 
             // IPアドレスを通知として出す
             IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
-                notifyForegroundNotification("IPアドレス：http://$ipAddress:${mirroringSettingData!!.portNumber}")
+                notifyForegroundNotification("${getString(R.string.ip_address)}：http://$ipAddress:${mirroringSettingData!!.portNumber}")
+                Log.d(TAG, "http://$ipAddress:${mirroringSettingData!!.portNumber}")
             }.launchIn(coroutineScope)
 
             // エンコーダーは別スレッドで
@@ -188,19 +187,19 @@ class ScreenMirrorService : Service() {
      *
      * @param contentText 通知本文
      */
-    private fun notifyForegroundNotification(contentText: String = "ブラウザから見れます") {
+    private fun notifyForegroundNotification(contentText: String = getString(R.string.zeromirror_service_notification_content)) {
         // 通知チャンネル
         val notificationManagerCompat = NotificationManagerCompat.from(this)
         //通知チャンネルが存在しないときは登録する
         if (notificationManagerCompat.getNotificationChannel(NOTIFICATION_CHANNEL_ID) == null) {
             val channel = NotificationChannelCompat.Builder(NOTIFICATION_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW).apply {
-                setName("ぜろみらー起動中通知")
+                setName(getString(R.string.notification_channel_title))
             }.build()
             notificationManagerCompat.createNotificationChannel(channel)
         }
         //通知作成
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
-            setContentTitle("ぜろみらー起動中")
+            setContentTitle(getString(R.string.zeromirror_service_notification_title))
             setContentText(contentText)
             setSmallIcon(R.drawable.zeromirror_android)
         }.build()
@@ -208,6 +207,7 @@ class ScreenMirrorService : Service() {
     }
 
     companion object {
+        private val TAG = ScreenMirrorService::class.simpleName
 
         /** 内部録画だけのファイルの名前 */
         private const val SCREEN_CAPTURE_FILE_NAME = "screen.mp4"

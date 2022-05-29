@@ -1,3 +1,38 @@
 <resources>
     <string name="app_name">ZeroMirror</string>
+    <string name="hello_sceren_title">Nice to meet you, this is ZeroMirror.</string>
+    <string name="hello_screen_message">This app is an app to share the screen (mirroring).\n
+You can share the screen of this smartphone from a computer or smartphone connected to the same Wi-Fi.\n
+To use it, just open the URL in the browser of another terminal.\n
+It is a specification that there is a momentary reading when switching images.</string>
+    <string name="hello_screen_start">Start</string>
+    <string name="setting_screen_title">Settings</string>
+    <string name="setting_stream_title">Screen sharing (mirroring) settings</string>
+    <string name="setting_stream_description">Update frequency, bit rate and FPS settings</string>
+    <string name="setting_about_this_app_title">About this app</string>
+    <string name="setting_about_this_app_description">Open source</string>
+    <string name="setting_license_title">License</string>
+    <string name="setting_license_description">thank you !!!</string>
+    <string name="about_this_app_message">Just prepare a browser\nEasy screen sharing (mirroring) app</string>
+    <string name="about_this_app_open_github">Open on GitHub (open source)</string>
+    <string name="about_this_app_version">Version</string>
+    <string name="about_this_app_twitter">Twitter</string>
+    <string name="notification_channel_title">Notification during startup of ZeroMirror</string>
+    <string name="zeromirror_service_notification_title">ZeroMirror is running</string>
+    <string name="zeromirror_service_notification_content">You can see it from your browser</string>
+    <string name="ip_address">IP address</string>
+    <string name="mirroring_setting_video_interval_title">Video update frequency (seconds)</string>
+    <string name="mirroring_setting_reset_message">Do you really want to reset</string>
+    <string name="mirroring_setting_reset">reset</string>
+    <string name="mirroring_setting_video_interval_description">Shortening it will reduce the delay with the video played in the browser.</string>
+    <string name="mirroring_setting_video_bitrate_title">Video bit rate (Kbps)</string>
+    <string name="mirroring_setting_video_bitrate_description">The image quality should improve at the cost of increasing the size of the video.</string>
+    <string name="mirroring_setting_video_fps_title">Video frame rate (fps)</string>
+    <string name="mirroring_setting_video_fps_description">The smoothness of the video.</string>
+    <string name="mirroring_setting_internal_audio_title">Record internal audio</string>
+    <string name="mirroring_setting_internal_audio_description">If you are using Android 10 or later, you will be able to combine the audio of your device with the video. Requires microphone privileges.</string>
+    <string name="mirroring_setting_audio_bitrate_title">Audio bit rate (Kbps)</string>
+    <string name="mirroring_setting_audio_bitrate_description">The sound quality.</string>
+    <string name="mirroring_setting_port_title">port number</string>
+    <string name="mirroring_setting_port_description">Basically, you can keep the default.</string>
 </resources>
