@@ -202,7 +202,7 @@ class ScreenMirrorService : Service() {
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
             setContentTitle("ぜろみらー起動中")
             setContentText(contentText)
-            setSmallIcon(R.drawable.ic_launcher_foreground)
+            setSmallIcon(R.drawable.zeromirror_android)
         }.build()
         startForeground(NOTIFICATION_ID, notification)
     }

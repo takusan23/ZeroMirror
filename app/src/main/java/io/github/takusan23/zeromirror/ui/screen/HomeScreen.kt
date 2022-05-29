@@ -17,8 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
 import io.github.takusan23.zeromirror.ScreenMirrorService
 import io.github.takusan23.zeromirror.data.MirroringSettingData
+import io.github.takusan23.zeromirror.setting.SettingKeyObject
+import io.github.takusan23.zeromirror.setting.dataStore
 import io.github.takusan23.zeromirror.tool.IntentTool
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
@@ -44,6 +47,8 @@ fun HomeScreen(
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
     // ミラーリング情報
     val mirroringData = remember { MirroringSettingData.loadDataStore(context) }.collectAsState(initial = null)
+    // DataStore監視
+    val dataStore = remember { context.dataStore.data }.collectAsState(initial = null)
 
     // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
     val isGrantedRecordAudio = remember {
@@ -91,6 +96,22 @@ fun HomeScreen(
                     ScreenMirrorService.stopService(context)
                 }
             )
+
+            // はじめまして画面誘導カード
+            if (dataStore.value?.contains(SettingKeyObject.IS_HIDE_HELLO_CARD) == false) {
+                HelloCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    onHelloClick = { onNavigate(MainScreenNavigationLinks.HelloScreen) },
+                    onClose = {
+                        // もう出さない
+                        scope.launch {
+                            context.dataStore.edit { it[SettingKeyObject.IS_HIDE_HELLO_CARD] = true }
+                        }
+                    }
+                )
+            }
 
             if (mirroringData.value != null && idAddress.value != null) {
                 // URLを作る

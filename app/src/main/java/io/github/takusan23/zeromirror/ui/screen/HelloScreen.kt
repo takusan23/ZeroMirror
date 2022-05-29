@@ -19,12 +19,22 @@ import io.github.takusan23.zeromirror.R
  * でも映像の切り替えが目に見えるレベルであるのでそれが玉に瑕
  *
  * @param onNextClick ボタンを押したときに呼ばれる
+ * @param onBack 戻ってほしいときに呼ばれる
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HelloScreen(onNextClick: () -> Unit) {
+fun HelloScreen(onNextClick: () -> Unit, onBack: () -> Unit) {
     Scaffold(
-        topBar = { LargeTopAppBar(title = { Text(text = "はじめまして、ぜろみらーです。") }) }
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(text = "はじめまして、ぜろみらーです。") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
+                    }
+                }
+            )
+        }
     ) {
         Column(
             modifier = Modifier
