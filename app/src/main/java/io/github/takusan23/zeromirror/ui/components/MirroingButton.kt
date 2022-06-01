@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.zeromirror.R
 
@@ -34,7 +35,7 @@ fun MirroringButton(
         ) {
             Icon(painter = painterResource(id = R.drawable.ic_outline_videocam_24), contentDescription = null)
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-            Text(text = "画面共有開始")
+            Text(text = stringResource(id = R.string.mirroring_component_start))
         }
         OutlinedButton(
             modifier = Modifier
@@ -44,7 +45,7 @@ fun MirroringButton(
         ) {
             Icon(painter = painterResource(id = R.drawable.ic_outline_close_24), contentDescription = null)
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-            Text(text = "画面共有終了")
+            Text(text = stringResource(id = R.string.mirroring_component_end))
         }
     }
 }

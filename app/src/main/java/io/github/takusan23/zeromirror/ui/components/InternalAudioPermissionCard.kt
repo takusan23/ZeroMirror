@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,7 @@ fun InternalAudioPermissionCard(
         ) {
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = "Android 10 以降 内部音声を共有できます",
+                text = stringResource(id = R.string.internal_audio_permission_card_title),
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -48,7 +49,7 @@ fun InternalAudioPermissionCard(
             Spacer(modifier = Modifier.size(10.dp))
 
             Column(modifier = Modifier.padding(5.dp)) {
-                Text(text = "画面共有に内部の音声を含めることができます。内部音声を含めるためには、マイク権限が必要ですのでお願いします。")
+                Text(text = stringResource(id = R.string.internal_audio_permission_card_description))
             }
             OutlinedButton(
                 modifier = Modifier
@@ -59,7 +60,7 @@ fun InternalAudioPermissionCard(
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                Text(text = "マイクの権限を付与")
+                Text(text = stringResource(id = R.string.internal_audio_permission_card_button))
             }
         }
     }

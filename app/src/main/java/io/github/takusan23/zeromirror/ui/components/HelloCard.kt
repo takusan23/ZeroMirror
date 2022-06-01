@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,12 +49,12 @@ fun HelloCard(
                     .weight(1f)
             ) {
                 Text(
-                    text = "はじめまして ぜろみらーです",
+                    text = stringResource(id = R.string.hello_card_title),
                     style = TextStyle(fontWeight = FontWeight.Bold),
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Text(text = "このアプリについてのちょっとした説明が見れます")
+                Text(text = stringResource(id = R.string.hello_card_description))
             }
             IconButton(
                 onClick = onClose)

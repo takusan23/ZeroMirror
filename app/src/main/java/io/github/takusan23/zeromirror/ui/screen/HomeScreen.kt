@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
+import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.ScreenMirrorService
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.setting.SettingKeyObject
@@ -65,7 +66,7 @@ fun HomeScreen(
             // Activity 以外は無いはず...
             ScreenMirrorService.startService((context as Activity), result.resultCode, result.data!!)
         } else {
-            Toast.makeText(context, "開始が拒否されました、(ヽ´ω`)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.home_screen_permission_result_fail), Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,7 +32,7 @@ fun UrlCard(
         Column(modifier = Modifier.padding(10.dp)) {
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = "視聴用URL",
+                text = stringResource(id = R.string.url_card_title),
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 20.sp
@@ -43,21 +44,21 @@ fun UrlCard(
             )
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = "このURLをPCやスマホのブラウザのアドレス欄へ入力すると画面共有を見ることが出来ます。",
+                text = stringResource(id = R.string.url_card_description),
             )
 
             Row {
                 Button(onClick = onShareClick) {
                     Icon(painter = painterResource(id = R.drawable.ic_outline_share_24), contentDescription = null)
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(text = "共有")
+                    Text(text = stringResource(id = R.string.url_card_share))
                 }
                 Spacer(modifier = Modifier.size(10.dp))
 
                 OutlinedButton(onClick = onOpenBrowserClick) {
                     Icon(painter = painterResource(id = R.drawable.ic_outline_open_in_browser_24), contentDescription = null)
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(text = "ブラウザで確認する")
+                    Text(text = stringResource(id = R.string.url_card_open_browser))
                 }
             }
         }

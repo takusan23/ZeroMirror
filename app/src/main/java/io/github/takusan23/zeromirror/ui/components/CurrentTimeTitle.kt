@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -38,8 +39,8 @@ fun CurrentTimeTitle(
         modifier = modifier,
         title = {
             Text(text = """
-            こんにちは
-            今の時間 ${timeToFormat(currentTime.value)}
+            ${stringResource(id = R.string.time_component_time_hello)}
+            ${stringResource(id = R.string.time_component_time_now)} ${timeToFormat(currentTime.value)}
         """.trimIndent())
         },
         actions = {
