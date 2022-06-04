@@ -13,5 +13,12 @@
         <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
         <!-- Customize your theme here. -->
+
+        <!-- スプラッシュスクリーン -->
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">
+            @drawable/zeromirror_splash_screen_icon
+        </item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">#ffb3b9</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">1000</item>
     </style>
 </resources>
