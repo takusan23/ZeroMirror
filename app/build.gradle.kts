@@ -56,6 +56,10 @@ dependencies {
     // 映像を配信するサーバー
     implementation(project(":server"))
 
+    // QR code
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
+    implementation("com.google.zxing:core:3.3.0")
+
     // Coroutine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
 

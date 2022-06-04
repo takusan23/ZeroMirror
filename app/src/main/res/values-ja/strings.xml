@@ -60,4 +60,5 @@
     <string name="stream_info_video_fps">映像フレームレート (fps)</string>
     <string name="stream_info_audio_bitrate">音声ビットレート</string>
     <string name="stream_info_setting_button">設定を変更する</string>
+    <string name="url_card_qr_code">QRコード</string>
 </resources>

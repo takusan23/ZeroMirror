@@ -59,4 +59,5 @@ It is a specification that there is a momentary reading when switching images.</
     <string name="stream_info_video_fps">Video frame rate (fps)</string>
     <string name="stream_info_audio_bitrate">Audio bit rate</string>
     <string name="stream_info_setting_button">Change settings</string>
+    <string name="url_card_qr_code">QR code</string>
 </resources>
