@@ -9,12 +9,12 @@
 </head>
 
 <body>
-    <div align="center">
-        <p id="title">動画データの到着を待っています...</p>
-        <p>最初だけ再生ボタンを押す必要があります。音量注意してください。</p>
-        <p><button id="cache_button">切り替えを安定させる（実験的）</button></p>
-        <video id="video_player" width="300" controls autoplay></video>
-    </div>
+<div align="center">
+    <p id="title">動画データの到着を待っています...</p>
+    <p>最初だけ再生ボタンを押す必要があります。音量注意してください。</p>
+    <p><button id="cache_button">切り替えを安定させる（実験的）</button></p>
+    <video id="video_player" width="300" controls autoplay></video>
+</div>
 </body>
 
 <script>
@@ -29,24 +29,19 @@
 
     // 動画をすべてダウンロードしてから再生するか
     let isFullVideoDl = false
-    // BlobURLか動画へアクセスできる相対URLが手に入る
-    let rawUrlOrPreloadedUrl = ''
 
     // ボタンを押したら切り替える
     cacheButton.onclick = () => {
         isFullVideoDl = !isFullVideoDl
     }
 
-    // 再生終了イベント
-    videoElement.onended = () => {
-        // BlobURL有効時でも初回時は開放しない
-        if (videoElement.src === '' && isFullVideoDl) {
-            URL.revokeObjectURL(videoElement.src)
-        }
+    // 動画をロードする
+    // 引数は 動画のパス
+    const loadVideo = (rawUrlOrPreloadedUrl) => {
         // 一つ前の動画をロードする
+        videoElement.pause()
         videoElement.src = rawUrlOrPreloadedUrl
         videoElement.load()
-        videoElement.play()
     }
 
     // WebSocket 接続を作成
@@ -67,15 +62,15 @@
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
+                    // 前回の BlobURL を無効にする
+                    URL.revokeObjectURL(videoElement.src)
                     // 今回の動画の BlobURL を作成する
-                    rawUrlOrPreloadedUrl = URL.createObjectURL(blob)
-                    videoElement.onended.call()
+                    const rawUrlOrPreloadedUrl = URL.createObjectURL(blob)
+                    loadVideo(rawUrlOrPreloadedUrl)
                 })
         } else {
             // そのまま渡す
-            rawUrlOrPreloadedUrl = url
-            // 動画ロードを終了イベントに書いてるので発火する
-            videoElement.onended.call()
+            loadVideo(url)
         }
         // 上の文字を消す
         titleElement.style.display = 'none'
