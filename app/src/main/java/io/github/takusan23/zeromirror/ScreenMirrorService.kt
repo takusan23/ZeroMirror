@@ -16,16 +16,15 @@ import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.hlsserver.Server
 import io.github.takusan23.zeromirror.data.MirroringSettingData
+import io.github.takusan23.zeromirror.media.ContainerFileWriter
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
-import io.github.takusan23.zeromirror.tool.TrackMixer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import java.io.File
 
 /**
  * ミラーリングサービス
@@ -36,6 +35,9 @@ class ScreenMirrorService : Service() {
 
     /** 生成したファイルを管理する */
     private var captureVideoManager: CaptureVideoManager? = null
+
+    /** エンコードされたデータをコンテナファイルに書き込む */
+    private var containerFileWriter: ContainerFileWriter? = null
 
     /** サーバー これだけ別モジュール */
     private var server: Server? = null
@@ -69,9 +71,20 @@ class ScreenMirrorService : Service() {
             notifyForegroundNotification()
             // 設定を読み出す
             mirroringSettingData = MirroringSettingData.loadDataStore(this@ScreenMirrorService).first()
+
             // 今までのファイルを消す
-            captureVideoManager = CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME, mirroringSettingData!!.isVP9)
+            captureVideoManager = CaptureVideoManager(
+                parentFile = getExternalFilesDir(null)!!,
+                baseName = VIDEO_FILE_NAME,
+                isWebM = mirroringSettingData!!.isVP9
+            )
             captureVideoManager?.deleteParentFolderChildren()
+
+            // コンテナファイルに書き込むやつ
+            containerFileWriter = ContainerFileWriter(
+                includeAudio = mirroringSettingData!!.isRecordInternalAudio,
+                isWebM = mirroringSettingData!!.isVP9
+            )
 
             // 起動できる場合は起動
             if (resultCode != null && resultData != null) {
@@ -87,6 +100,7 @@ class ScreenMirrorService : Service() {
                     displayHeight to displayWidth
                 }
 
+                // エンコーダーの用意
                 screenVideoEncoder!!.prepareEncoder(
                     videoWidth = width,
                     videoHeight = height,
@@ -130,6 +144,7 @@ class ScreenMirrorService : Service() {
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
         mediaProjection?.stop()
+        containerFileWriter?.stopAndRelease()
         server?.stopServer()
     }
 
@@ -139,50 +154,37 @@ class ScreenMirrorService : Service() {
 
     /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
-        val isWebM = mirroringSettingData!!.isVP9
+        // 初回用
+        containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
 
-        // 内部録画エンコーダー
-        launch { screenVideoEncoder!!.start() }
+        // 画面録画エンコーダー
+        launch {
+            screenVideoEncoder!!.start(
+                onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeVideo(byteBuffer, bufferInfo) },
+                onOutputFormatAvailable = { containerFileWriter?.setVideoTrack(it) }
+            )
+        }
         // 内部音声エンコーダー
-        if (availableInternalAudio()) {
-            launch { internalAudioEncoder!!.start() }
+        launch {
+            if (availableInternalAudio()) {
+                internalAudioEncoder!!.start(
+                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeAudio(byteBuffer, bufferInfo) },
+                    onOutputFormatAvailable = { containerFileWriter?.setAudioTrack(it) }
+                )
+            }
         }
 
         // コルーチンの中なので whileループ できます
         while (isActive) {
-
-            // それぞれ格納するファイルを用意
-            if (availableInternalAudio()) {
-                // 後で映像と音声を合成するので同じファイルに書き込む
-                screenVideoEncoder!!.createContainer(File(getExternalFilesDir(null), SCREEN_CAPTURE_FILE_NAME), isWebM)
-                internalAudioEncoder!!.createContainer(File(getExternalFilesDir(null), INTERNAL_RECORD_FILE_NAME), isWebM)
-            } else {
-                // ここで書き込んだファイルを直接クライアントに返すので重要
-                screenVideoEncoder!!.createContainer(captureVideoManager!!.generateFile(), isWebM)
-            }
-
             // intervalMs秒待機したら新しいファイルにする
             delay(mirroringSettingData!!.intervalMs)
 
-            // 内部音声を合成するか、合成せずに映像だけ返すか
-            // 内部音声はAndroid10以降のみなので実装は必須
-            val publishFile = if (availableInternalAudio()) {
-                // ファイルの書き込みをやめる
-                val videoFilePath = screenVideoEncoder!!.stopWriteContainer().path
-                val audioFilePath = internalAudioEncoder!!.stopWriteContainer().path
-                // 一つのファイルにする
-                captureVideoManager!!.generateFile().also { mixedFile ->
-                    TrackMixer.startMix(
-                        mergeFileList = listOf(videoFilePath, audioFilePath),
-                        resultFile = mixedFile,
-                        isWebM = isWebM
-                    )
-                }
-            } else {
-                screenVideoEncoder!!.stopWriteContainer()
-            }
             // クライアント側にWebSocketでファイルが出来たことを通知する
+            val publishFile = containerFileWriter!!.stopAndRelease()
             server?.updateVideoFileName(publishFile.name)
+
+            // それぞれ格納するファイルを用意
+            containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
         }
     }
 
