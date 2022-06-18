@@ -10,12 +10,12 @@ import java.io.File
  *
  * @param parentFile 保存先
  * @param baseName ファイル名先頭につけるやつ
- * @param extension 拡張子
+ * @param isWebM WebMを利用する場合はtrue(VP9)、mp4を利用する場合はfalse(mp4)
  */
 class CaptureVideoManager(
     private val parentFile: File,
     private val baseName: String,
-    private val extension: String = "mp4",
+    private val isWebM: Boolean = false,
 ) {
 
     /** 作るたびにインクリメントする */
@@ -40,6 +40,7 @@ class CaptureVideoManager(
      */
     suspend fun generateFile(): File {
         deleteNotHoldFile()
+        val extension = if (isWebM) "webm" else "mp4"
         currentFile = File(parentFile, "$baseName${count++}.$extension").apply { createNewFile() }
         fileList.add(currentFile!!)
         return currentFile!!

@@ -19,11 +19,13 @@ object TrackMixer {
      *
      * @param mergeFileList 音声と映像のファイルパスを配列に入れて渡して
      * @param resultFile 書き込み先ファイル
+     * @param isWebM WebMを利用する場合はtrue(VP9)、mp4を利用する場合はfalse(mp4)
      */
     @SuppressLint("WrongConstant")
-    suspend fun startMix(mergeFileList: List<String>, resultFile: File) = withContext(Dispatchers.Default) {
+    suspend fun startMix(mergeFileList: List<String>, resultFile: File, isWebM: Boolean = false) = withContext(Dispatchers.Default) {
         // これから書き込むファイル
-        val mergeMediaMuxer = MediaMuxer(resultFile.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+        val mergeMediaMuxer = MediaMuxer(resultFile.path, containerFormat)
         // それぞれ取り出してMediaMuxerへ書き込む
         val trackIndexToExtractorPairList = mergeFileList
             .map { path -> MediaExtractor().apply { setDataSource(path) } }

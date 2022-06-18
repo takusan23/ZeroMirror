@@ -12,7 +12,10 @@ import java.nio.ByteBuffer
  * 動画エンコーダー
  * MediaCodecを使いやすくしただけ
  *
- * 入力Surface から H.264 をエンコードする。
+ * VP9の場合は画面解像度が厳しい？
+ * 1920x1080 1280x720 とかなら問題ないけど、ディスプレイの画面解像度を入れると例外を吐く？
+ *
+ * 入力Surface から H.264 / VP9 をエンコードする。
  */
 class VideoEncoder {
 
@@ -20,30 +23,33 @@ class VideoEncoder {
     private var mediaCodec: MediaCodec? = null
 
     /**
-     * H.264 エンコーダーを初期化する
+     * エンコーダーを初期化する
      *
      * @param videoWidth 動画の幅
      * @param videoHeight 動画の高さ
      * @param bitRate ビットレート
      * @param frameRate フレームレート
      * @param iFrameInterval Iフレーム
+     * @param isVp9 VP9コーデックを利用する場合はtrue
      */
     fun prepareEncoder(
         videoWidth: Int,
         videoHeight: Int,
         bitRate: Int,
         frameRate: Int,
-        iFrameInterval: Int = 10,
+        iFrameInterval: Int = 1,
+        isVp9: Boolean = false,
     ) {
-        // avc が H.264 のことだと思う
-        val videoEncodeFormat = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, videoWidth, videoHeight).apply {
+        // コーデックの選択
+        val codec = if (isVp9) MediaFormat.MIMETYPE_VIDEO_VP9 else MediaFormat.MIMETYPE_VIDEO_AVC
+        val videoEncodeFormat = MediaFormat.createVideoFormat(codec, videoWidth, videoHeight).apply {
             setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
             setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
         }
         // エンコーダー用意
-        mediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC).apply {
+        mediaCodec = MediaCodec.createEncoderByType(codec).apply {
             configure(videoEncodeFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         }
     }
@@ -59,7 +65,7 @@ class VideoEncoder {
     /**
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
      *
-     * @param onOutputBufferAvailable H.264にエンコードされたデータが流れてきます
+     * @param onOutputBufferAvailable エンコードされたデータが流れてきます
      * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun startVideoEncode(

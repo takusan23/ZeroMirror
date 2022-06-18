@@ -35,7 +35,7 @@ class ScreenMirrorService : Service() {
     private val coroutineScope = CoroutineScope(Job())
 
     /** 生成したファイルを管理する */
-    private val captureVideoManager by lazy { CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME) }
+    private var captureVideoManager: CaptureVideoManager? = null
 
     /** サーバー これだけ別モジュール */
     private var server: Server? = null
@@ -65,30 +65,42 @@ class ScreenMirrorService : Service() {
         displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
         coroutineScope.launch {
-            // 今までのファイルを消す
-            captureVideoManager.deleteParentFolderChildren()
             // 通知発行
             notifyForegroundNotification()
             // 設定を読み出す
             mirroringSettingData = MirroringSettingData.loadDataStore(this@ScreenMirrorService).first()
+            // 今までのファイルを消す
+            captureVideoManager = CaptureVideoManager(getExternalFilesDir(null)!!, VIDEO_FILE_NAME, mirroringSettingData!!.isVP9)
+            captureVideoManager?.deleteParentFolderChildren()
 
             // 起動できる場合は起動
             if (resultCode != null && resultData != null) {
                 mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
                 // 画面ミラーリング
                 screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!)
+
+                // 解像度をカスタマイズしている場合
+                val (height, width) = if (mirroringSettingData!!.isCustomResolution || mirroringSettingData!!.isVP9) {
+                    // VP9 エンコーダーだと画面解像度を入れると失敗する？ 1280x720 / 1920x1080 だと成功する
+                    mirroringSettingData!!.videoHeight to mirroringSettingData!!.videoWidth
+                } else {
+                    displayHeight to displayWidth
+                }
+
                 screenVideoEncoder!!.prepareEncoder(
-                    videoWidth = displayWidth,
-                    videoHeight = displayHeight,
+                    videoWidth = width,
+                    videoHeight = height,
                     bitRate = mirroringSettingData!!.videoBitRate,
                     frameRate = mirroringSettingData!!.videoFrameRate,
+                    isVp9 = mirroringSettingData!!.isVP9,
                     iFrameInterval = 1
                 )
                 // 内部音声を一緒にエンコードする場合
                 if (availableInternalAudio()) {
                     internalAudioEncoder = InternalAudioEncoder(mediaProjection!!)
                     internalAudioEncoder!!.prepareEncoder(
-                        bitRate = mirroringSettingData!!.audioBitRate
+                        bitRate = mirroringSettingData!!.audioBitRate,
+                        isOpus = mirroringSettingData!!.isVP9,
                     )
                 }
             } else {
@@ -128,6 +140,8 @@ class ScreenMirrorService : Service() {
 
     /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
+        val isWebM = mirroringSettingData!!.isVP9
+
         // 内部録画エンコーダー
         launch { screenVideoEncoder!!.start() }
         // 内部音声エンコーダー
@@ -141,15 +155,15 @@ class ScreenMirrorService : Service() {
             // それぞれ格納するファイルを用意
             if (availableInternalAudio()) {
                 // 後で映像と音声を合成するので同じファイルに書き込む
-                screenVideoEncoder!!.createContainer(File(getExternalFilesDir(null), SCREEN_CAPTURE_FILE_NAME))
-                internalAudioEncoder!!.createContainer(File(getExternalFilesDir(null), INTERNAL_RECORD_FILE_NAME))
+                screenVideoEncoder!!.createContainer(File(getExternalFilesDir(null), SCREEN_CAPTURE_FILE_NAME), isWebM)
+                internalAudioEncoder!!.createContainer(File(getExternalFilesDir(null), INTERNAL_RECORD_FILE_NAME), isWebM)
             } else {
                 // ここで書き込んだファイルを直接クライアントに返すので重要
-                screenVideoEncoder!!.createContainer(captureVideoManager.generateFile())
+                screenVideoEncoder!!.createContainer(captureVideoManager!!.generateFile(), isWebM)
             }
 
             // intervalMs秒待機したら新しいファイルにする
-            delay(mirroringSettingData?.intervalMs!!)
+            delay(mirroringSettingData!!.intervalMs)
 
             // 内部音声を合成するか、合成せずに映像だけ返すか
             // 内部音声はAndroid10以降のみなので実装は必須
@@ -158,10 +172,11 @@ class ScreenMirrorService : Service() {
                 val videoFilePath = screenVideoEncoder!!.stopWriteContainer().path
                 val audioFilePath = internalAudioEncoder!!.stopWriteContainer().path
                 // 一つのファイルにする
-                captureVideoManager.generateFile().also { mixedFile ->
+                captureVideoManager!!.generateFile().also { mixedFile ->
                     TrackMixer.startMix(
                         mergeFileList = listOf(videoFilePath, audioFilePath),
-                        resultFile = mixedFile
+                        resultFile = mixedFile,
+                        isWebM = isWebM
                     )
                 }
             } else {
@@ -209,11 +224,11 @@ class ScreenMirrorService : Service() {
     companion object {
         private val TAG = ScreenMirrorService::class.simpleName
 
-        /** 内部録画だけのファイルの名前 */
-        private const val SCREEN_CAPTURE_FILE_NAME = "screen.mp4"
+        /** 内部録画だけのファイルの名前、拡張子は [ScreenVideoEncoder.createContainer] とかで作る */
+        private const val SCREEN_CAPTURE_FILE_NAME = "screen"
 
         /** 内部音声を記録するだけのファイルの名前 */
-        private const val INTERNAL_RECORD_FILE_NAME = "internal.aac"
+        private const val INTERNAL_RECORD_FILE_NAME = "internal"
 
         /** クライアントに見せる最終的な動画のファイル名、拡張子はあとから付ける */
         private const val VIDEO_FILE_NAME = "publish"

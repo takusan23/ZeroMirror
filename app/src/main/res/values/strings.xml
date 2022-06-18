@@ -68,4 +68,7 @@ It is a specification that there is a momentary reading when switching images.</
     <string name="mirroring_setting_vp9">Use VP9 for codec</string>
     <string name="mirroring_setting_vp9_description">H.264 is used by default. You need an environment where VP9 can be played. You also need to set the video resolution.</string>
     <string name="mirroring_setting_vp9_hint">It seems that the file size of the video can be made smaller than H.264. Maybe you can use it when the Wi-Fi speed is slow.</string>
+    <string name="mirroring_setting_resolution_hint">Horizontal 1280 / Vertical 720, etc.</string>
+    <string name="stream_info_video_resolution">Video resolution</string>
+    <string name="stream_info_vp9">Use VP9 codec</string>
 </resources>

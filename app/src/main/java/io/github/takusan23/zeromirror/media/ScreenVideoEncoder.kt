@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * 画面録画して H.264 でエンコードする
+ * 画面録画して H.264 / VP9 でエンコードする
  *
  * 次のファイルにする流れ
  *
@@ -31,8 +31,8 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     /** mp4ファイルにするやつ */
     private var mediaMuxer: MediaMuxer? = null
 
-    /** mp4ファイル */
-    private var h264File: File? = null
+    /** 映像ファイル */
+    private var videoFile: File? = null
 
     /** 画面録画に使う */
     private var virtualDisplay: VirtualDisplay? = null
@@ -50,22 +50,31 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     private var isWritable = false
 
     /**
-     * H.264 エンコーダーを初期化する
+     * エンコーダーを初期化する
      *
      * @param videoWidth 動画の幅
      * @param videoHeight 動画の高さ
      * @param bitRate ビットレート
      * @param frameRate フレームレート
      * @param iFrameInterval Iフレーム
+     * @param isVp9 VP9コーデックを利用する場合はtrue
      */
     fun prepareEncoder(
         videoWidth: Int,
         videoHeight: Int,
         bitRate: Int,
         frameRate: Int,
-        iFrameInterval: Int = 10,
+        iFrameInterval: Int = 1,
+        isVp9: Boolean = false,
     ) {
-        videoEncoder.prepareEncoder(videoWidth, videoHeight, bitRate, frameRate, iFrameInterval)
+        videoEncoder.prepareEncoder(
+            videoWidth = videoWidth,
+            videoHeight = videoHeight,
+            bitRate = bitRate,
+            frameRate = frameRate,
+            iFrameInterval = iFrameInterval,
+            isVp9 = isVp9
+        )
         encoderSurface = videoEncoder.createInputSurface()
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "io.github.takusan23.zeromirror",
@@ -81,7 +90,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
 
     /**
      * エンコーダーを起動する。
-     * H.264になる。すっと一時停止します。
+     * ずっと一時停止します。
      */
     suspend fun start() = withContext(Dispatchers.Default) {
         videoEncoder.startVideoEncode(
@@ -115,19 +124,21 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
         isWritable = false
         mediaMuxer!!.stop()
         videoTrackIndex = INIT_INDEX_NUMBER
-        return h264File!!
+        return videoFile!!
     }
 
     /**
      * コンテナファイルを初期化する
      *
-     * @param h264File 書き込むファイル
+     * @param videoFile 書き込むファイル
+     * @param isWebM WebMコンテナに保存する場合はtrue(VP9)、mp4にする場合はfalse(H.264)
      */
-    suspend fun createContainer(h264File: File) = withContext(Dispatchers.Default) {
+    suspend fun createContainer(videoFile: File, isWebM: Boolean = false) = withContext(Dispatchers.Default) {
         // 一応消しておく
-        this@ScreenVideoEncoder.h264File = h264File
-        h264File.delete()
-        mediaMuxer = MediaMuxer(h264File.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        this@ScreenVideoEncoder.videoFile = videoFile
+        videoFile.delete()
+        val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+        mediaMuxer = MediaMuxer(videoFile.path, containerFormat)
         // 2個目以降のファイルはここで初期化出来る
         addTrackAndStart()
     }

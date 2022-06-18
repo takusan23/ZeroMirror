@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
@@ -47,15 +49,8 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
 
     /** ミラーリング設定を初期値に戻す */
     fun resetMirrorSetting() {
-        updateSetting {
-            it.copy(
-                portNumber = MirroringSettingData.DEFAULT_PORT_NUMBER,
-                intervalMs = MirroringSettingData.DEFAULT_INTERVAL_MS,
-                videoBitRate = MirroringSettingData.DEFAULT_VIDEO_BIT_RATE,
-                videoFrameRate = MirroringSettingData.DEFAULT_VIDEO_FRAME_RATE,
-                audioBitRate = MirroringSettingData.DEFAULT_AUDIO_BIT_RATE,
-                isRecordInternalAudio = false
-            )
+        scope.launch {
+            MirroringSettingData.resetDataStore(context)
         }
     }
 
@@ -136,6 +131,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     SwitchSettingItem(
                         title = stringResource(id = R.string.mirroring_setting_resolution),
                         subTitle = stringResource(id = R.string.mirroring_setting_resolution_description),
+                        description = stringResource(id = R.string.mirroring_setting_resolution_hint),
                         isEnable = mirroringData.value!!.isCustomResolution,
                         iconRes = R.drawable.ic_outline_aspect_ratio_24,
                         onValueChange = { after ->
@@ -199,6 +195,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     Text(
                         modifier = Modifier.padding(10.dp),
                         text = stringResource(id = R.string.mirroring_setting_radvanced),
+                        style = TextStyle(fontWeight = FontWeight.Bold),
                         fontSize = 20.sp
                     )
 

@@ -68,8 +68,8 @@ data class MirroringSettingData(
                     isRecordInternalAudio = data[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] ?: false,
                     isVP9 = data[SettingKeyObject.IS_VP9] ?: false,
                     isCustomResolution = data[SettingKeyObject.IS_CUSTOM_RESOLUTION] ?: false,
-                    videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: 0,
-                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 0
+                    videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: 1280,
+                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 720
                 )
             }
         }
@@ -92,6 +92,25 @@ data class MirroringSettingData(
                 it[SettingKeyObject.IS_CUSTOM_RESOLUTION] = mirroringSettingData.isCustomResolution
                 it[SettingKeyObject.VIDEO_WIDTH] = mirroringSettingData.videoWidth
                 it[SettingKeyObject.VIDEO_HEIGHT] = mirroringSettingData.videoHeight
+            }
+        }
+
+        /**
+         * 設定項目をリセットする
+         * @param context [Context]
+         */
+        suspend fun resetDataStore(context: Context) {
+            context.dataStore.edit {
+                it -= SettingKeyObject.PORT_NUMBER
+                it -= SettingKeyObject.INTERVAL_MS
+                it -= SettingKeyObject.VIDEO_BIT_RATE
+                it -= SettingKeyObject.VIDEO_FRAME_RATE
+                it -= SettingKeyObject.AUDIO_BIT_RATE
+                it -= SettingKeyObject.IS_RECORD_INTERNAL_AUDIO
+                it -= SettingKeyObject.IS_VP9
+                it -= SettingKeyObject.IS_CUSTOM_RESOLUTION
+                it -= SettingKeyObject.VIDEO_WIDTH
+                it -= SettingKeyObject.VIDEO_HEIGHT
             }
         }
 

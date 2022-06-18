@@ -69,4 +69,7 @@
     <string name="mirroring_setting_vp9">コーデックに VP9 を利用する</string>
     <string name="mirroring_setting_vp9_description">デフォルトでは H.264 が利用されます。 VP9 が再生できる環境が必要です。また、動画の解像度を設定する必要があります。</string>
     <string name="mirroring_setting_vp9_hint">H.264 より動画のファイルサイズが小さくできるらしい。Wi-Fiの速度が遅いときに使えるかも。</string>
+    <string name="mirroring_setting_resolution_hint">横 1280 / 縦 720 など</string>
+    <string name="stream_info_video_resolution">動画の解像度</string>
+    <string name="stream_info_vp9">VP9コーデックを利用</string>
 </resources>

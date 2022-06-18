@@ -10,7 +10,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * 内部音声をPCMで取り出して、AACでエンコードする
+ * 内部音声をPCMで取り出して、AAC / Opusでエンコードする
  *
  * @param mediaProjection [MediaProjection]、内部音声を収録するのに使います。
  */
@@ -21,14 +21,14 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
     /** 音声エンコーダー、MediaCodecをラップした */
     private val audioEncoder = AudioEncoder()
 
-    /** AACファイルにするやつ */
+    /** ファイルにするやつ */
     private var mediaMuxer: MediaMuxer? = null
 
     /** 内部音声がとれる */
     private var audioRecord: AudioRecord? = null
 
-    /** AACファイル */
-    private var aacFile: File? = null
+    /** ファイル */
+    private var audioFile: File? = null
 
     /** 音声トラックの番号、-1はまだ追加してない */
     private var audioTrackIndex = INIT_INDEX_NUMBER
@@ -59,21 +59,23 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
     }
 
     /**
-     * AAC エンコーダーを初期化する
+     * エンコーダーを初期化する
      *
      * @param sampleRate サンプリングレート
      * @param channelCount チャンネル数
      * @param bitRate ビットレート
+     * @param isOpus コーデックにOpusを利用する場合はtrue。動画のコーデックにVP9を利用している場合は必須
      */
     fun prepareEncoder(
         sampleRate: Int = 44_100,
         channelCount: Int = 1,
         bitRate: Int = 192_000,
-    ) = audioEncoder.prepareEncoder(sampleRate, channelCount, bitRate)
+        isOpus: Boolean = false,
+    ) = audioEncoder.prepareEncoder(sampleRate, channelCount, bitRate, isOpus)
 
     /**
      * エンコーダーを起動する。
-     * 内部音声を取り出してAACにエンコードする、エンコード中はずっと一時停止します
+     * 内部音声を取り出して AAC / Opus にエンコードする、エンコード中はずっと一時停止します
      */
     suspend fun start() = withContext(Dispatchers.Default) {
         // エンコードする
@@ -104,7 +106,7 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
     }
 
     /**
-     * aacファイルへの書き込みを辞める
+     * ファイルへの書き込みを辞める
      *
      * @return 書き込んでいたファイル
      */
@@ -112,19 +114,21 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
         isWritable = false
         mediaMuxer?.stop()
         audioTrackIndex = INIT_INDEX_NUMBER
-        return aacFile!!
+        return audioFile!!
     }
 
     /**
      * コンテナファイルを初期化する
      *
-     * @param aacFile AACを書き込むファイル
+     * @param audioFile 書き込むファイル
+     * @param isWebM WebMコンテナに保存する場合はtrue(Opus)、mp4にする場合はfalse(aac)
      */
-    suspend fun createContainer(aacFile: File) = withContext(Dispatchers.Default) {
+    suspend fun createContainer(audioFile: File, isWebM: Boolean = false) = withContext(Dispatchers.Default) {
         // 前回のファイルを消してから
-        this@InternalAudioEncoder.aacFile = aacFile
-        aacFile.delete()
-        mediaMuxer = MediaMuxer(aacFile.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        this@InternalAudioEncoder.audioFile = audioFile
+        audioFile.delete()
+        val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+        mediaMuxer = MediaMuxer(audioFile.path, containerFormat)
         // 2個目以降のファイルはここで初期化出来る
         addTrackAndStart()
     }

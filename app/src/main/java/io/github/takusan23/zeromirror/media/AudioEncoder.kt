@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
  * 音声エンコーダー
  * MediaCodecを使いやすくしただけ
  *
- * 内部音声が生のまま（PCM）送られてくるので、AACにエンコードする。
+ * 内部音声が生のまま（PCM）送られてくるので、 AAC / Opus にエンコードする。
  */
 class AudioEncoder {
 
@@ -23,24 +23,27 @@ class AudioEncoder {
     private var sampleRate: Int = 44_100
 
     /**
-     * AACエンコーダーを初期化する
+     * エンコーダーを初期化する
      *
      * @param sampleRate サンプリングレート
      * @param channelCount チャンネル数
      * @param bitRate ビットレート
+     * @param isOpus コーデックにOpusを利用する場合はtrue。動画のコーデックにVP9を利用している場合は必須
      */
     fun prepareEncoder(
         sampleRate: Int = 44_100,
         channelCount: Int = 1,
         bitRate: Int = 192_000,
+        isOpus: Boolean = false,
     ) {
         this@AudioEncoder.sampleRate = sampleRate
-        val audioEncodeFormat = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channelCount).apply {
+        val codec = if (isOpus) MediaFormat.MIMETYPE_AUDIO_OPUS else MediaFormat.MIMETYPE_AUDIO_AAC
+        val audioEncodeFormat = MediaFormat.createAudioFormat(codec, sampleRate, channelCount).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
             setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
         }
         // エンコーダー用意
-        mediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC).apply {
+        mediaCodec = MediaCodec.createEncoderByType(codec).apply {
             configure(audioEncodeFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         }
     }
@@ -49,7 +52,7 @@ class AudioEncoder {
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
      *
      * @param onRecordInput ByteArrayを渡すので、音声データを入れて、サイズを返してください
-     * @param onOutputBufferAvailable AACにエンコードされたデータが流れてきます
+     * @param onOutputBufferAvailable エンコードされたデータが流れてきます
      * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun startAudioEncode(

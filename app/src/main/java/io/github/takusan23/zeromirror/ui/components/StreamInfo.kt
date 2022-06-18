@@ -63,9 +63,21 @@ fun StreamInfo(
             Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_video_fps))
             Text(text = mirroringData.videoFrameRate.toString())
         }
+        if (mirroringData.isCustomResolution) {
+            Column(modifier = Modifier.padding(5.dp)) {
+                Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_video_resolution))
+                Text(text = "${mirroringData.videoWidth} x ${mirroringData.videoHeight}")
+            }
+        }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_audio_bitrate))
             Text(text = DisplayConverter.convert(mirroringData.audioBitRate))
+        }
+        if (mirroringData.isVP9) {
+            Column(modifier = Modifier.padding(5.dp)) {
+                Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_vp9))
+                Text(text = stringResource(id = R.string.stream_info_enable))
+            }
         }
 
         OutlinedButton(
