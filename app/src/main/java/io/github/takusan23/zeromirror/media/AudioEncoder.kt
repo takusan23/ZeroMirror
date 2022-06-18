@@ -96,13 +96,14 @@ class AudioEncoder {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
                             // ファイルに書き込む...
                             onOutputBufferAvailable(outputBuffer, bufferInfo)
-                        } else {
-                            // たぶんこっちのほうが先に呼ばれる
-                            onOutputFormatAvailable(mediaCodec!!.outputFormat)
                         }
                     }
                     // 返却
                     mediaCodec!!.releaseOutputBuffer(outputBufferId, false)
+                } else if (outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    // MediaFormat、MediaMuxerに入れるときに使うやつ
+                    // たぶんこっちのほうが先に呼ばれる
+                    onOutputFormatAvailable(mediaCodec!!.outputFormat)
                 }
             }
         } catch (e: Exception) {

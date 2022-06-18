@@ -93,7 +93,6 @@ class ScreenMirrorService : Service() {
                     bitRate = mirroringSettingData!!.videoBitRate,
                     frameRate = mirroringSettingData!!.videoFrameRate,
                     isVp9 = mirroringSettingData!!.isVP9,
-                    iFrameInterval = 1
                 )
                 // 内部音声を一緒にエンコードする場合
                 if (availableInternalAudio()) {

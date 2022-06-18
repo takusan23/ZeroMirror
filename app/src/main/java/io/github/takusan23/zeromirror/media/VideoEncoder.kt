@@ -86,16 +86,16 @@ class VideoEncoder {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
                             // ファイルに書き込む...
                             onOutputBufferAvailable(outputBuffer, bufferInfo)
-                        } else {
-                            // 多分映像データより先に呼ばれる
-                            // MediaMuxerへ映像トラックを追加するのはこのタイミングで行う
-                            // このタイミングでやると固有のパラメーターがセットされたMediaFormatが手に入る(csd-0 とか)
-                            // 映像がぶっ壊れている場合（緑で塗りつぶされてるとか）は多分このあたりが怪しい
-                            onOutputFormatAvailable(mediaCodec!!.outputFormat)
                         }
                     }
                     // 返却
                     mediaCodec!!.releaseOutputBuffer(outputBufferId, false)
+                } else if (outputBufferId == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    // 多分映像データより先に呼ばれる
+                    // MediaMuxerへ映像トラックを追加するのはこのタイミングで行う
+                    // このタイミングでやると固有のパラメーターがセットされたMediaFormatが手に入る(csd-0 とか)
+                    // 映像がぶっ壊れている場合（緑で塗りつぶされてるとか）は多分このあたりが怪しい
+                    onOutputFormatAvailable(mediaCodec!!.outputFormat)
                 }
             }
         } catch (e: Exception) {
