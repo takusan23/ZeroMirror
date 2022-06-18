@@ -61,4 +61,12 @@
     <string name="stream_info_audio_bitrate">音声ビットレート</string>
     <string name="stream_info_setting_button">設定を変更する</string>
     <string name="url_card_qr_code">QRコード</string>
+    <string name="mirroring_setting_resolution">動画の解像度を指定する</string>
+    <string name="mirroring_setting_resolution_description">指定しない場合は画面の解像度になります。</string>
+    <string name="mirroring_setting_resolution_video_height">動画の高さ</string>
+    <string name="mirroring_setting_resolution_video_width">動画の幅</string>
+    <string name="mirroring_setting_radvanced">上級者 / パワーユーザー 向けの設定</string>
+    <string name="mirroring_setting_vp9">コーデックに VP9 を利用する</string>
+    <string name="mirroring_setting_vp9_description">デフォルトでは H.264 が利用されます。 VP9 が再生できる環境が必要です。また、動画の解像度を設定する必要があります。</string>
+    <string name="mirroring_setting_vp9_hint">H.264 より動画のファイルサイズが小さくできるらしい。Wi-Fiの速度が遅いときに使えるかも。</string>
 </resources>

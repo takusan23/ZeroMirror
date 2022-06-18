@@ -29,4 +29,16 @@ object SettingKeyObject {
 
     /** はじめまして画面への誘導を消すかどうか */
     val IS_HIDE_HELLO_CARD = booleanPreferencesKey("is_hide_hello_card")
+
+    /** H.264/avc の代わりに VP9 コーデックを利用する場合はtrue */
+    val IS_VP9 = booleanPreferencesKey("is_vp9")
+
+    /** 解像度を指定する場合はtrue */
+    val IS_CUSTOM_RESOLUTION = booleanPreferencesKey("is_custom_resolution")
+
+    /** 動画の高さ */
+    val VIDEO_HEIGHT = intPreferencesKey("video_height")
+
+    /** 動画の幅 */
+    val VIDEO_WIDTH = intPreferencesKey("video_width")
 }

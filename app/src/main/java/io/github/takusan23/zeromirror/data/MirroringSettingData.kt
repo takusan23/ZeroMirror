@@ -15,7 +15,11 @@ import kotlinx.coroutines.flow.map
  * @param audioBitRate 音声ビットレート、ビット
  * @param videoFrameRate 映像フレームレート、fps
  * @param intervalMs 動画を切り出す間隔、ミリ秒
- * @param isRecordInternalAudio 内部音声を入れる場合はtrue、権限があるかどうかまでは見ていません。
+ * @param isRecordInternalAudio 内部音声を入れる場合はtrue、権限があるかどうかまでは見ていません
+ * @param isVP9 H.264ではなく、VP9を利用する場合はtrue。なんかかっこいい
+ * @param isCustomResolution 動画の解像度をカスタマイズした場合はtrue、falseなら画面の解像度を利用する
+ * @param videoHeight 動画の高さ、0の場合は画面の大きさを利用すること
+ * @param videoWidth 動画の幅、0の場合は画面の大きさを利用すること
  */
 data class MirroringSettingData(
     val portNumber: Int,
@@ -24,12 +28,16 @@ data class MirroringSettingData(
     val videoFrameRate: Int,
     val audioBitRate: Int,
     val isRecordInternalAudio: Boolean,
+    val isVP9: Boolean,
+    val isCustomResolution: Boolean,
+    val videoHeight: Int,
+    val videoWidth: Int,
 ) {
 
     companion object {
 
         /** デフォルトポート番号 */
-         const val DEFAULT_PORT_NUMBER = 2828
+        const val DEFAULT_PORT_NUMBER = 2828
 
         /** デフォルトファイル生成間隔 */
         const val DEFAULT_INTERVAL_MS = 5_000L
@@ -58,6 +66,10 @@ data class MirroringSettingData(
                     videoFrameRate = data[SettingKeyObject.VIDEO_FRAME_RATE] ?: DEFAULT_VIDEO_FRAME_RATE,
                     audioBitRate = data[SettingKeyObject.AUDIO_BIT_RATE] ?: DEFAULT_AUDIO_BIT_RATE,
                     isRecordInternalAudio = data[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] ?: false,
+                    isVP9 = data[SettingKeyObject.IS_VP9] ?: false,
+                    isCustomResolution = data[SettingKeyObject.IS_CUSTOM_RESOLUTION] ?: false,
+                    videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: 0,
+                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 0
                 )
             }
         }
@@ -76,6 +88,10 @@ data class MirroringSettingData(
                 it[SettingKeyObject.VIDEO_FRAME_RATE] = mirroringSettingData.videoFrameRate
                 it[SettingKeyObject.AUDIO_BIT_RATE] = mirroringSettingData.audioBitRate
                 it[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] = mirroringSettingData.isRecordInternalAudio
+                it[SettingKeyObject.IS_VP9] = mirroringSettingData.isVP9
+                it[SettingKeyObject.IS_CUSTOM_RESOLUTION] = mirroringSettingData.isCustomResolution
+                it[SettingKeyObject.VIDEO_WIDTH] = mirroringSettingData.videoWidth
+                it[SettingKeyObject.VIDEO_HEIGHT] = mirroringSettingData.videoHeight
             }
         }
 

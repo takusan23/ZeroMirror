@@ -71,6 +71,7 @@ fun SettingItem(
  *
  * @param modifier [Modifier]
  * @param title タイトル
+ * @param subTitle タイトルの下に出す文字
  * @param description 説明
  * @param iconRes アイコンリソースID
  * @param isEnable スイッチをONにするか
@@ -81,6 +82,7 @@ fun SettingItem(
 fun SwitchSettingItem(
     modifier: Modifier = Modifier,
     title: String,
+    subTitle: String? = null,
     description: String? = null,
     iconRes: Int,
     isEnable: Boolean,
@@ -105,21 +107,28 @@ fun SwitchSettingItem(
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
             )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-                Text(
-                    text = title,
-                    modifier = Modifier.padding(bottom = 5.dp),
-                    fontSize = 20.sp
-                )
+            Column {
+                Row {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                        Text(
+                            text = title,
+                            modifier = Modifier.padding(bottom = 5.dp),
+                            fontSize = 20.sp
+                        )
+                        if (subTitle != null) {
+                            Text(text = subTitle)
+                        }
+                    }
+                    AndroidSnowConeSwitch(
+                        modifier = Modifier.padding(10.dp),
+                        isEnable = isEnable,
+                        onValueChange = onValueChange
+                    )
+                }
                 if (description != null) {
-                    Text(text = description)
+                    SettingItemDescriptionCard(description = description)
                 }
             }
-            AndroidSnowConeSwitch(
-                modifier = Modifier.padding(10.dp),
-                isEnable = isEnable,
-                onValueChange = onValueChange
-            )
         }
     }
 }
@@ -129,7 +138,7 @@ fun SwitchSettingItem(
  * あとは変更時のみ呼ばれる
  *
  * @param modifier [Modifier]
- * @param label タイトル
+ * @param title タイトル
  * @param description 説明
  * @param inputUnderText 入力の下にある説明
  * @param iconRes アイコンのリソース画像
@@ -139,7 +148,7 @@ fun SwitchSettingItem(
 @Composable
 fun TextBoxInitValueSettingItem(
     modifier: Modifier = Modifier,
-    label: String,
+    title: String,
     initValue: String,
     description: String? = null,
     inputUnderText: String? = null,
@@ -150,7 +159,7 @@ fun TextBoxInitValueSettingItem(
     val value = remember { mutableStateOf(initValue) }
     TextBoxSettingItem(
         modifier = modifier,
-        label = label,
+        label = title,
         inputValue = value.value,
         description = description,
         inputUnderText = inputUnderText,
@@ -225,23 +234,38 @@ fun TextBoxSettingItem(
                 }
 
                 if (description != null) {
-                    OutlinedCard(
-                        modifier = Modifier.padding(5.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(painter = painterResource(id = R.drawable.ic_outline_info_24), contentDescription = null)
-                            Text(
-                                modifier = Modifier.padding(start = 5.dp),
-                                text = description
-                            )
-                        }
-                    }
+                    SettingItemDescriptionCard(description = description)
                 }
             }
+        }
+    }
+}
+
+/**
+ * 各設定項目にある説明の部分
+ *
+ * @param modifier [Modifier]
+ * @param description 説明
+ */
+@ExperimentalMaterial3Api
+@Composable
+fun SettingItemDescriptionCard(
+    modifier: Modifier = Modifier,
+    description: String,
+) {
+    OutlinedCard(
+        modifier = modifier.padding(5.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)
+    ) {
+        Row(
+            modifier = Modifier.padding(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(painter = painterResource(id = R.drawable.ic_outline_info_24), contentDescription = null)
+            Text(
+                modifier = Modifier.padding(start = 5.dp),
+                text = description
+            )
         }
     }
 }

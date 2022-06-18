@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.tool.DisplayConverter
@@ -91,7 +92,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                 Card(modifier = Modifier.padding(10.dp)) {
 
                     TextBoxInitValueSettingItem(
-                        label = stringResource(id = R.string.mirroring_setting_video_interval_title),
+                        title = stringResource(id = R.string.mirroring_setting_video_interval_title),
                         description = stringResource(id = R.string.mirroring_setting_video_interval_description),
                         initValue = (mirroringData.value!!.intervalMs / 1000).toString(),
                         iconRes = R.drawable.ic_outline_timer_24,
@@ -106,7 +107,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     Divider()
 
                     TextBoxInitValueSettingItem(
-                        label = stringResource(id = R.string.mirroring_setting_video_bitrate_title),
+                        title = stringResource(id = R.string.mirroring_setting_video_bitrate_title),
                         description = stringResource(id = R.string.mirroring_setting_video_bitrate_description),
                         initValue = (mirroringData.value!!.videoBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.videoBitRate),
@@ -119,7 +120,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     )
 
                     TextBoxInitValueSettingItem(
-                        label = stringResource(id = R.string.mirroring_setting_video_fps_title),
+                        title = stringResource(id = R.string.mirroring_setting_video_fps_title),
                         description = stringResource(id = R.string.mirroring_setting_video_fps_description),
                         initValue = mirroringData.value!!.videoFrameRate.toString(),
                         iconRes = R.drawable.ic_outline_videocam_24,
@@ -133,8 +134,45 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     Divider()
 
                     SwitchSettingItem(
+                        title = stringResource(id = R.string.mirroring_setting_resolution),
+                        subTitle = stringResource(id = R.string.mirroring_setting_resolution_description),
+                        isEnable = mirroringData.value!!.isCustomResolution,
+                        iconRes = R.drawable.ic_outline_aspect_ratio_24,
+                        onValueChange = { after ->
+                            updateSetting { it.copy(isCustomResolution = after) }
+                        }
+                    )
+
+                    if (mirroringData.value!!.isCustomResolution) {
+
+                        TextBoxInitValueSettingItem(
+                            title = stringResource(id = R.string.mirroring_setting_resolution_video_height),
+                            initValue = mirroringData.value!!.videoHeight.toString(),
+                            iconRes = R.drawable.ic_outline_aspect_ratio_24,
+                            onValueChange = { after ->
+                                after.toIntOrNull()?.also { height ->
+                                    updateSetting { it.copy(videoHeight = height) }
+                                }
+                            }
+                        )
+
+                        TextBoxInitValueSettingItem(
+                            title = stringResource(id = R.string.mirroring_setting_resolution_video_width),
+                            initValue = mirroringData.value!!.videoWidth.toString(),
+                            iconRes = R.drawable.ic_outline_aspect_ratio_24,
+                            onValueChange = { after ->
+                                after.toIntOrNull()?.also { width ->
+                                    updateSetting { it.copy(videoWidth = width) }
+                                }
+                            }
+                        )
+                    }
+
+                    Divider()
+
+                    SwitchSettingItem(
                         title = stringResource(id = R.string.mirroring_setting_internal_audio_title),
-                        description = stringResource(id = R.string.mirroring_setting_internal_audio_description),
+                        subTitle = stringResource(id = R.string.mirroring_setting_internal_audio_description),
                         iconRes = R.drawable.ic_outline_audiotrack_24,
                         isEnable = mirroringData.value!!.isRecordInternalAudio,
                         onValueChange = { isChecked ->
@@ -143,7 +181,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                     )
 
                     TextBoxInitValueSettingItem(
-                        label = stringResource(id = R.string.mirroring_setting_audio_bitrate_title),
+                        title = stringResource(id = R.string.mirroring_setting_audio_bitrate_title),
                         description = stringResource(id = R.string.mirroring_setting_audio_bitrate_description),
                         initValue = (mirroringData.value!!.audioBitRate / 1000).toString(),
                         inputUnderText = DisplayConverter.convert(mirroringData.value!!.audioBitRate),
@@ -154,11 +192,18 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         }
                     )
+                }
 
-                    Divider()
+                Card(modifier = Modifier.padding(10.dp)) {
+
+                    Text(
+                        modifier = Modifier.padding(10.dp),
+                        text = stringResource(id = R.string.mirroring_setting_radvanced),
+                        fontSize = 20.sp
+                    )
 
                     TextBoxInitValueSettingItem(
-                        label = stringResource(id = R.string.mirroring_setting_port_title),
+                        title = stringResource(id = R.string.mirroring_setting_port_title),
                         description = stringResource(id = R.string.mirroring_setting_port_description),
                         initValue = mirroringData.value!!.portNumber.toString(),
                         iconRes = R.drawable.ic_outline_open_in_browser_24,
@@ -166,6 +211,17 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             it.toIntOrNull()?.also { portNumber ->
                                 updateSetting { it.copy(portNumber = portNumber) }
                             }
+                        }
+                    )
+
+                    SwitchSettingItem(
+                        title = stringResource(id = R.string.mirroring_setting_vp9),
+                        subTitle = stringResource(id = R.string.mirroring_setting_vp9_description),
+                        description = stringResource(id = R.string.mirroring_setting_vp9_hint),
+                        isEnable = mirroringData.value!!.isVP9,
+                        iconRes = R.drawable.ic_outline_aspect_ratio_24,
+                        onValueChange = { after ->
+                            updateSetting { it.copy(isVP9 = after) }
                         }
                     )
                 }

@@ -60,4 +60,12 @@ It is a specification that there is a momentary reading when switching images.</
     <string name="stream_info_audio_bitrate">Audio bit rate</string>
     <string name="stream_info_setting_button">Change settings</string>
     <string name="url_card_qr_code">QR code</string>
+    <string name="mirroring_setting_resolution">Specify the video resolution</string>
+    <string name="mirroring_setting_resolution_description">If not specified, the screen resolution will be used.</string>
+    <string name="mirroring_setting_resolution_video_height">Video height</string>
+    <string name="mirroring_setting_resolution_video_width">Video width</string>
+    <string name="mirroring_setting_radvanced">Settings for advanced / power users</string>
+    <string name="mirroring_setting_vp9">Use VP9 for codec</string>
+    <string name="mirroring_setting_vp9_description">H.264 is used by default. You need an environment where VP9 can be played. You also need to set the video resolution.</string>
+    <string name="mirroring_setting_vp9_hint">It seems that the file size of the video can be made smaller than H.264. Maybe you can use it when the Wi-Fi speed is slow.</string>
 </resources>
