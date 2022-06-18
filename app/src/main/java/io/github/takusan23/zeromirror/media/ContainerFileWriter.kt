@@ -25,10 +25,10 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
     private var isRunning = false
 
     /** オーディオトラックの番号 */
-    private var audioTrackIndex = INIT_INDEX_NUMBER
+    private var audioTrackIndex = INVALID_INDEX_NUMBER
 
     /** 映像トラックの番号 */
-    private var videoTrackIndex = INIT_INDEX_NUMBER
+    private var videoTrackIndex = INVALID_INDEX_NUMBER
 
     /** オーディオのフォーマット */
     private var audioFormat: MediaFormat? = null
@@ -52,12 +52,8 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
         if (includeAudio) {
             videoFormat?.also { setVideoTrack(it) }
             audioFormat?.also { setAudioTrack(it) }
-            // トラック追加ができた（つまり再生成時）はスタートさせる
-            // 初回時はトラック追加後にスタートする
-            startIfAddedFormat()
         } else {
             videoFormat?.also { setVideoTrack(it) }
-            startIfAddedFormat()
         }
     }
 
@@ -68,9 +64,11 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
      * @param mediaFormat 映像トラックの情報
      */
     fun setVideoTrack(mediaFormat: MediaFormat) {
-        videoTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+        // MediaMuxer 開始前のみ追加できるので
+        if (!isRunning) {
+            videoTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+        }
         videoFormat = mediaFormat
-        startIfAddedFormat()
     }
 
     /**
@@ -80,9 +78,22 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
      * @param mediaFormat 音声トラックの情報
      */
     fun setAudioTrack(mediaFormat: MediaFormat) {
-        audioTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+        // MediaMuxer 開始前のみ追加できるので
+        if (!isRunning) {
+            audioTrackIndex = mediaMuxer!!.addTrack(mediaFormat)
+        }
         audioFormat = mediaFormat
-        startIfAddedFormat()
+    }
+
+    /**
+     * 書き込みを開始させる。
+     * これ以降のフォーマット登録を受け付けないので、ファイル再生成まで登録されません [createContainer]
+     */
+    fun start() {
+        if (!isRunning) {
+            mediaMuxer!!.start()
+            isRunning = true
+        }
     }
 
     /**
@@ -92,7 +103,7 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeVideo(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        if (isRunning) {
+        if (isRunning && videoTrackIndex != INVALID_INDEX_NUMBER) {
             mediaMuxer?.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
         }
     }
@@ -104,7 +115,7 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeAudio(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        if (isRunning) {
+        if (isRunning && audioTrackIndex != INVALID_INDEX_NUMBER) {
             mediaMuxer?.writeSampleData(audioTrackIndex, byteBuffer, bufferInfo)
         }
     }
@@ -116,36 +127,20 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
      * @return 書き込んでいたファイル
      */
     fun stopAndRelease(): File {
+        // 起動していなければ終了もさせない
+        if (isRunning) {
+            mediaMuxer?.stop()
+            mediaMuxer?.release()
+        }
         isRunning = false
         videoTrackIndex = -1
         audioTrackIndex = -1
-        mediaMuxer?.stop()
-        mediaMuxer?.release()
         return currentFile!!
     }
 
-    /** フォーマットの登録が済んでいるかを確認して、確認OKならMediaMuxerを開始する */
-    private fun startIfAddedFormat() {
-        println("videoTrackIndex = "+videoTrackIndex)
-        println("audioTrackIndex = "+audioTrackIndex)
-        if (includeAudio) {
-            // 音声を含める場合
-            if (videoTrackIndex != INIT_INDEX_NUMBER && audioTrackIndex != INIT_INDEX_NUMBER) {
-                mediaMuxer!!.start()
-                isRunning = true
-            }
-        } else {
-            // 映像のみ
-            if (videoTrackIndex != INIT_INDEX_NUMBER) {
-                mediaMuxer!!.start()
-                isRunning = true
-            }
-        }
-    }
-
     companion object {
-        /** インデックス番号初期値 */
-        private const val INIT_INDEX_NUMBER = -1
+        /** インデックス番号初期値、無効な値 */
+        private const val INVALID_INDEX_NUMBER = -1
     }
 
 

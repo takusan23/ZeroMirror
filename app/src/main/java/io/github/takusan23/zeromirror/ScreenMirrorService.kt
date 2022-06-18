@@ -165,8 +165,8 @@ class ScreenMirrorService : Service() {
             )
         }
         // 内部音声エンコーダー
-        launch {
-            if (availableInternalAudio()) {
+        if (availableInternalAudio()) {
+            launch {
                 internalAudioEncoder!!.start(
                     onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeAudio(byteBuffer, bufferInfo) },
                     onOutputFormatAvailable = { containerFileWriter?.setAudioTrack(it) }
@@ -185,6 +185,8 @@ class ScreenMirrorService : Service() {
 
             // それぞれ格納するファイルを用意
             containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
+            // 開始する
+            containerFileWriter?.start()
         }
     }
 
