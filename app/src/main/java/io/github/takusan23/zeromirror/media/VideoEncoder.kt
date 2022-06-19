@@ -23,6 +23,12 @@ class VideoEncoder {
     private var mediaCodec: MediaCodec? = null
 
     /**
+     * Surface入力のMediaCodecの場合、 presentationTimeUs の値が System.nanoTime を足した値になっているため、その分を引くため
+     * 引かないと音声エンコーダーと合わなくなってしまう。
+     */
+    private var startUs = 0L
+
+    /**
      * エンコーダーを初期化する
      *
      * @param videoWidth 動画の幅
@@ -75,6 +81,7 @@ class VideoEncoder {
         // 多分使い回す
         val bufferInfo = MediaCodec.BufferInfo()
         mediaCodec?.start()
+        startUs = System.nanoTime() / 1000L
 
         try {
             while (isActive) {
@@ -84,8 +91,18 @@ class VideoEncoder {
                     val outputBuffer = mediaCodec!!.getOutputBuffer(outputBufferId)!!
                     if (bufferInfo.size > 1) {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
-                            // ファイルに書き込む...
-                            onOutputBufferAvailable(outputBuffer, bufferInfo)
+                            // BufferInfoを作り直す
+                            // BufferInfo内にある presentationTimeUs の値がすでに謎の値 ( System#nanoTime ) で足した状態で始まる
+                            // Surface入力にしているので、こちらが制御することはできない
+                            // そのせいで、音声エンコーダーの presentationTimeUs と値が合わなくなる
+                            // なので音声エンコーダーと歩調を合わせるため作り直す
+                            val fixBufferInfo = MediaCodec.BufferInfo().apply {
+                                set(bufferInfo.offset, bufferInfo.size, bufferInfo.presentationTimeUs - startUs, bufferInfo.flags)
+                            }
+                            if (fixBufferInfo.presentationTimeUs > 0) {
+                                // ファイルに書き込む...
+                                onOutputBufferAvailable(outputBuffer, fixBufferInfo)
+                            }
                         }
                     }
                     // 返却
@@ -104,6 +121,14 @@ class VideoEncoder {
             // at android.media.MediaCodec.native_dequeueOutputBuffer(Native Method)
             e.printStackTrace()
         }
+    }
+
+    /**
+     * このエンコーダー内部で持っている時間をリセットします
+     * 次の動画ファイルに切り替えた際に呼び出す
+     */
+    fun resetInternalTime() {
+        startUs = System.nanoTime() / 1000L
     }
 
     /** リソースを開放する */

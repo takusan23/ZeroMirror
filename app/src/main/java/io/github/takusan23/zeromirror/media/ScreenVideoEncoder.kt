@@ -95,6 +95,13 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
         )
     }
 
+    /**
+     * このエンコーダー内部で持っている時間をリセットします
+     * 次の動画ファイルに切り替えた際に呼び出す
+     */
+    fun resetInternalTime() {
+        videoEncoder.resetInternalTime()
+    }
 
     /** 終了時に呼ぶ */
     fun release() {

@@ -161,7 +161,11 @@ class ScreenMirrorService : Service() {
         launch {
             screenVideoEncoder!!.start(
                 onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeVideo(byteBuffer, bufferInfo) },
-                onOutputFormatAvailable = { containerFileWriter?.setVideoTrack(it) }
+                onOutputFormatAvailable = {
+                    containerFileWriter?.setVideoTrack(it)
+                    // 開始する
+                    containerFileWriter?.start()
+                }
             )
         }
         // 内部音声エンコーダー
@@ -169,23 +173,31 @@ class ScreenMirrorService : Service() {
             launch {
                 internalAudioEncoder!!.start(
                     onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeAudio(byteBuffer, bufferInfo) },
-                    onOutputFormatAvailable = { containerFileWriter?.setAudioTrack(it) }
+                    onOutputFormatAvailable = {
+                        containerFileWriter?.setAudioTrack(it)
+                        // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
+                    }
                 )
             }
         }
 
         // コルーチンの中なので whileループ できます
         while (isActive) {
-            // intervalMs秒待機したら新しいファイルにする
+            // intervalMs 秒待機したら新しいファイルにする
             delay(mirroringSettingData!!.intervalMs)
 
             // クライアント側にWebSocketでファイルが出来たことを通知する
             val publishFile = containerFileWriter!!.stopAndRelease()
             server?.updateVideoFileName(publishFile.name)
 
+            // エンコーダー内部で持っている時間をリセットする
+            screenVideoEncoder?.resetInternalTime()
+            if (availableInternalAudio()) {
+                internalAudioEncoder?.resetInternalTime()
+            }
+
             // それぞれ格納するファイルを用意
             containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
-            // 開始する
             containerFileWriter?.start()
         }
     }

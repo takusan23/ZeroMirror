@@ -22,6 +22,9 @@ class AudioEncoder {
     /** サンプリングレート、エンコードの際に使うので */
     private var sampleRate: Int = 44_100
 
+    /** 動画を切り替えた際に presentationTimeUs を0から始めたいため、 totalBytes とかを0にしても効果がなかった... */
+    private var prevPresentationTimeUs = 0L
+
     /**
      * エンコーダーを初期化する
      *
@@ -94,8 +97,20 @@ class AudioEncoder {
                     val outputBuffer = mediaCodec!!.getOutputBuffer(outputBufferId)!!
                     if (bufferInfo.size > 1) {
                         if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
+                            // BufferInfoを作り直す
+                            // BufferInfo内にある presentationTimeUs の値が多分MediaCodecスタート時から常に増え続けている
+                            // ファイルを作り直した際は0から始めてほしいため作り直す必要がある
+                            val fixBufferInfo = MediaCodec.BufferInfo().apply {
+                                // 動画切り替え時は0を入れる
+                                if (prevPresentationTimeUs == 0L) {
+                                    prevPresentationTimeUs = bufferInfo.presentationTimeUs
+                                    set(bufferInfo.offset, bufferInfo.size, 0, bufferInfo.flags)
+                                } else {
+                                    set(bufferInfo.offset, bufferInfo.size, bufferInfo.presentationTimeUs - prevPresentationTimeUs, bufferInfo.flags)
+                                }
+                            }
                             // ファイルに書き込む...
-                            onOutputBufferAvailable(outputBuffer, bufferInfo)
+                            onOutputBufferAvailable(outputBuffer, fixBufferInfo)
                         }
                     }
                     // 返却
@@ -109,6 +124,14 @@ class AudioEncoder {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    /**
+     * このエンコーダー内部で持っている時間をリセットします
+     * 次の動画ファイルに切り替えた際に呼び出す
+     */
+    fun resetInternalTime() {
+        prevPresentationTimeUs = 0L
     }
 
     /** リソースを開放する */

@@ -48,18 +48,13 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
         currentFile = File(videoPath)
         mediaMuxer = MediaMuxer(videoPath, containerFormat)
 
-        // 再生成する場合はパラメーター持っているのですぐ開始する
-        if (includeAudio) {
-            videoFormat?.also { setVideoTrack(it) }
-            audioFormat?.also { setAudioTrack(it) }
-        } else {
-            videoFormat?.also { setVideoTrack(it) }
-        }
+        // 再生成する場合はパラメーター持っているので入れておく
+        videoFormat?.also { setVideoTrack(it) }
+        audioFormat?.also { setAudioTrack(it) }
     }
 
     /**
      * 映像トラックを追加する
-     * 情報が出揃ったら書き込みを始める
      *
      * @param mediaFormat 映像トラックの情報
      */
@@ -73,7 +68,6 @@ class ContainerFileWriter(private val includeAudio: Boolean = false, private val
 
     /**
      * 音声トラックを追加する
-     * 情報が出揃ったら書き込みを始める
      *
      * @param mediaFormat 音声トラックの情報
      */
