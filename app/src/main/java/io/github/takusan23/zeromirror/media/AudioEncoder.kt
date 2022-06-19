@@ -22,6 +22,9 @@ class AudioEncoder {
     /** サンプリングレート、エンコードの際に使うので */
     private var sampleRate: Int = 44_100
 
+    /** チャンネル数、ステレオだと2、モノラルだと1 */
+    private var channelCount: Int = 2
+
     /** 動画を切り替えた際に presentationTimeUs を0から始めたいため、 totalBytes とかを0にしても効果がなかった... */
     private var prevPresentationTimeUs = 0L
 
@@ -35,11 +38,12 @@ class AudioEncoder {
      */
     fun prepareEncoder(
         sampleRate: Int = 44_100,
-        channelCount: Int = 1,
+        channelCount: Int = 2,
         bitRate: Int = 192_000,
         isOpus: Boolean = false,
     ) {
         this@AudioEncoder.sampleRate = sampleRate
+        this@AudioEncoder.channelCount = channelCount
         val codec = if (isOpus) MediaFormat.MIMETYPE_AUDIO_OPUS else MediaFormat.MIMETYPE_AUDIO_AAC
         val audioEncodeFormat = MediaFormat.createAudioFormat(codec, sampleRate, channelCount).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
@@ -88,7 +92,8 @@ class AudioEncoder {
                         inputBuffer.put(byteArray, 0, readByteSize)
                         mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, mPresentationTime, 0)
                         mTotalBytes += readByteSize
-                        mPresentationTime = 1000000L * (mTotalBytes / 2) / sampleRate
+                        // チャンネル数気をつけて
+                        mPresentationTime = 1000000L * (mTotalBytes / 2) / (sampleRate * channelCount)
                     }
                 }
                 // 出力
