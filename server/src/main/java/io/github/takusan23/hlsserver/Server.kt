@@ -35,11 +35,15 @@ class Server(
 
         // resources内のindex.htmlを取得。ブラウザ用投稿画面です
         val htmlFile = this@Server::class.java.classLoader.getResource("index.html")!!.readText()
+        val stableFile = this@Server::class.java.classLoader.getResource("stablemode.html")!!.readText()
 
         routing {
             // WebSocketと動画プレイヤーを持った簡単なHTMLを返す
             get("/") {
                 call.respondText(htmlFile, ContentType.parse("text/html"))
+            }
+            get("/stablemode") {
+                call.respondText(stableFile, ContentType.parse("text/html"))
             }
             // 静的ファイル、動画などを配信する。
             static {

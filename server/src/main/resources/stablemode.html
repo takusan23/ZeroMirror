@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぜろみらーくらいあんと</title>
+</head>
+
+<body>
+    <div align="center">
+        <p id="title">安定版 動画データの到着を待っています...</p>
+        <p>最初だけ再生ボタンを押す必要があります。音量注意してください。</p>
+        <p><a href="/">通常モードへ</a></p>
+        <video id="video_player" width="300" controls autoplay></video>
+    </div>
+</body>
+
+<script>
+    // 安定版 一つ前の動画を再生することで遅延と引き換えに安定を取る
+    //@ts-check
+
+    // 一番上の文字
+    const titleElement = document.getElementById('title')
+    // 動画プレイヤー
+    const videoElement = document.getElementById('video_player')
+
+    // 先読みしたBlobUrl
+    let prefetchVideoUrlList = []
+    // 再生を開始したことがあるか
+    let isPlayedVideo = false
+    // 再生しているURLの配列の位置
+    let playVideoIndexFromUrlList = 0
+
+    // 動画をロードする
+    // 引数は 動画のパス
+    const loadVideo = (videoUrl) => {
+        // 一つ前の動画をロードする
+        videoElement.pause()
+        videoElement.src = videoUrl
+        videoElement.load()
+    }
+
+    // 動画の終了イベント
+    videoElement.addEventListener('ended', () => {
+        // 再生中の BlobURL を無効にする
+        // URL.revokeObjectURL(videoElement.src)
+        // 先読み済み配列からURLを取り出して再生する
+        playVideoIndexFromUrlList++
+        const url = prefetchVideoUrlList[playVideoIndexFromUrlList]
+        loadVideo(url)
+    })
+
+    // WebSocket 接続を作成
+    const socket = new WebSocket(`ws://${location.host}/wsvideo`)
+
+    // 接続が開いたときのイベント
+    socket.addEventListener('open', function (event) {
+        socket.send('WebSocket接続がオープンしました。')
+    })
+
+    // メッセージの待ち受け
+    socket.addEventListener('message', function (event) {
+        console.log('動画データが到着しました。', event.data)
+        // 新しい動画の相対URL
+        const url = JSON.parse(event.data)["url"]
+        fetch(url)
+            .then(response => response.blob())
+            .then(blob => {
+                // 今回の動画の BlobURL を作成して配列に入れる
+                const blobUrl = URL.createObjectURL(blob)
+                prefetchVideoUrlList.push(blobUrl)
+                // 2つできたら1つ目を再生する
+                // 一度再生すると ended イベントによりずっと再生される
+                if (prefetchVideoUrlList.length >= 2 && !isPlayedVideo) {
+                    isPlayedVideo = true
+                    loadVideo(prefetchVideoUrlList[0])
+                }
+            })
+        // 上の文字を消す
+        titleElement.style.display = 'none'
+    })
+
+</script>
+
+</html>
