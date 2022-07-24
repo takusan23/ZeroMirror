@@ -74,16 +74,20 @@ class ScreenMirrorService : Service() {
 
             // 今までのファイルを消す
             captureVideoManager = CaptureVideoManager(
-                parentFile = getExternalFilesDir(null)!!,
-                baseName = VIDEO_FILE_NAME,
+                parentFolder = getExternalFilesDir(null)!!,
+                prefixName = VIDEO_FILE_NAME,
                 isWebM = mirroringSettingData!!.isVP9
             )
             captureVideoManager?.deleteParentFolderChildren()
 
+            // 一時ファイル
+            val tempFile = captureVideoManager!!.generateTempFile(ContainerFileWriter.TEMP_VIDEO_FILENAME)
             // コンテナファイルに書き込むやつ
             containerFileWriter = ContainerFileWriter(
                 includeAudio = mirroringSettingData!!.isRecordInternalAudio,
-                isWebM = mirroringSettingData!!.isVP9
+                isWebM = mirroringSettingData!!.isVP9,
+                isMp4FastStart = true,
+                tempFile = tempFile
             )
 
             // 起動できる場合は起動
@@ -130,7 +134,7 @@ class ScreenMirrorService : Service() {
             launch { startEncode() }
 
             // サーバー開始
-            server = Server(mirroringSettingData!!.portNumber, getExternalFilesDir(null)!!)
+            server = Server(mirroringSettingData!!.portNumber, captureVideoManager!!.outputsFolder)
             server?.startServer()
         }
 
@@ -144,7 +148,7 @@ class ScreenMirrorService : Service() {
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
         mediaProjection?.stop()
-        containerFileWriter?.stopAndRelease()
+        containerFileWriter?.release()
         server?.stopServer()
     }
 
@@ -155,7 +159,7 @@ class ScreenMirrorService : Service() {
     /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
         // 初回用
-        containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
+        containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path)
 
         // 画面録画エンコーダー
         launch {
@@ -197,7 +201,7 @@ class ScreenMirrorService : Service() {
             }
 
             // それぞれ格納するファイルを用意
-            containerFileWriter?.createContainer(captureVideoManager!!.generateFile().path)
+            containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path)
             containerFileWriter?.start()
         }
     }
