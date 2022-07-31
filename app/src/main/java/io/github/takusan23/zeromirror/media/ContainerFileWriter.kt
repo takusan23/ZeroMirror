@@ -146,7 +146,7 @@ class ContainerFileWriter(
     }
 
     /**
-     * リリース開放
+     * リソース開放
      */
     fun release() {
         // 起動していなければ終了もさせない

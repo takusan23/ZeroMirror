@@ -27,7 +27,7 @@ fun MainScreen() {
 
         Surface(color = MaterialTheme.colorScheme.background) {
             NavHost(navController = mainScreenNavigation, startDestination = MainScreenNavigationLinks.HomeScreen) {
-                // 最初に出す画面
+                // アプリの説明
                 composable(MainScreenNavigationLinks.HelloScreen) {
                     HelloScreen(
                         onNextClick = { mainScreenNavigation.popBackStack() },

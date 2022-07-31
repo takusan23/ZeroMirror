@@ -18,9 +18,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.zxing.BarcodeFormat
-import com.journeyapps.barcodescanner.BarcodeEncoder
 import io.github.takusan23.zeromirror.R
+import io.github.takusan23.zeromirror.tool.QrCodeGeneratorTool
 
 
 /**
@@ -42,10 +41,7 @@ fun UrlCard(
     // QRコードを出すか
     val isShowQrCode = remember { mutableStateOf(false) }
     // QRコードのBitmap
-    val qrCodeBitmap = remember(url) {
-        val barcodeEncoder = BarcodeEncoder()
-        barcodeEncoder.encodeBitmap(url, BarcodeFormat.QR_CODE, 400, 400)
-    }
+    val qrCodeBitmap = remember(url) { QrCodeGeneratorTool.generateQrCode(url) }
 
     Card(modifier = modifier) {
         Column(modifier = Modifier.padding(10.dp)) {

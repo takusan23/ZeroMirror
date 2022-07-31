@@ -45,7 +45,7 @@
     // 動画の終了イベント
     videoElement.addEventListener('ended', () => {
         // 再生中の BlobURL を無効にする
-        // URL.revokeObjectURL(videoElement.src)
+        URL.revokeObjectURL(videoElement.src)
         // 先読み済み配列からURLを取り出して再生する
         playVideoIndexFromUrlList++
         const url = prefetchVideoUrlList[playVideoIndexFromUrlList]

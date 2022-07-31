@@ -21,6 +21,7 @@ import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
+import io.github.takusan23.zeromirror.tool.QrCodeGeneratorTool
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -126,8 +127,9 @@ class ScreenMirrorService : Service() {
 
             // IPアドレスを通知として出す
             IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
-                notifyForegroundNotification("${getString(R.string.ip_address)}：http://$ipAddress:${mirroringSettingData!!.portNumber}")
-                Log.d(TAG, "http://$ipAddress:${mirroringSettingData!!.portNumber}")
+                val url = "http://$ipAddress:${mirroringSettingData!!.portNumber}"
+                notifyForegroundNotification(url = url, contentText = "${getString(R.string.ip_address)}：$url")
+                Log.d(TAG, url)
             }.launchIn(coroutineScope)
 
             // エンコーダーは別スレッドで
@@ -220,8 +222,12 @@ class ScreenMirrorService : Service() {
      * フォアグラウンドサービスの通知を発行する
      *
      * @param contentText 通知本文
+     * @param url QRコードにするURL、あるなら
      */
-    private fun notifyForegroundNotification(contentText: String = getString(R.string.zeromirror_service_notification_content)) {
+    private fun notifyForegroundNotification(
+        contentText: String = getString(R.string.zeromirror_service_notification_content),
+        url: String? = null,
+    ) {
         // 通知チャンネル
         val notificationManagerCompat = NotificationManagerCompat.from(this)
         //通知チャンネルが存在しないときは登録する
@@ -232,10 +238,12 @@ class ScreenMirrorService : Service() {
             notificationManagerCompat.createNotificationChannel(channel)
         }
         //通知作成
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
-            setContentTitle(getString(R.string.zeromirror_service_notification_title))
-            setContentText(contentText)
-            setSmallIcon(R.drawable.zeromirror_android)
+        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).also { builder ->
+            builder.setContentTitle(getString(R.string.zeromirror_service_notification_title))
+            builder.setContentText(contentText)
+            builder.setSmallIcon(R.drawable.zeromirror_android)
+            url?.let { QrCodeGeneratorTool.generateQrCode(it) }
+                ?.also { bitmap -> builder.setLargeIcon(bitmap) }
         }.build()
         startForeground(NOTIFICATION_ID, notification)
     }
