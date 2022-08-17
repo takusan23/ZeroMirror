@@ -193,18 +193,18 @@ class ScreenMirrorService : Service() {
             delay(mirroringSettingData!!.intervalMs)
 
             // クライアント側にWebSocketでファイルが出来たことを通知する
-            val publishFile = containerFileWriter!!.stopAndRelease()
-            server?.updateVideoFileName(publishFile.name)
+            // val publishFile = containerFileWriter!!.stopAndRelease()
+            // server?.updateVideoFileName(publishFile.name)
 
             // エンコーダー内部で持っている時間をリセットする
-            screenVideoEncoder?.resetInternalTime()
-            if (availableInternalAudio()) {
-                internalAudioEncoder?.resetInternalTime()
-            }
+            // screenVideoEncoder?.resetInternalTime()
+            // if (availableInternalAudio()) {
+            //     internalAudioEncoder?.resetInternalTime()
+            // }
 
             // それぞれ格納するファイルを用意
             containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path)
-            containerFileWriter?.start()
+            // containerFileWriter?.start()
         }
     }
 
@@ -258,7 +258,7 @@ class ScreenMirrorService : Service() {
         private const val INTERNAL_RECORD_FILE_NAME = "internal"
 
         /** クライアントに見せる最終的な動画のファイル名、拡張子はあとから付ける */
-        private const val VIDEO_FILE_NAME = "publish"
+        private const val VIDEO_FILE_NAME = "file_"
 
         /** 通知ID */
         private const val NOTIFICATION_ID = 4545

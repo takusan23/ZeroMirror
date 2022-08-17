@@ -46,6 +46,8 @@ class ContainerFileWriter(
     /** 映像のフォーマット */
     private var videoFormat: MediaFormat? = null
 
+    var prevReadLength = 0L
+
     /**
      * コンテナを作成する か 作り直す
      * 作り直す場合は [stopWriter] を呼び出す
@@ -53,19 +55,27 @@ class ContainerFileWriter(
      * @param videoPath 動画ファイルのパス
      */
     fun createContainer(videoPath: String) {
-        // ファイルを作成
-        val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
-        if (!isWebM && isMp4FastStart) {
-            // mp4 で faststart する場合は moovブロック を先頭に持ってくる関係で MediaMuxer へ渡すFileは tempFile です
+        if (isRunning) {
+            tempFile.inputStream().use { stream ->
+                stream.skip(prevReadLength)
+                val byteArray = ByteArray(stream.available())
+                stream.read(byteArray)
+                currentFile?.writeBytes(byteArray)
+            }
+            prevReadLength = tempFile.length()
+            tempFile.writeBytes(byteArrayOf())
             currentFile = File(videoPath)
-            mediaMuxer = MediaMuxer(tempFile.path, containerFormat)
         } else {
             currentFile = File(videoPath)
-            mediaMuxer = MediaMuxer(videoPath, containerFormat)
+            // ファイルを作成
+            val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+            // mp4 で faststart する場合は moovブロック を先頭に持ってくる関係で MediaMuxer へ渡すFileは tempFile です
+            mediaMuxer = MediaMuxer(tempFile.path, containerFormat)
+
+            // 再生成する場合はパラメーター持っているので入れておく
+            videoFormat?.also { setVideoTrack(it) }
+            audioFormat?.also { setAudioTrack(it) }
         }
-        // 再生成する場合はパラメーター持っているので入れておく
-        videoFormat?.also { setVideoTrack(it) }
-        audioFormat?.also { setAudioTrack(it) }
     }
 
     /**
@@ -136,12 +146,10 @@ class ContainerFileWriter(
      * @return 書き込んでいたファイル
      */
     suspend fun stopAndRelease() = withContext(Dispatchers.IO) {
-        release()
+        // release()
         // mp4 で faststart する場合は moovブロック を移動する
         // 移動させることで、ダウンロードしながら再生が可能（ MediaMuxer が作る mp4 はすべてダウンロードしないと再生できない）
-        if (!isWebM && isMp4FastStart) {
-            QtFastStart.fastStart(tempFile, currentFile)
-        }
+        // currentFile?.writeBytes(tempFile.readBytes())
         currentFile!!
     }
 

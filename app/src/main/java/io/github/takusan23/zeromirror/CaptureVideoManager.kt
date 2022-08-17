@@ -54,7 +54,7 @@ class CaptureVideoManager(
      * @return [File]
      */
     suspend fun generateNewFile() = withContext(Dispatchers.IO) {
-        deleteNotHoldFile()
+        // deleteNotHoldFile()
         val extension = if (isWebM) "webm" else "mp4"
         currentFile = File(outputsFolder, "$prefixName${count++}.$extension").apply { createNewFile() }
         fileList.add(currentFile!!)
