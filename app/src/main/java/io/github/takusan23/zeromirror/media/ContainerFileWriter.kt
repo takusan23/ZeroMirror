@@ -55,6 +55,7 @@ class ContainerFileWriter(
      * @param videoPath 動画ファイルのパス
      */
     fun createContainer(videoPath: String) {
+        println(videoPath)
         if (isRunning) {
             tempFile.inputStream().use { stream ->
                 stream.skip(prevReadLength)

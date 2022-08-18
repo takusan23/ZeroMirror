@@ -8,55 +8,94 @@ import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import io.ktor.websocket.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * ミラーリングした映像を配信するサーバー
  *
- * 視聴画面のHTMLを返す鯖と、映像が出来たことを通知するWebSocket鯖がある。
- *
  * @param portNumber ポート番号
  * @param hostingFolder 公開するフォルダ
+ * @param serverLaunchDate サーバー起動日時
+ * @param fileIntervalMs ファイルの生成間隔
  * */
 class Server(
     private val portNumber: Int = 10_000,
     private val hostingFolder: File,
+    private val serverLaunchDate: Long = System.currentTimeMillis(),
+    private val fileIntervalMs: Long = 5_000,
 ) {
+    /**
+     * コンテンツが利用可能になる時間（ISO-8601）
+     * この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
+     * TODO Android 7 以降のみ対応
+     */
+    private val contentAvailableTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.JAPAN).format(serverLaunchDate + fileIntervalMs)
 
-    /** 新しい動画データが出来たら動画ファイルを入れるFlow、staticで公開しているので相対パスで良いはず */
-    private val _updateVideoFileName = MutableStateFlow<String?>(null)
+    /** MPEG-DASH版 視聴ページ */
+    private val mpegDashHtml = """
+        <!doctype html>
+        <html>
+        <head>
+            <title>ぜろみらー MPEG-DASH</title>
+            <style>
+                video {
+                    width: 640px;
+                    height: 360px;
+                }
+            </style>
+        </head>
+        <body>
+            <div>
+                <video id="videoPlayer" controls muted autoplay></video>
+            </div>
+            <script src="https://cdn.dashjs.org/latest/dash.all.debug.js"></script>
+            <script>
+                (function () {
+                    var url = "manifest.mpd";
+                    var player = dashjs.MediaPlayer().create();
+                    player.initialize(document.querySelector("#videoPlayer"), url, true);
+                })();
+            </script>
+        </body>
+        </html>
+    """.trimIndent()
+
+    /**
+     * MPEG-DASHのマニフェストファイル
+     * initialization に最初の WebM を渡してるが、多分良くない。初期化に必要なデータのみを持たせて、映像データ（Cluster）はそれ単体で吐き出すべき
+     */
+    private val manifestMpd = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$contentAvailableTime" maxSegmentDuration="PT5S" minBufferTime="PT5S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+          <BaseURL>/</BaseURL>
+          <Period start="PT0S">
+            <AdaptationSet mimeType="video/webm">
+              <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
+              <!-- duration が更新頻度っぽい -->
+              <SegmentTemplate duration="5" initialization="/file_0.webm" media="/file_${"$"}Number${'$'}.webm"/>
+              <Representation id="default" codecs="vp9,opus"/>
+            </AdaptationSet>
+          </Period>
+        </MPD>
+    """.trimIndent()
 
     /** サーバー */
     private val server = embeddedServer(Netty, port = portNumber) {
         install(WebSockets)
 
-        // resources内のindex.htmlを取得。ブラウザ用投稿画面です
-        val htmlFile = this@Server::class.java.classLoader.getResource("index.html")!!.readText()
-        val stableFile = this@Server::class.java.classLoader.getResource("stablemode.html")!!.readText()
-
         routing {
-            // WebSocketと動画プレイヤーを持った簡単なHTMLを返す
             get("/") {
-                call.respondText(htmlFile, ContentType.parse("text/html"))
+                call.respondText(mpegDashHtml, ContentType.parse("text/html"))
             }
-            get("/stablemode") {
-                call.respondText(stableFile, ContentType.parse("text/html"))
+            get("manifest.mpd") {
+                call.respondText(manifestMpd, ContentType.parse("text/plain"))
             }
             // 静的ファイル、動画などを配信する。
             static {
                 staticRootFolder = hostingFolder
                 files(hostingFolder)
-            }
-            // WebSocket
-            webSocket("/wsvideo") {
-                // 新しいデータが来たらWebSocketを経由してクライアントへ通知する
-                // JSON作るのちゃんとしろ
-                _updateVideoFileName
-                    .filterNotNull()
-                    .collect { fileName -> send(Frame.Text("""{ "url":"$fileName" }""")) }
             }
         }
     }
@@ -71,12 +110,4 @@ class Server(
         server.stop()
     }
 
-    /**
-     * 新しい動画データが出来たことをWebSocket経由で通知する
-     *
-     * @param videoFileName ファイル名
-     */
-    fun updateVideoFileName(videoFileName: String) {
-        _updateVideoFileName.value = videoFileName
-    }
 }

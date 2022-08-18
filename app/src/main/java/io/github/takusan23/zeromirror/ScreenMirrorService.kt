@@ -136,7 +136,8 @@ class ScreenMirrorService : Service() {
             launch { startEncode() }
 
             // サーバー開始
-            server = Server(mirroringSettingData!!.portNumber, captureVideoManager!!.outputsFolder)
+            val intervalMs = mirroringSettingData!!.intervalMs * 3
+            server = Server(mirroringSettingData!!.portNumber, captureVideoManager!!.outputsFolder, fileIntervalMs = intervalMs)
             server?.startServer()
         }
 
