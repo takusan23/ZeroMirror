@@ -35,13 +35,16 @@ class ScreenMirrorService : Service() {
     private val coroutineScope = CoroutineScope(Job())
 
     /** 生成したファイルを管理する */
-    private var captureVideoManager: CaptureVideoManager? = null
+    private lateinit var captureVideoManager: CaptureVideoManager
 
     /** エンコードされたデータをコンテナファイルに書き込む */
-    private var containerFileWriter: ContainerFileWriter? = null
+    private lateinit var containerFileWriter: ContainerFileWriter
+
+    /** ミラーリング情報、ビットレートとか */
+    private lateinit var mirroringSettingData: MirroringSettingData
 
     /** サーバー これだけ別モジュール */
-    private var server: Server? = null
+    private lateinit var server: Server
 
     // ミラーリングで使う
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
@@ -52,9 +55,6 @@ class ScreenMirrorService : Service() {
 
     /** 内部音声を収録してエンコードするクラス、Android 10未満では利用できないので使ってはいけない */
     private var internalAudioEncoder: InternalAudioEncoder? = null
-
-    /** ミラーリング情報、ビットレートとか */
-    private var mirroringSettingData: MirroringSettingData? = null
 
     // 画面サイズ
     private var displayHeight = 0
@@ -77,16 +77,16 @@ class ScreenMirrorService : Service() {
             captureVideoManager = CaptureVideoManager(
                 parentFolder = getExternalFilesDir(null)!!,
                 prefixName = VIDEO_FILE_NAME,
-                isWebM = mirroringSettingData!!.isVP9
+                isWebM = mirroringSettingData.isVP9
             )
-            captureVideoManager?.deleteParentFolderChildren()
+            captureVideoManager.deleteCreatedFile()
 
             // 一時ファイル
-            val tempFile = captureVideoManager!!.generateTempFile(ContainerFileWriter.TEMP_VIDEO_FILENAME)
+            val tempFile = captureVideoManager.generateTempFile(ContainerFileWriter.TEMP_VIDEO_FILENAME)
             // コンテナファイルに書き込むやつ
             containerFileWriter = ContainerFileWriter(
-                includeAudio = mirroringSettingData!!.isRecordInternalAudio,
-                isWebM = mirroringSettingData!!.isVP9,
+                includeAudio = mirroringSettingData.isRecordInternalAudio,
+                isWebM = mirroringSettingData.isVP9,
                 isMp4FastStart = true,
                 tempFile = tempFile
             )
@@ -94,32 +94,33 @@ class ScreenMirrorService : Service() {
             // 起動できる場合は起動
             if (resultCode != null && resultData != null) {
                 mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-                // 画面ミラーリング
-                screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!)
-
                 // 解像度をカスタマイズしている場合
-                val (height, width) = if (mirroringSettingData!!.isCustomResolution || mirroringSettingData!!.isVP9) {
+                val (height, width) = if (mirroringSettingData.isCustomResolution || mirroringSettingData.isVP9) {
                     // VP9 エンコーダーだと画面解像度を入れると失敗する？ 1280x720 / 1920x1080 だと成功する
-                    mirroringSettingData!!.videoHeight to mirroringSettingData!!.videoWidth
+                    mirroringSettingData.videoHeight to mirroringSettingData.videoWidth
                 } else {
                     displayHeight to displayWidth
                 }
 
-                // エンコーダーの用意
-                screenVideoEncoder!!.prepareEncoder(
-                    videoWidth = width,
-                    videoHeight = height,
-                    bitRate = mirroringSettingData!!.videoBitRate,
-                    frameRate = mirroringSettingData!!.videoFrameRate,
-                    isVp9 = mirroringSettingData!!.isVP9,
-                )
+                // 画面ミラーリング
+                screenVideoEncoder = ScreenVideoEncoder(resources.configuration.densityDpi, mediaProjection!!).apply {
+                    // エンコーダーの用意
+                    prepareEncoder(
+                        videoWidth = width,
+                        videoHeight = height,
+                        bitRate = mirroringSettingData.videoBitRate,
+                        frameRate = mirroringSettingData.videoFrameRate,
+                        isVp9 = mirroringSettingData.isVP9,
+                    )
+                }
                 // 内部音声を一緒にエンコードする場合
                 if (availableInternalAudio()) {
-                    internalAudioEncoder = InternalAudioEncoder(mediaProjection!!)
-                    internalAudioEncoder!!.prepareEncoder(
-                        bitRate = mirroringSettingData!!.audioBitRate,
-                        isOpus = mirroringSettingData!!.isVP9,
-                    )
+                    internalAudioEncoder = InternalAudioEncoder(mediaProjection!!).apply {
+                        prepareEncoder(
+                            bitRate = mirroringSettingData.audioBitRate,
+                            isOpus = mirroringSettingData.isVP9
+                        )
+                    }
                 }
             } else {
                 stopSelf()
@@ -127,18 +128,39 @@ class ScreenMirrorService : Service() {
 
             // IPアドレスを通知として出す
             IpAddressTool.collectIpAddress(this@ScreenMirrorService).onEach { ipAddress ->
-                val url = "http://$ipAddress:${mirroringSettingData!!.portNumber}"
+                val url = "http://$ipAddress:${mirroringSettingData.portNumber}"
                 notifyForegroundNotification(url = url, contentText = "${getString(R.string.ip_address)}：$url")
                 Log.d(TAG, url)
             }.launchIn(coroutineScope)
 
-            // エンコーダーは別スレッドで
+            // エンコードする
             launch { startEncode() }
 
+//            // 60秒ごとに MediaMuxer をリセットするためのコード
+//            // これをしないと切り出し元のファイルがだんだんデカくなっていくので
+//            // リセット後は 初期化セグメント を再生成したりしないといけない
+//            launch {
+//                while (isActive) {
+//                    delay(60_000)
+//                    captureVideoManager.deleteCreatedFile()
+//                    captureVideoManager.resetIncrement()
+//                    server.updateManifest()
+//                    containerFileWriter.also { writer ->
+//                        writer.release()
+//                        writer.resetOrCreateContainerFile()
+//                        writer.start()
+//                    }
+//                }
+//            }
+
             // サーバー開始
-            val intervalMs = mirroringSettingData!!.intervalMs * 3
-            server = Server(mirroringSettingData!!.portNumber, captureVideoManager!!.outputsFolder, fileIntervalMs = intervalMs)
-            server?.startServer()
+            val intervalMs = mirroringSettingData.intervalMs
+            server = Server(
+                portNumber = mirroringSettingData.portNumber,
+                hostingFolder = captureVideoManager.outputsFolder,
+                fileIntervalSec = (intervalMs / 1000).toInt(),
+                manifestUpdateSec = 60
+            ).also { server -> server.startServer() }
         }
 
         return START_NOT_STICKY
@@ -151,8 +173,8 @@ class ScreenMirrorService : Service() {
         screenVideoEncoder?.release()
         internalAudioEncoder?.release()
         mediaProjection?.stop()
-        containerFileWriter?.release()
-        server?.stopServer()
+        containerFileWriter.release()
+        server.stopServer()
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -162,16 +184,16 @@ class ScreenMirrorService : Service() {
     /** 動画、内部音声エンコーダー（使うなら）を起動する */
     private suspend fun startEncode() = withContext(Dispatchers.Default) {
         // 初回用
-        containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path)
+        containerFileWriter.resetOrCreateContainerFile()
 
         // 画面録画エンコーダー
         launch {
             screenVideoEncoder!!.start(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeVideo(byteBuffer, bufferInfo) },
+                onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter.writeVideo(byteBuffer, bufferInfo) },
                 onOutputFormatAvailable = {
-                    containerFileWriter?.setVideoTrack(it)
+                    containerFileWriter.setVideoTrack(it)
                     // 開始する
-                    containerFileWriter?.start()
+                    containerFileWriter.start()
                 }
             )
         }
@@ -179,36 +201,29 @@ class ScreenMirrorService : Service() {
         if (availableInternalAudio()) {
             launch {
                 internalAudioEncoder!!.start(
-                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter?.writeAudio(byteBuffer, bufferInfo) },
+                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> containerFileWriter.writeAudio(byteBuffer, bufferInfo) },
                     onOutputFormatAvailable = {
-                        containerFileWriter?.setAudioTrack(it)
+                        containerFileWriter.setAudioTrack(it)
                         // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
                     }
                 )
             }
         }
-
-        // 初期化セグメント用
-        val initSegment = captureVideoManager!!.createFile("init.webm")
-
-        // コルーチンの中なので whileループ できます
+        // セグメントファイルを作る
         while (isActive) {
             // intervalMs 秒待機したら新しいファイルにする
-            delay(mirroringSettingData!!.intervalMs)
-
-            // クライアント側にWebSocketでファイルが出来たことを通知する
-            // val publishFile = containerFileWriter!!.stopAndRelease()
-            // server?.updateVideoFileName(publishFile.name)
-
-            // エンコーダー内部で持っている時間をリセットする
-            // screenVideoEncoder?.resetInternalTime()
-            // if (availableInternalAudio()) {
-            //     internalAudioEncoder?.resetInternalTime()
-            // }
-
-            // それぞれ格納するファイルを用意
-            containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path, initSegment.path)
-            // containerFileWriter?.start()
+            delay(mirroringSettingData.intervalMs)
+            // 初回時だけ初期化セグメントを作る
+            if (!containerFileWriter.hasInitSegment) {
+                captureVideoManager.createFile("init.webm").also { initSegment ->
+                    containerFileWriter.sliceInitSegmentFile(initSegment.path)
+                }
+            }
+            launch {
+                captureVideoManager.createIncrementFile().also { segment ->
+                    containerFileWriter.sliceSegmentFile(segment.path)
+                }
+            }
         }
     }
 
@@ -218,9 +233,8 @@ class ScreenMirrorService : Service() {
      * @return 内部音声を取る場合はtrue
      */
     private fun availableInternalAudio() =
-        PermissionTool.isAndroidQAndHigher()
-                && PermissionTool.isGrantedRecordPermission(this)
-                && mirroringSettingData?.isRecordInternalAudio == true
+        (PermissionTool.isAndroidQAndHigher()
+                && PermissionTool.isGrantedRecordPermission(this)) && mirroringSettingData.isRecordInternalAudio
 
     /**
      * フォアグラウンドサービスの通知を発行する

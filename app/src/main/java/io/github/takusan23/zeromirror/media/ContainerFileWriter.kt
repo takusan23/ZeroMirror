@@ -6,6 +6,7 @@ import android.media.MediaMuxer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InputStream
 import java.nio.ByteBuffer
 
 /**
@@ -46,67 +47,86 @@ class ContainerFileWriter(
     /** 映像のフォーマット */
     private var videoFormat: MediaFormat? = null
 
-    /** 前回までに読み取った位置 */
-    var prevReadLength = 0L
+    /** 書き込み可能かどうか */
+    private var isWritable = true
 
-    /** 初期化セグメントを作ったらtrue */
+    /** MediaMuxerで書き込んでいる動画ファイルの [InputStream]、その都度開くより良さそう */
+    private var inputStream: InputStream? = null
+
+    /** 初期化セグメントを作成したか */
     var hasInitSegment = false
 
-    /** 書き込み可能かどうか */
-    var isWritable = true
+    /** コンテナフォーマット / MediaMuxer を再生成する */
+    suspend fun resetOrCreateContainerFile() = withContext(Dispatchers.IO) {
+        tempFile.delete()
+        hasInitSegment = false
+        mediaMuxer = MediaMuxer(tempFile.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM)
+        inputStream = tempFile.inputStream()
+        // 再生成する場合はパラメーター持っているので入れておく
+        videoFormat?.also { setVideoTrack(it) }
+        audioFormat?.also { setAudioTrack(it) }
+    }
 
     /**
-     * コンテナを作成する か 作り直す
-     * 作り直す場合は [stopWriter] を呼び出す
+     * MediaMuxerで書き込み中のファイルから、WebMの初期化セグメントの部分を切り出す。
+     * 初期化セグメントの位置は Clusterタグ が始まる前まで
      *
-     * @param videoPath 動画ファイルのパス
+     * @param filePath 書き込み先ファイルのファイルパス
+     * @return ファイル
      */
-    suspend fun createContainer(videoPath: String, initSegmentFilePath: String? = null) = withContext(Dispatchers.IO) {
-        println(videoPath)
-        if (isRunning) {
+    suspend fun sliceInitSegmentFile(filePath: String) = withContext(Dispatchers.IO) {
+        File(filePath).also { file ->
+            // 書き込まれないようにしておく
             isWritable = false
-            // 初期化セグメントを作る必要がある場合
-            if (!hasInitSegment && initSegmentFilePath != null) {
-                val readRecordFile = tempFile.readBytes()
-                // 初期化セグメントの範囲を探す
-                var initSegmentLength = -1
-                // いい方法が思いつかなかった、、、
-                for (i in readRecordFile.indices) {
-                    if (
-                        readRecordFile[i] == 0x1F.toByte()
-                        && readRecordFile[i + 1] == 0x43.toByte()
-                        && readRecordFile[i + 2] == 0xB6.toByte()
-                        && readRecordFile[i + 3] == 0x75.toByte()
-                    ) {
-                        initSegmentLength = i
-                        break
-                    }
+            val readRecordFile = tempFile.readBytes()
+            // 初期化セグメントの範囲を探す
+            // きれいな実装じゃない...
+            var initSegmentLength = -1
+            for (i in readRecordFile.indices) {
+                if (
+                    readRecordFile[i] == 0x1F.toByte()
+                    && readRecordFile[i + 1] == 0x43.toByte()
+                    && readRecordFile[i + 2] == 0xB6.toByte()
+                    && readRecordFile[i + 3] == 0x75.toByte()
+                ) {
+                    initSegmentLength = i
+                    break
                 }
-                // 初期化セグメントを書き込む
-                File(initSegmentFilePath).writeBytes(readRecordFile.copyOfRange(0, initSegmentLength))
-                prevReadLength = initSegmentLength.toLong()
-                hasInitSegment = true
             }
-            tempFile.inputStream().use { stream ->
-                stream.skip(prevReadLength)
-                val byteArray = ByteArray(stream.available())
-                stream.read(byteArray)
-                currentFile?.writeBytes(byteArray)
+            if (initSegmentLength == -1) {
+                return@withContext
             }
-            prevReadLength = tempFile.length()
-            tempFile.writeBytes(byteArrayOf())
-            currentFile = File(videoPath)
+            // 初期化セグメントを書き込む
+            file.writeBytes(readRecordFile.copyOfRange(0, initSegmentLength))
+            // 読み出した位置分スキップ
+            inputStream?.skip(initSegmentLength.toLong())
+            // 書き込み可にする
             isWritable = true
-        } else {
-            currentFile = File(videoPath)
-            // ファイルを作成
-            val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
-            // mp4 で faststart する場合は moovブロック を先頭に持ってくる関係で MediaMuxer へ渡すFileは tempFile です
-            mediaMuxer = MediaMuxer(tempFile.path, containerFormat)
+            hasInitSegment = true
+        }
+    }
 
-            // 再生成する場合はパラメーター持っているので入れておく
-            videoFormat?.also { setVideoTrack(it) }
-            audioFormat?.also { setAudioTrack(it) }
+    /**
+     * MediaMuxerで書き込み中のファイルから、前回切り出した範囲から今書き込み中の範囲までを切り出す。
+     * 前回切り出した範囲は[sliceInitSegmentFile]も対象。
+     *
+     * @param filePath 書き込み先ファイルのファイルパス
+     * @return ファイル
+     */
+    suspend fun sliceSegmentFile(filePath: String) = withContext(Dispatchers.IO) {
+        println(filePath)
+        File(filePath).also { file ->
+            // 書き込まれないようにしておく
+            isWritable = false
+            // 前回までの範囲をスキップして切り出す
+            inputStream?.also { stream ->
+                val byteArray = ByteArray(stream.available())
+                println("書き込みサイズ = ${byteArray.size}")
+                stream.read(byteArray)
+                file.writeBytes(byteArray)
+            }
+            // 書き込み可にする
+            isWritable = true
         }
     }
 
@@ -138,7 +158,7 @@ class ContainerFileWriter(
 
     /**
      * 書き込みを開始させる。
-     * これ以降のフォーマット登録を受け付けないので、ファイル再生成まで登録されません [createContainer]
+     * これ以降のフォーマット登録を受け付けないので、ファイル再生成まで登録されません [resetOrCreateContainerFile]
      */
     fun start() {
         if (!isRunning) {
@@ -171,32 +191,17 @@ class ContainerFileWriter(
         }
     }
 
-    /**
-     * 書き込みを終了し、動画ファイルを完成させる
-     * qt-faststart の処理があるためサスペンド関数にしてみた
-     *
-     * @return 書き込んでいたファイル
-     */
-    suspend fun stopAndRelease() = withContext(Dispatchers.IO) {
-        // release()
-        // mp4 で faststart する場合は moovブロック を移動する
-        // 移動させることで、ダウンロードしながら再生が可能（ MediaMuxer が作る mp4 はすべてダウンロードしないと再生できない）
-        // currentFile?.writeBytes(tempFile.readBytes())
-        currentFile!!
-    }
-
-    /**
-     * リソース開放
-     */
+    /** リソース開放 */
     fun release() {
         // 起動していなければ終了もさせない
         if (isRunning) {
             mediaMuxer?.stop()
             mediaMuxer?.release()
         }
+        inputStream?.close()
         isRunning = false
-        videoTrackIndex = -1
-        audioTrackIndex = -1
+        videoTrackIndex = INVALID_INDEX_NUMBER
+        audioTrackIndex = INVALID_INDEX_NUMBER
     }
 
     companion object {

@@ -14,7 +14,7 @@ import java.io.File
  *  - temp
  *      - 一時的に保存する必要のあるファイル
  *
- * 両方とも [deleteParentFolderChildren] を呼ぶと削除されます。
+ * 両方とも [deleteCreatedFile] を呼ぶと削除されます。
  *
  * @param parentFolder 保存先
  * @param prefixName ファイル名先頭につけるやつ
@@ -42,10 +42,15 @@ class CaptureVideoManager(
     var currentFile: File? = null
         private set
 
-    /** [parentFolder]の中のファイルを消す */
-    suspend fun deleteParentFolderChildren() = withContext(Dispatchers.IO) {
+    /** 生成したファイルを消す */
+    suspend fun deleteCreatedFile() = withContext(Dispatchers.IO) {
         outputsFolder.listFiles()?.forEach { it.delete() }
         tempFolder.listFiles()?.forEach { it.delete() }
+    }
+
+    /** 連番をリセットする */
+    fun resetIncrement() {
+        count = 0
     }
 
     /**
@@ -53,12 +58,17 @@ class CaptureVideoManager(
      *
      * @return [File]
      */
-    suspend fun generateNewFile() = withContext(Dispatchers.IO) {
-        // deleteNotHoldFile()
+    suspend fun createIncrementFile() = withContext(Dispatchers.IO) {
         val extension = if (isWebM) "webm" else "mp4"
         currentFile = File(outputsFolder, "$prefixName${count++}.$extension").apply { createNewFile() }
         fileList.add(currentFile!!)
         currentFile!!
+    }
+
+    suspend fun createIncrementFile(increment: suspend (File) -> Boolean) = withContext(Dispatchers.IO) {
+        val extension = if (isWebM) "webm" else "mp4"
+        currentFile = File(outputsFolder, "$prefixName${count++}.$extension").apply { createNewFile() }
+        fileList.add(currentFile!!)
     }
 
     suspend fun createFile(fileName: String) = withContext(Dispatchers.IO) {
