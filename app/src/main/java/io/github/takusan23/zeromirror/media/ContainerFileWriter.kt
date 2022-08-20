@@ -46,7 +46,14 @@ class ContainerFileWriter(
     /** 映像のフォーマット */
     private var videoFormat: MediaFormat? = null
 
+    /** 前回までに読み取った位置 */
     var prevReadLength = 0L
+
+    /** 初期化セグメントを作ったらtrue */
+    var hasInitSegment = false
+
+    /** 書き込み可能かどうか */
+    var isWritable = true
 
     /**
      * コンテナを作成する か 作り直す
@@ -54,9 +61,32 @@ class ContainerFileWriter(
      *
      * @param videoPath 動画ファイルのパス
      */
-    fun createContainer(videoPath: String) {
+    suspend fun createContainer(videoPath: String, initSegmentFilePath: String? = null) = withContext(Dispatchers.IO) {
         println(videoPath)
         if (isRunning) {
+            isWritable = false
+            // 初期化セグメントを作る必要がある場合
+            if (!hasInitSegment && initSegmentFilePath != null) {
+                val readRecordFile = tempFile.readBytes()
+                // 初期化セグメントの範囲を探す
+                var initSegmentLength = -1
+                // いい方法が思いつかなかった、、、
+                for (i in readRecordFile.indices) {
+                    if (
+                        readRecordFile[i] == 0x1F.toByte()
+                        && readRecordFile[i + 1] == 0x43.toByte()
+                        && readRecordFile[i + 2] == 0xB6.toByte()
+                        && readRecordFile[i + 3] == 0x75.toByte()
+                    ) {
+                        initSegmentLength = i
+                        break
+                    }
+                }
+                // 初期化セグメントを書き込む
+                File(initSegmentFilePath).writeBytes(readRecordFile.copyOfRange(0, initSegmentLength))
+                prevReadLength = initSegmentLength.toLong()
+                hasInitSegment = true
+            }
             tempFile.inputStream().use { stream ->
                 stream.skip(prevReadLength)
                 val byteArray = ByteArray(stream.available())
@@ -66,6 +96,7 @@ class ContainerFileWriter(
             prevReadLength = tempFile.length()
             tempFile.writeBytes(byteArrayOf())
             currentFile = File(videoPath)
+            isWritable = true
         } else {
             currentFile = File(videoPath)
             // ファイルを作成
@@ -123,7 +154,7 @@ class ContainerFileWriter(
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeVideo(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        if (isRunning && videoTrackIndex != INVALID_INDEX_NUMBER) {
+        if (isRunning && videoTrackIndex != INVALID_INDEX_NUMBER && isWritable) {
             mediaMuxer?.writeSampleData(videoTrackIndex, byteBuffer, bufferInfo)
         }
     }
@@ -135,7 +166,7 @@ class ContainerFileWriter(
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeAudio(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        if (isRunning && audioTrackIndex != INVALID_INDEX_NUMBER) {
+        if (isRunning && audioTrackIndex != INVALID_INDEX_NUMBER && isWritable) {
             mediaMuxer?.writeSampleData(audioTrackIndex, byteBuffer, bufferInfo)
         }
     }
@@ -167,7 +198,6 @@ class ContainerFileWriter(
         videoTrackIndex = -1
         audioTrackIndex = -1
     }
-
 
     companion object {
         /** インデックス番号初期値、無効な値 */

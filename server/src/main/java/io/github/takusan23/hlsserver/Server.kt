@@ -31,7 +31,7 @@ class Server(
      * この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
      * TODO Android 7 以降のみ対応
      */
-    private val contentAvailableTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.JAPAN).format(serverLaunchDate + fileIntervalMs)
+    private val contentAvailableTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.JAPAN).format(serverLaunchDate)
 
     /** MPEG-DASH版 視聴ページ */
     private val mpegDashHtml = """
@@ -68,13 +68,13 @@ class Server(
      */
     private val manifestMpd = """
         <?xml version="1.0" encoding="utf-8"?>
-        <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$contentAvailableTime" maxSegmentDuration="PT5S" minBufferTime="PT5S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+        <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$contentAvailableTime" maxSegmentDuration="PT2S" minBufferTime="PT2S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
           <BaseURL>/</BaseURL>
           <Period start="PT0S">
             <AdaptationSet mimeType="video/webm">
               <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
               <!-- duration が更新頻度っぽい -->
-              <SegmentTemplate duration="5" initialization="/file_0.webm" media="/file_${"$"}Number${'$'}.webm"/>
+              <SegmentTemplate duration="3" initialization="/init.webm" media="/file_${"$"}Number${'$'}.webm" startNumber="0"/>
               <Representation id="default" codecs="vp9,opus"/>
             </AdaptationSet>
           </Period>

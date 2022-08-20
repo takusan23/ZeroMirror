@@ -188,6 +188,9 @@ class ScreenMirrorService : Service() {
             }
         }
 
+        // 初期化セグメント用
+        val initSegment = captureVideoManager!!.createFile("init.webm")
+
         // コルーチンの中なので whileループ できます
         while (isActive) {
             // intervalMs 秒待機したら新しいファイルにする
@@ -204,7 +207,7 @@ class ScreenMirrorService : Service() {
             // }
 
             // それぞれ格納するファイルを用意
-            containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path)
+            containerFileWriter?.createContainer(captureVideoManager!!.generateNewFile().path, initSegment.path)
             // containerFileWriter?.start()
         }
     }

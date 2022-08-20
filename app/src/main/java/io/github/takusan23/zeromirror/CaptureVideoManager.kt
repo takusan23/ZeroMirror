@@ -61,6 +61,10 @@ class CaptureVideoManager(
         currentFile!!
     }
 
+    suspend fun createFile(fileName: String) = withContext(Dispatchers.IO) {
+        File(outputsFolder, fileName).apply { createNewFile() }
+    }
+
     /**
      * 一時ファイルを生成する関数
      *
