@@ -70,10 +70,10 @@ class AudioEncoder {
         val bufferInfo = MediaCodec.BufferInfo()
         mediaCodec!!.start()
 
-        // 経過時間の計算、AOSPの内部音声コードをそのままパクります
-        // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenInternalAudioRecorder.java;l=252;drc=a9f632187cec8873f3f2429022a25b867b2b7d4b?q=internalaudio
-        var mTotalBytes = 0
-        var mPresentationTime = 0L
+        // エンコーダー開始時間
+        val encoderStartTimeUs = System.nanoTime()
+        // 経過時間を増加させていく
+        var prevPresentationTimeUs = 0L
 
         try {
             while (isActive) {
@@ -90,10 +90,8 @@ class AudioEncoder {
                     if (readByteSize > 0) {
                         // 書き込む。書き込んだデータは[onOutputBufferAvailable]で受け取れる
                         inputBuffer.put(byteArray, 0, readByteSize)
-                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, mPresentationTime, 0)
-                        mTotalBytes += readByteSize
-                        // チャンネル数気をつけて
-                        mPresentationTime = 1000000L * (mTotalBytes / 2) / (sampleRate * channelCount)
+                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, prevPresentationTimeUs, 0)
+                        prevPresentationTimeUs = System.nanoTime() - encoderStartTimeUs
                     }
                 }
                 // 出力
@@ -107,11 +105,11 @@ class AudioEncoder {
                             // ファイルを作り直した際は0から始めてほしいため作り直す必要がある
                             val fixBufferInfo = MediaCodec.BufferInfo().apply {
                                 // 動画切り替え時は0を入れる
-                                if (prevPresentationTimeUs == 0L) {
-                                    prevPresentationTimeUs = bufferInfo.presentationTimeUs
+                                if (this@AudioEncoder.prevPresentationTimeUs == 0L) {
+                                    this@AudioEncoder.prevPresentationTimeUs = bufferInfo.presentationTimeUs
                                     set(bufferInfo.offset, bufferInfo.size, 0, bufferInfo.flags)
                                 } else {
-                                    set(bufferInfo.offset, bufferInfo.size, bufferInfo.presentationTimeUs - prevPresentationTimeUs, bufferInfo.flags)
+                                    set(bufferInfo.offset, bufferInfo.size, bufferInfo.presentationTimeUs - this@AudioEncoder.prevPresentationTimeUs, bufferInfo.flags)
                                 }
                             }
                             // ファイルに書き込む...
