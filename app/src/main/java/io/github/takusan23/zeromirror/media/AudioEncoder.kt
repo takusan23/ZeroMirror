@@ -19,12 +19,6 @@ class AudioEncoder {
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
 
-    /** サンプリングレート、エンコードの際に使うので */
-    private var sampleRate: Int = 44_100
-
-    /** チャンネル数、ステレオだと2、モノラルだと1 */
-    private var channelCount: Int = 2
-
     /** 動画を切り替えた際に presentationTimeUs を0から始めたいため、 totalBytes とかを0にしても効果がなかった... */
     private var prevPresentationTimeUs = 0L
 
@@ -37,17 +31,15 @@ class AudioEncoder {
      * @param isOpus コーデックにOpusを利用する場合はtrue。動画のコーデックにVP9を利用している場合は必須
      */
     fun prepareEncoder(
-        sampleRate: Int = 44_100,
-        channelCount: Int = 2,
+        sampleRate: Int = 48_000,
+        channelCount: Int = 1,
         bitRate: Int = 192_000,
         isOpus: Boolean = false,
     ) {
-        this@AudioEncoder.sampleRate = sampleRate
-        this@AudioEncoder.channelCount = channelCount
         val codec = if (isOpus) MediaFormat.MIMETYPE_AUDIO_OPUS else MediaFormat.MIMETYPE_AUDIO_AAC
-        val audioEncodeFormat = MediaFormat.createAudioFormat(codec, sampleRate, channelCount).apply {
+        val audioEncodeFormat = MediaFormat.createAudioFormat(codec, 48_000, 2).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-            setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
+            setInteger(MediaFormat.KEY_BIT_RATE, 192_000)
         }
         // エンコーダー用意
         mediaCodec = MediaCodec.createEncoderByType(codec).apply {

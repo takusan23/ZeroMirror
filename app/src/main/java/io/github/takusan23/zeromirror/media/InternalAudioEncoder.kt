@@ -35,7 +35,7 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
         }.build()
         val audioFormat = AudioFormat.Builder().apply {
             setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            setSampleRate(44_100)
+            setSampleRate(48_000)
             setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
         }.build()
         audioRecord = AudioRecord.Builder().apply {
@@ -55,7 +55,7 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
      */
     fun prepareEncoder(
         sampleRate: Int = 44_100,
-        channelCount: Int = 2,
+        channelCount: Int = 1,
         bitRate: Int = 192_000,
         isOpus: Boolean = false,
     ) = audioEncoder.prepareEncoder(sampleRate, channelCount, bitRate, isOpus)
