@@ -54,8 +54,8 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
      * @param isOpus コーデックにOpusを利用する場合はtrue。動画のコーデックにVP9を利用している場合は必須
      */
     fun prepareEncoder(
-        sampleRate: Int = 44_100,
-        channelCount: Int = 1,
+        sampleRate: Int = 48_000,
+        channelCount: Int = 2,
         bitRate: Int = 192_000,
         isOpus: Boolean = false,
     ) = audioEncoder.prepareEncoder(sampleRate, channelCount, bitRate, isOpus)
