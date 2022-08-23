@@ -1,33 +1,27 @@
-package io.github.takusan23.zeromirror.media
+package io.github.takusan23.zeromirror.websocket
 
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import io.github.takusan23.zeromirror.media.QtFastStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
 
 /**
- * エンコードされたデータをファイル（コンテナ）に書き込む
+ * WebSocketで配信するための MP4 を作成します。
+ * エンコードされたデータをファイル（コンテナ）に書き込む。
  *
- * @param includeAudio 内部音声を含める場合はtrue
- * @param isWebM WebMコンテナを利用する場合はtrue、mp4の場合はfalse
- * @param isMp4FastStart mp4 の moovブロック を先頭に移動するには true 、ストリーミング可能になります
  * @param tempFile 一時ファイル。詳しくは [currentFile]
  */
-class ContainerFileWriter(
-    private val includeAudio: Boolean = false,
-    private val isWebM: Boolean = false,
-    private val isMp4FastStart: Boolean = true,
-    private val tempFile: File,
-) {
+class WSContainerWriter(private val tempFile: File) {
     /** コンテナへ書き込むやつ */
     private var mediaMuxer: MediaMuxer? = null
 
     /**
      * 現在のファイル、出力ファイル
-     * mp4の場合は moovブロック を先頭に持ってくる関係で [stopWriter] するまで書き込まれません。
+     * mp4の場合は moovブロック を先頭に持ってくる関係で [stopAndRelease] するまで書き込まれません。
      */
     private var currentFile: File? = null
 
@@ -54,15 +48,9 @@ class ContainerFileWriter(
      */
     fun createContainer(videoPath: String) {
         // ファイルを作成
-        val containerFormat = if (isWebM) MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM else MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
-        if (!isWebM && isMp4FastStart) {
-            // mp4 で faststart する場合は moovブロック を先頭に持ってくる関係で MediaMuxer へ渡すFileは tempFile です
-            currentFile = File(videoPath)
-            mediaMuxer = MediaMuxer(tempFile.path, containerFormat)
-        } else {
-            currentFile = File(videoPath)
-            mediaMuxer = MediaMuxer(videoPath, containerFormat)
-        }
+        // mp4 で faststart する場合は moovブロック を先頭に持ってくる関係で MediaMuxer へ渡すFileは tempFile です
+        currentFile = File(videoPath)
+        mediaMuxer = MediaMuxer(tempFile.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         // 再生成する場合はパラメーター持っているので入れておく
         videoFormat?.also { setVideoTrack(it) }
         audioFormat?.also { setAudioTrack(it) }
@@ -100,7 +88,7 @@ class ContainerFileWriter(
      */
     fun start() {
         if (!isRunning) {
-            mediaMuxer!!.start()
+            mediaMuxer?.start()
             isRunning = true
         }
     }
@@ -139,9 +127,7 @@ class ContainerFileWriter(
         release()
         // mp4 で faststart する場合は moovブロック を移動する
         // 移動させることで、ダウンロードしながら再生が可能（ MediaMuxer が作る mp4 はすべてダウンロードしないと再生できない）
-        if (!isWebM && isMp4FastStart) {
-            QtFastStart.fastStart(tempFile, currentFile)
-        }
+        QtFastStart.fastStart(tempFile, currentFile)
         currentFile!!
     }
 
@@ -163,9 +149,6 @@ class ContainerFileWriter(
     companion object {
         /** インデックス番号初期値、無効な値 */
         private const val INVALID_INDEX_NUMBER = -1
-
-        /** mp4で moovブロック 移動前のファイル名 */
-        const val TEMP_VIDEO_FILENAME = "temp_video_file"
     }
 
 }

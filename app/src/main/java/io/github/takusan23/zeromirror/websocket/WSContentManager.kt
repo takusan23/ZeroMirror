@@ -1,11 +1,11 @@
-package io.github.takusan23.zeromirror
+package io.github.takusan23.zeromirror.websocket
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * 生成した動画ファイルを管理する。
+ * WebSocket 用ファイル管理クラス
  * 保持分を超えたら今までのファイルを消すなど
  *
  * - [parentFolder]
@@ -14,16 +14,14 @@ import java.io.File
  *  - temp
  *      - 一時的に保存する必要のあるファイル
  *
- * 両方とも [deleteParentFolderChildren] を呼ぶと削除されます。
+ * 両方とも [deleteGenerateFile] を呼ぶと削除されます。
  *
  * @param parentFolder 保存先
  * @param prefixName ファイル名先頭につけるやつ
- * @param isWebM WebMを利用する場合はtrue、mp4を利用する場合はfalse
  */
-class CaptureVideoManager(
+class WSContentManager(
     private val parentFolder: File,
     private val prefixName: String,
-    private val isWebM: Boolean = false,
 ) {
 
     /** 作るたびにインクリメントする */
@@ -36,29 +34,26 @@ class CaptureVideoManager(
     private val tempFolder = File(parentFolder, TEMP_FOLDER_NAME).apply { mkdir() }
 
     /** 完成品を公開するフォルダ */
-    val outputsFolder = File(parentFolder, OUTPUT_VIDEO_FOLDER_NAME).apply { mkdir() }
-
-    /** 今のファイル */
-    var currentFile: File? = null
-        private set
+    val outputFolder = File(parentFolder, OUTPUT_VIDEO_FOLDER_NAME).apply { mkdir() }
 
     /** [parentFolder]の中のファイルを消す */
-    suspend fun deleteParentFolderChildren() = withContext(Dispatchers.IO) {
-        outputsFolder.listFiles()?.forEach { it.delete() }
-        tempFolder.listFiles()?.forEach { it.delete() }
+    suspend fun deleteGenerateFile() = withContext(Dispatchers.IO) {
+        outputFolder.deleteRecursively()
+        tempFolder.deleteRecursively()
     }
 
     /**
      * 連番なファイル名になった[File]を作成する
+     * 保持数を超えたら削除すうる
      *
      * @return [File]
      */
     suspend fun generateNewFile() = withContext(Dispatchers.IO) {
         deleteNotHoldFile()
-        val extension = if (isWebM) "webm" else "mp4"
-        currentFile = File(outputsFolder, "$prefixName${count++}.$extension").apply { createNewFile() }
-        fileList.add(currentFile!!)
-        currentFile!!
+        File(outputFolder, "$prefixName${count++}.$MP4_EXTENSION").apply {
+            createNewFile()
+            fileList.add(this)
+        }
     }
 
     /**
@@ -84,6 +79,9 @@ class CaptureVideoManager(
     companion object {
         /** 動画保持数 */
         private const val FILE_HOLD_COUNT = 5
+
+        /** 拡張子 */
+        private const val MP4_EXTENSION = "mp4"
 
         /** 完成品の動画が入るフォルダの名前 */
         private const val OUTPUT_VIDEO_FOLDER_NAME = "dist"
