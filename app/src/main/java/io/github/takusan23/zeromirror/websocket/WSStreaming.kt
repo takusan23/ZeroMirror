@@ -77,7 +77,8 @@ class WSStreaming(
         // サーバー開始
         server = Server(
             portNumber = mirroringSettingData.portNumber,
-            hostingFolder = wsContentManager.outputFolder
+            hostingFolder = wsContentManager.outputFolder,
+            indexHtml = INDEX_HTML
         ).apply {
             startServer()
         }
@@ -141,6 +142,95 @@ class WSStreaming(
 
         /** mp4で moovブロック 移動前のファイル名、MediaMuxerでシーク可能にするために一時的に使う */
         private const val TEMP_VIDEO_FILENAME = "temp_video_file"
+
+        /**
+         * index.html
+         * TODO 直書きやめたい
+         */
+        private const val INDEX_HTML = """
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぜろみらーくらいあんと</title>
+</head>
+
+<body>
+    <div align="center">
+        <p id="title">動画データの到着を待っています...</p>
+        <p>最初だけ再生ボタンを押す必要があります。音量注意してください。</p>
+        <p><button id="cache_button">切り替えを安定させる（実験的）</button></p>
+        <p><a href="/stablemode">先読みを利用した安定モードへ切り替え</a></p>
+        <video id="video_player" width="300" controls autoplay muted></video>
+    </div>
+</body>
+
+<script>
+    //@ts-check
+
+    // 一番上の文字
+    const titleElement = document.getElementById('title')
+    // 動画プレイヤー
+    const videoElement = document.getElementById('video_player')
+    // キャッシュボタン
+    const cacheButton = document.getElementById('cache_button')
+
+    // 動画をすべてダウンロードしてから再生するか
+    let isFullVideoDl = false
+
+    // ボタンを押したら切り替える
+    cacheButton.onclick = () => {
+        isFullVideoDl = !isFullVideoDl
+    }
+
+    // 動画をロードする
+    // 引数は 動画のパス
+    const loadVideo = (rawUrlOrPreloadedUrl) => {
+        // 一つ前の動画をロードする
+        videoElement.pause()
+        videoElement.src = rawUrlOrPreloadedUrl
+        videoElement.load()
+    }
+
+    // WebSocket 接続を作成
+    const socket = new WebSocket(`ws://${'$'}{location.host}/wsvideo`)
+
+    // 接続が開いたときのイベント
+    socket.addEventListener('open', function (event) {
+        socket.send('WebSocket接続がオープンしました。')
+    })
+
+    // メッセージの待ち受け
+    socket.addEventListener('message', function (event) {
+        console.log('動画データが到着しました。', event.data)
+        // 新しい動画の相対URL
+        const url = JSON.parse(event.data)["url"]
+        if (isFullVideoDl) {
+            // ダウンロードしてから再生する場合
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    // 前回の BlobURL を無効にする
+                    URL.revokeObjectURL(videoElement.src)
+                    // 今回の動画の BlobURL を作成する
+                    const rawUrlOrPreloadedUrl = URL.createObjectURL(blob)
+                    loadVideo(rawUrlOrPreloadedUrl)
+                })
+        } else {
+            // そのまま渡す
+            loadVideo(url)
+        }
+        // 上の文字を消す
+        titleElement.style.display = 'none'
+    })
+
+</script>
+
+</html>
+"""
     }
 
 }

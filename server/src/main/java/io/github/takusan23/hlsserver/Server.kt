@@ -18,12 +18,16 @@ import java.io.File
  *
  * 視聴画面のHTMLを返す鯖と、映像が出来たことを通知するWebSocket鯖がある。
  *
+ * TODO もうサーバーだけ別モジュールにする旨みが無いよ；；、もうエンコード部分をライブラリに切り出したほうが良いのかな
+ *
  * @param portNumber ポート番号
  * @param hostingFolder 公開するフォルダ
+ * @param indexHtml index.html
  * */
 class Server(
     private val portNumber: Int = 10_000,
     private val hostingFolder: File,
+    private val indexHtml: String,
 ) {
 
     /** 新しい動画データが出来たら動画ファイルを入れるFlow、staticで公開しているので相対パスで良いはず */
@@ -33,19 +37,12 @@ class Server(
     private val server = embeddedServer(Netty, port = portNumber) {
         install(WebSockets)
 
-        // resources内のindex.htmlを取得。ブラウザ用投稿画面です
-        val htmlFile = this@Server::class.java.classLoader.getResource("index.html")!!.readText()
-        val stableFile = this@Server::class.java.classLoader.getResource("stablemode.html")!!.readText()
-
         routing {
             // WebSocketと動画プレイヤーを持った簡単なHTMLを返す
             get("/") {
-                call.respondText(htmlFile, ContentType.parse("text/html"))
+                call.respondText(indexHtml, ContentType.parse("text/html"))
             }
-            get("/stablemode") {
-                call.respondText(stableFile, ContentType.parse("text/html"))
-            }
-            // 静的ファイル、動画などを配信する。
+            // 静的ファイル公開するように。動画を配信する
             static {
                 staticRootFolder = hostingFolder
                 files(hostingFolder)

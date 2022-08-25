@@ -38,8 +38,8 @@ class WSContentManager(
 
     /** [parentFolder]の中のファイルを消す */
     suspend fun deleteGenerateFile() = withContext(Dispatchers.IO) {
-        outputFolder.deleteRecursively()
-        tempFolder.deleteRecursively()
+        tempFolder.listFiles()?.forEach { it.delete() }
+        outputFolder.listFiles()?.forEach { it.delete() }
     }
 
     /**

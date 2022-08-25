@@ -68,8 +68,8 @@ class DashContentManager(
 
     /** 生成したファイルを削除する */
     suspend fun deleteGenerateFile() = withContext(Dispatchers.IO) {
-        tempFolder.deleteRecursively()
-        outputFolder.deleteRecursively()
+        tempFolder.listFiles()?.forEach { it.delete() }
+        outputFolder.listFiles()?.forEach { it.delete() }
     }
 
     companion object {

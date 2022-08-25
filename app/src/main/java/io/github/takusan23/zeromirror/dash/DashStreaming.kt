@@ -13,7 +13,10 @@ import kotlinx.coroutines.*
 import java.io.File
 
 /**
- * MPEG-DASH でミラーリングをストリーミングする場合に利用するクラス
+ * MPEG-DASH でミラーリングをストリーミングする場合に利用するクラス。
+ * WebM を定期的に切り出して MPEG-DASH で配信する。
+ *
+ * [init]関数のサイズはVP9の場合は無視されます。
  *
  * @param context [Context]
  * @param mirroringSettingData ミラーリング設定情報
@@ -74,10 +77,15 @@ class DashStreaming(
                 )
             }
         }
+        // MPEG-DASHのマニフェストファイルをホスティングする
+        dashContentManager.createFile(MANIFEST_FILENAME).apply {
+            writeText(DashManifestTool.createManifest((mirroringSettingData.intervalMs / 1_000).toInt()))
+        }
         // サーバー開始
         server = Server(
             portNumber = mirroringSettingData.portNumber,
-            hostingFolder = dashContentManager.outputFolder
+            hostingFolder = dashContentManager.outputFolder,
+            indexHtml = INDEX_HTML
         ).apply {
             startServer()
         }
@@ -116,7 +124,7 @@ class DashStreaming(
             delay(mirroringSettingData.intervalMs)
             // 初回時だけ初期化セグメントを作る
             if (!dashContainerWriter.isGeneratedInitSegment) {
-                dashContentManager.createFile("init.webm").also { initSegment ->
+                dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
                     dashContainerWriter.sliceInitSegmentFile(initSegment.path)
                 }
             }
@@ -144,6 +152,45 @@ class DashStreaming(
 
         /** mp4で moovブロック 移動前のファイル名、MediaMuxerでシーク可能にするために一時的に使う */
         private const val TEMP_VIDEO_FILENAME = "temp_video_file"
+
+        /** 初期化セグメントの名前 */
+        private const val INIT_SEGMENT_FILENAME = "init.webm"
+
+        /** マニフェストファイルの名前 */
+        private const val MANIFEST_FILENAME = "manifest.mpd"
+
+        /**
+         * index.html
+         * TODO 直書きを辞める
+         */
+        private const val INDEX_HTML = """
+<!doctype html>
+<html>
+<head>
+    <title>ぜろみらー MPEG-DASH</title>
+    <style>
+        video {
+            width: 640px;
+            height: 360px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <video id="videoPlayer" controls muted autoplay></video>
+    </div>
+    <script src="https://cdn.dashjs.org/latest/dash.all.debug.js"></script>
+    <script>
+        (function () {
+            var url = "manifest.mpd";
+            var player = dashjs.MediaPlayer().create();
+            player.initialize(document.querySelector("#videoPlayer"), url, true);
+        })();
+    </script>
+</body>
+</html>
+"""
+
     }
 
 }

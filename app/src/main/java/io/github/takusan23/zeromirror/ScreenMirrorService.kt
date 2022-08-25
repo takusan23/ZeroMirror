@@ -45,16 +45,12 @@ class ScreenMirrorService : Service() {
     /** ミラーリングするやつ */
     private lateinit var streaming: StreamingInterface
 
-    // 画面サイズ
-    private var displayHeight = 0
-    private var displayWidth = 0
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val resultCode = intent?.getIntExtra(KEY_INTENT_RESULT_CODE, -1)
         val resultData = intent?.getParcelableExtra<Intent>(KEY_INTENT_RESULT_INTENT)
-        displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
-        displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
+        val displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
+        val displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 
         coroutineScope.launch {
             // 通知発行
