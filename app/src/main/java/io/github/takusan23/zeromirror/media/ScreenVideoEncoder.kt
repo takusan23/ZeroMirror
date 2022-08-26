@@ -5,7 +5,6 @@ import android.hardware.display.VirtualDisplay
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.media.projection.MediaProjection
-import android.view.Surface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -25,9 +24,6 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
 
     /** 画面録画に使う */
     private var virtualDisplay: VirtualDisplay? = null
-
-    /** エンコーダーから払い出される Surface */
-    private var encoderSurface: Surface? = null
 
     /**
      * エンコーダーを初期化する
@@ -55,14 +51,14 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             iFrameInterval = iFrameInterval,
             isVp9 = isVp9
         )
-        encoderSurface = videoEncoder.createInputSurface()
+        val encoderSurface = videoEncoder.createInputSurface()
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "io.github.takusan23.zeromirror",
             videoWidth,
             videoHeight,
             displayDpi,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            encoderSurface!!,
+            encoderSurface,
             null,
             null
         )
@@ -107,7 +103,6 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     fun release() {
         videoEncoder.release()
         virtualDisplay?.release()
-        encoderSurface?.release()
     }
 
 }

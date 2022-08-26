@@ -19,12 +19,6 @@ class AudioEncoder {
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
 
-    /** サンプリングレート、エンコードの際に使うので */
-    private var sampleRate: Int = 44_100
-
-    /** チャンネル数、ステレオだと2、モノラルだと1 */
-    private var channelCount: Int = 2
-
     /** 動画を切り替えた際に presentationTimeUs を0から始めたいため、 totalBytes とかを0にしても効果がなかった... */
     private var prevPresentationTimeUs = 0L
 
@@ -37,13 +31,11 @@ class AudioEncoder {
      * @param isOpus コーデックにOpusを利用する場合はtrue。動画のコーデックにVP9を利用している場合は必須
      */
     fun prepareEncoder(
-        sampleRate: Int = 44_100,
+        sampleRate: Int = 48_000,
         channelCount: Int = 2,
         bitRate: Int = 192_000,
         isOpus: Boolean = false,
     ) {
-        this@AudioEncoder.sampleRate = sampleRate
-        this@AudioEncoder.channelCount = channelCount
         val codec = if (isOpus) MediaFormat.MIMETYPE_AUDIO_OPUS else MediaFormat.MIMETYPE_AUDIO_AAC
         val audioEncodeFormat = MediaFormat.createAudioFormat(codec, sampleRate, channelCount).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
@@ -70,10 +62,9 @@ class AudioEncoder {
         val bufferInfo = MediaCodec.BufferInfo()
         mediaCodec!!.start()
 
-        // 経過時間の計算、AOSPの内部音声コードをそのままパクります
-        // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenInternalAudioRecorder.java;l=252;drc=a9f632187cec8873f3f2429022a25b867b2b7d4b?q=internalaudio
-        var mTotalBytes = 0
-        var mPresentationTime = 0L
+        // 経過時間を足していく
+        val startUs = System.nanoTime()
+        var currentPresentationTimeUs = 0L
 
         try {
             while (isActive) {
@@ -90,10 +81,8 @@ class AudioEncoder {
                     if (readByteSize > 0) {
                         // 書き込む。書き込んだデータは[onOutputBufferAvailable]で受け取れる
                         inputBuffer.put(byteArray, 0, readByteSize)
-                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, mPresentationTime, 0)
-                        mTotalBytes += readByteSize
-                        // チャンネル数気をつけて
-                        mPresentationTime = 1000000L * (mTotalBytes / 2) / (sampleRate * channelCount)
+                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, currentPresentationTimeUs, 0)
+                        currentPresentationTimeUs = System.nanoTime() - startUs
                     }
                 }
                 // 出力

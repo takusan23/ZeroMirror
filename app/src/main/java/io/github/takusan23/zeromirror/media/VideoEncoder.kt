@@ -3,6 +3,7 @@ package io.github.takusan23.zeromirror.media
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.view.Surface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -21,6 +22,9 @@ class VideoEncoder {
 
     /** MediaCodec エンコーダー */
     private var mediaCodec: MediaCodec? = null
+
+    /** MediaCodecの入力Surface */
+    private var inputSurface: Surface? = null
 
     /**
      * Surface入力のMediaCodecの場合、 presentationTimeUs の値が System.nanoTime を足した値になっているため、その分を引くため
@@ -66,7 +70,9 @@ class VideoEncoder {
      *
      * @return 入力で使うSurface
      */
-    fun createInputSurface() = mediaCodec!!.createInputSurface()
+    fun createInputSurface() = mediaCodec!!.createInputSurface().apply {
+        inputSurface = this
+    }
 
     /**
      * エンコーダーを開始する。同期モードを使うのでコルーチンを使います（スレッドでも良いけど）
@@ -134,6 +140,7 @@ class VideoEncoder {
     /** リソースを開放する */
     fun release() {
         try {
+            inputSurface?.release()
             mediaCodec?.stop()
             mediaCodec?.release()
         } catch (e: Exception) {

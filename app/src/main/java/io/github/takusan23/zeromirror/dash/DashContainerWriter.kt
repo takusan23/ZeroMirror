@@ -13,7 +13,7 @@ import java.nio.ByteBuffer
  * MPEG-DASHで配信する WebM を作成する。
  * エンコードされたデータをファイル（コンテナ）に書き込む。
  *
- * @param tempFile 一時ファイル。詳しくは [currentFile]
+ * @param tempFile 一時ファイル。
  */
 class DashContainerWriter(private val tempFile: File) {
 
@@ -108,7 +108,6 @@ class DashContainerWriter(private val tempFile: File) {
             // 前回までの範囲をスキップして切り出す
             inputStream?.also { stream ->
                 val byteArray = ByteArray(stream.available())
-                println("書き込みサイズ = ${byteArray.size}")
                 stream.read(byteArray)
                 file.writeBytes(byteArray)
             }
