@@ -119,10 +119,10 @@ fun SwitchSettingItem(
                             Text(text = subTitle)
                         }
                     }
-                    AndroidSnowConeSwitch(
+                    Switch(
                         modifier = Modifier.padding(10.dp),
-                        isEnable = isEnable,
-                        onValueChange = onValueChange
+                        checked = isEnable,
+                        onCheckedChange = onValueChange
                     )
                 }
                 if (description != null) {

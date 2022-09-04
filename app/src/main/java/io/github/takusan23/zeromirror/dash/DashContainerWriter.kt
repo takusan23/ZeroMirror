@@ -43,6 +43,7 @@ class DashContainerWriter(private val tempFile: File) {
 
     /** 初期化セグメントを作成したか */
     var isGeneratedInitSegment = false
+        private set
 
     /** コンテナフォーマット / MediaMuxer を (再) 生成する */
     suspend fun resetOrCreateContainerFile() = withContext(Dispatchers.IO) {

@@ -130,10 +130,8 @@ class DashStreaming(
             }
             // MediaMuxerで書き込み中のファイルから定期的にデータをコピーして（セグメントファイルが出来る）クライアントで再生する
             // この方法だと、MediaMuxerとMediaMuxerからコピーしたデータで二重に容量を使うけど後で考える
-            launch {
-                dashContentManager.createIncrementFile().also { segment ->
-                    dashContainerWriter.sliceSegmentFile(segment.path)
-                }
+            dashContentManager.createIncrementFile().also { segment ->
+                dashContainerWriter.sliceSegmentFile(segment.path)
             }
         }
     }
