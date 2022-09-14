@@ -42,7 +42,6 @@ class WSContainerWriter(private val tempFile: File) {
 
     /**
      * コンテナを作成する か 作り直す
-     * 作り直す場合は [stopWriter] を呼び出す
      *
      * @param videoPath 動画ファイルのパス
      */

@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
  * ファイル保存は別クラスに譲渡している [ContainerFileWriter]
  *
  * @param displayDpi DPI
- * @param mediaProjection [MediaProjection]、内部音声を収録するのに使います。
+ * @param mediaProjection [MediaProjection]、画面収録するのに使います。
  */
 class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjection: MediaProjection) {
 

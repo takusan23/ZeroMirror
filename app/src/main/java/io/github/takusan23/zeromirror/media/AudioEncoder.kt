@@ -62,10 +62,6 @@ class AudioEncoder {
         val bufferInfo = MediaCodec.BufferInfo()
         mediaCodec!!.start()
 
-        // 経過時間を足していく
-        val startUs = System.nanoTime()
-        var currentPresentationTimeUs = 0L
-
         try {
             while (isActive) {
                 // もし -1 が返ってくれば configure() が間違ってる
@@ -81,8 +77,7 @@ class AudioEncoder {
                     if (readByteSize > 0) {
                         // 書き込む。書き込んだデータは[onOutputBufferAvailable]で受け取れる
                         inputBuffer.put(byteArray, 0, readByteSize)
-                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, currentPresentationTimeUs, 0)
-                        currentPresentationTimeUs = System.nanoTime() - startUs
+                        mediaCodec!!.queueInputBuffer(inputBufferId, 0, readByteSize, System.nanoTime() / 1000, 0)
                     }
                 }
                 // 出力

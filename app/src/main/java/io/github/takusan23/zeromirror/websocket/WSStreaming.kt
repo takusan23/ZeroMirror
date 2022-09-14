@@ -161,9 +161,7 @@ class WSStreaming(
 <body>
     <div align="center">
         <p id="title">動画データの到着を待っています...</p>
-        <p>最初だけ再生ボタンを押す必要があります。音量注意してください。</p>
         <p><button id="cache_button">切り替えを安定させる（実験的）</button></p>
-        <p><a href="/stablemode">先読みを利用した安定モードへ切り替え</a></p>
         <video id="video_player" width="300" controls autoplay muted></video>
     </div>
 </body>

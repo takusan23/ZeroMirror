@@ -79,7 +79,10 @@ class DashStreaming(
         }
         // MPEG-DASHのマニフェストファイルをホスティングする
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
-            writeText(DashManifestTool.createManifest((mirroringSettingData.intervalMs / 1_000).toInt()))
+            writeText(DashManifestTool.createManifest(
+                fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
+                hasAudio = mirroringSettingData.isRecordInternalAudio
+            ))
         }
         // サーバー開始
         server = Server(

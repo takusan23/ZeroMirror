@@ -18,12 +18,14 @@ object DashManifestTool {
      * マニフェストを作成する
      *
      * @param fileIntervalSec 動画ファイルの生成間隔
+     * @param hasAudio 音声を動画に含めている場合はtrue
      * @return XML
      */
-    fun createManifest(fileIntervalSec: Int = 3): String {
+    fun createManifest(fileIntervalSec: Int = 3, hasAudio: Boolean = false): String {
         // コンテンツが利用可能になる時間（ISO-8601）
         // この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
         val formattedAvailabilityStartTime = isoDateFormat.format(System.currentTimeMillis())
+        val codecs = if (hasAudio) "vp9,opus" else "vp9"
         // minimumUpdatePeriod="P60S" みたいな感じに指定すると、マニフェストファイルを指定した時間の間隔で更新してくれるみたい
         return """
             <?xml version="1.0" encoding="utf-8"?>
@@ -34,7 +36,7 @@ object DashManifestTool {
                   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
                   <!-- duration が更新頻度っぽい -->
                   <SegmentTemplate duration="$fileIntervalSec" initialization="/init.webm" media="/file_${"$"}Number${'$'}.webm" startNumber="0"/>
-                  <Representation id="default" codecs="vp9,opus"/>
+                  <Representation id="default" codecs="$codecs"/>
                 </AdaptationSet>
               </Period>
             </MPD>
