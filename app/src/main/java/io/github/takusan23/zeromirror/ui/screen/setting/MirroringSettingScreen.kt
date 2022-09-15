@@ -210,17 +210,6 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         }
                     )
-
-                    SwitchSettingItem(
-                        title = stringResource(id = R.string.mirroring_setting_vp9),
-                        subTitle = stringResource(id = R.string.mirroring_setting_vp9_description),
-                        description = stringResource(id = R.string.mirroring_setting_vp9_hint),
-                        isEnable = mirroringData.value!!.isVP9,
-                        iconRes = R.drawable.ic_outline_aspect_ratio_24,
-                        onValueChange = { after ->
-                            updateSetting { it.copy(isVP9 = after) }
-                        }
-                    )
                 }
             }
         }

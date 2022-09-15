@@ -62,7 +62,7 @@ class WSStreaming(
                 videoHeight = videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
-                isVp9 = mirroringSettingData.isVP9,
+                isVp9 = false,
             )
         }
         // 内部音声を一緒にエンコードする場合
@@ -70,7 +70,7 @@ class WSStreaming(
             internalAudioEncoder = InternalAudioEncoder(mediaProjection).apply {
                 prepareEncoder(
                     bitRate = mirroringSettingData.audioBitRate,
-                    isOpus = mirroringSettingData.isVP9,
+                    isOpus = false,
                 )
             }
         }

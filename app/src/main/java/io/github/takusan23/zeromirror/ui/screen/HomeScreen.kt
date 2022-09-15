@@ -149,6 +149,22 @@ fun HomeScreen(
                 )
             }
 
+            // ストリーミング方式の選択
+            if (mirroringData.value != null) {
+                StreamingTypeCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    currentType = mirroringData.value!!.streamingType,
+                    onClick = { type ->
+                        // 設定を保存
+                        scope.launch {
+                            MirroringSettingData.setDataStore(context, mirroringData.value!!.copy(streamingType = type))
+                        }
+                    }
+                )
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()

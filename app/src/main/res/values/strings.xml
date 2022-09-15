@@ -65,10 +65,19 @@ It is a specification that there is a momentary reading when switching images.</
     <string name="mirroring_setting_resolution_video_height">Video height</string>
     <string name="mirroring_setting_resolution_video_width">Video width</string>
     <string name="mirroring_setting_radvanced">Settings for advanced / power users</string>
-    <string name="mirroring_setting_vp9">Use VP9 for codec</string>
-    <string name="mirroring_setting_vp9_description">H.264 is used by default. You need an environment where VP9 can be played. You also need to set the video resolution.</string>
-    <string name="mirroring_setting_vp9_hint">It seems that the file size of the video can be made smaller than H.264. Maybe you can use it when the Wi-Fi speed is slow.</string>
     <string name="mirroring_setting_resolution_hint">Horizontal 1280 / Vertical 720, etc.</string>
     <string name="stream_info_video_resolution">Video resolution</string>
-    <string name="stream_info_vp9">Use VP9 codec</string>
+    <string name="streaming_setting_type_mpeg_dash_title">MPEG-DASH mode</string>
+    <string name="streaming_setting_type_websocket_title">WebSocket mode</string>
+    <string name="streaming_setting_type_mpeg_dash_description">
+Recommendation.\n
+Mirroring is performed using a technology called MPEG-DASH, which is also used in live distribution.\n
+The video codec uses VP9, the audio codec uses Opus, and the container uses WebM.\n
+Requires a browser with the MediaSource Extensions API available.
+    </string>
+    <string name="streaming_setting_type_websocket_description">
+Mirroring is performed by transmitting the chopped video with WebSocket.\n
+The video codec is H.264, the audio codec is AAC, and the container is MP4.
+    </string>
+    <string name="streaming_setting_type_title">Choosing a streaming method</string>
 </resources>

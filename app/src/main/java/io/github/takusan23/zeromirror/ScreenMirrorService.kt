@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.zeromirror.dash.DashStreaming
 import io.github.takusan23.zeromirror.data.MirroringSettingData
+import io.github.takusan23.zeromirror.data.StreamingType
 import io.github.takusan23.zeromirror.media.StreamingInterface
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.QrCodeGeneratorTool
@@ -62,7 +63,7 @@ class ScreenMirrorService : Service() {
             if (resultCode != null && resultData != null) {
                 mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
                 // ミラーリング用意
-                streaming = if (mirroringSettingData.isVP9) {
+                streaming = if (mirroringSettingData.streamingType == StreamingType.MpegDash) {
                     DashStreaming(this@ScreenMirrorService, mirroringSettingData)
                 } else {
                     WSStreaming(this@ScreenMirrorService, mirroringSettingData)

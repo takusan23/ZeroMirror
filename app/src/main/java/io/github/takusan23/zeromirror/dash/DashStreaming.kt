@@ -65,7 +65,7 @@ class DashStreaming(
                 videoHeight = mirroringSettingData.videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
-                isVp9 = mirroringSettingData.isVP9,
+                isVp9 = true,
             )
         }
         // 内部音声を一緒にエンコードする場合
@@ -73,7 +73,7 @@ class DashStreaming(
             internalAudioEncoder = InternalAudioEncoder(mediaProjection).apply {
                 prepareEncoder(
                     bitRate = mirroringSettingData.audioBitRate,
-                    isOpus = mirroringSettingData.isVP9,
+                    isOpus = true,
                 )
             }
         }

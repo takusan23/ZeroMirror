@@ -16,10 +16,10 @@ import kotlinx.coroutines.flow.map
  * @param videoFrameRate 映像フレームレート、fps
  * @param intervalMs 動画を切り出す間隔、ミリ秒
  * @param isRecordInternalAudio 内部音声を入れる場合はtrue、権限があるかどうかまでは見ていません
- * @param isVP9 H.264ではなく、VP9を利用する場合はtrue。なんかかっこいい
  * @param isCustomResolution 動画の解像度をカスタマイズした場合はtrue、falseなら画面の解像度を利用する
  * @param videoHeight 動画の高さ、0の場合は画面の大きさを利用すること
  * @param videoWidth 動画の幅、0の場合は画面の大きさを利用すること
+ * @param streamingType ストリーミング方式。デフォルトは[StreamingType.MpegDash]
  */
 data class MirroringSettingData(
     val portNumber: Int,
@@ -28,28 +28,28 @@ data class MirroringSettingData(
     val videoFrameRate: Int,
     val audioBitRate: Int,
     val isRecordInternalAudio: Boolean,
-    val isVP9: Boolean,
     val isCustomResolution: Boolean,
     val videoHeight: Int,
     val videoWidth: Int,
+    val streamingType: StreamingType,
 ) {
 
     companion object {
 
         /** デフォルトポート番号 */
-        const val DEFAULT_PORT_NUMBER = 2828
+        private const val DEFAULT_PORT_NUMBER = 2828
 
         /** デフォルトファイル生成間隔 */
-        const val DEFAULT_INTERVAL_MS = 5_000L
+        private const val DEFAULT_INTERVAL_MS = 5_000L
 
         /** デフォルト映像ビットレート */
-        const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
+        private const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
 
         /** デフォルト音声ビットレート */
-        const val DEFAULT_AUDIO_BIT_RATE = 128_000
+        private const val DEFAULT_AUDIO_BIT_RATE = 128_000
 
         /** デフォルト映像フレームレート */
-        const val DEFAULT_VIDEO_FRAME_RATE = 30
+        private const val DEFAULT_VIDEO_FRAME_RATE = 30
 
         /**
          * データストアから読み出してデータクラスを返す
@@ -66,10 +66,10 @@ data class MirroringSettingData(
                     videoFrameRate = data[SettingKeyObject.VIDEO_FRAME_RATE] ?: DEFAULT_VIDEO_FRAME_RATE,
                     audioBitRate = data[SettingKeyObject.AUDIO_BIT_RATE] ?: DEFAULT_AUDIO_BIT_RATE,
                     isRecordInternalAudio = data[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] ?: false,
-                    isVP9 = data[SettingKeyObject.IS_VP9] ?: false,
                     isCustomResolution = data[SettingKeyObject.IS_CUSTOM_RESOLUTION] ?: false,
                     videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: 1280,
-                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 720
+                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 720,
+                    streamingType = data[SettingKeyObject.STREAMING_TYPE]?.let { StreamingType.valueOf(it) } ?: StreamingType.MpegDash
                 )
             }
         }
@@ -88,10 +88,10 @@ data class MirroringSettingData(
                 it[SettingKeyObject.VIDEO_FRAME_RATE] = mirroringSettingData.videoFrameRate
                 it[SettingKeyObject.AUDIO_BIT_RATE] = mirroringSettingData.audioBitRate
                 it[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] = mirroringSettingData.isRecordInternalAudio
-                it[SettingKeyObject.IS_VP9] = mirroringSettingData.isVP9
                 it[SettingKeyObject.IS_CUSTOM_RESOLUTION] = mirroringSettingData.isCustomResolution
                 it[SettingKeyObject.VIDEO_WIDTH] = mirroringSettingData.videoWidth
                 it[SettingKeyObject.VIDEO_HEIGHT] = mirroringSettingData.videoHeight
+                it[SettingKeyObject.STREAMING_TYPE] = mirroringSettingData.streamingType.name
             }
         }
 
@@ -107,10 +107,10 @@ data class MirroringSettingData(
                 it -= SettingKeyObject.VIDEO_FRAME_RATE
                 it -= SettingKeyObject.AUDIO_BIT_RATE
                 it -= SettingKeyObject.IS_RECORD_INTERNAL_AUDIO
-                it -= SettingKeyObject.IS_VP9
                 it -= SettingKeyObject.IS_CUSTOM_RESOLUTION
                 it -= SettingKeyObject.VIDEO_WIDTH
                 it -= SettingKeyObject.VIDEO_HEIGHT
+                it -= SettingKeyObject.STREAMING_TYPE
             }
         }
 
