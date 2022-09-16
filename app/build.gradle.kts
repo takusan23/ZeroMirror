@@ -1,4 +1,4 @@
-val composeVersion = "1.2.0-alpha08"
+val composeVersion = "1.2.0"
 
 plugins {
     id("com.android.application")
@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    compileSdk = 31
+    compileSdk = 32
 
     defaultConfig {
         applicationId = "io.github.takusan23.zeromirror"
         minSdk = 21
-        targetSdk = 31
+        targetSdk = 32
         versionCode = 1
         versionName = "1.0.0"
 
@@ -85,7 +85,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.4.1")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.20.0")
     // Compose + Material You
-    implementation("androidx.compose.material3:material3:1.0.0-alpha12")
+    implementation("androidx.compose.material3:material3:1.0.0-alpha14")
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     testImplementation("junit:junit:4.13.2")
