@@ -5,7 +5,7 @@
     <string name="hello_screen_message">このアプリは画面を共有するアプリです（ミラーリング）。\n
 同じWi-Fiに接続しているパソコンやスマホからこのスマホの画面を共有できます。\n
 使い方もURLを他の端末のブラウザで開くだけ。\n
-映像の切り替え時に一瞬読み込みがあるのは仕様です。</string>
+映像の切り替え時に一瞬読み込みがあるのは仕様です（WebSocket モード）。</string>
     <string name="hello_screen_start">はじめる</string>
     <string name="setting_screen_title">設定画面</string>
     <string name="setting_stream_title">画面共有(ミラーリング)の設定</string>

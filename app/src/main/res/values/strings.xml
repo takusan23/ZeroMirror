@@ -4,7 +4,7 @@
     <string name="hello_screen_message">This app is an app to share the screen (mirroring).\n
 You can share the screen of this smartphone from a computer or smartphone connected to the same Wi-Fi.\n
 To use it, just open the URL in the browser of another terminal.\n
-It is a specification that there is a momentary reading when switching images.</string>
+It is a specification that there is a momentary reading when switching images (WebSocket Mode).</string>
     <string name="hello_screen_start">Start</string>
     <string name="setting_screen_title">Settings</string>
     <string name="setting_stream_title">Screen sharing (mirroring) settings</string>

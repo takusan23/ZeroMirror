@@ -40,7 +40,7 @@ data class MirroringSettingData(
         private const val DEFAULT_PORT_NUMBER = 2828
 
         /** デフォルトファイル生成間隔 */
-        private const val DEFAULT_INTERVAL_MS = 5_000L
+        private const val DEFAULT_INTERVAL_MS = 1_000L
 
         /** デフォルト映像ビットレート */
         private const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
