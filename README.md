@@ -15,8 +15,10 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.zeromirror
 
 - ブラウザがあれば見れる
     - 同じLAN（同じ Wi-Fi）につながっていれば見れます
+    - ブラウザがあれば見れます。**お手軽！！！！**
+        - スマホでも見れる
 - ほぼ設定なしで利用できる
-    - Zero ( Configration ) Mirroring → ぜろみらー
+    - Zero ( Configuration ) Mirroring → ぜろみらー
     - ビットレート、フレームレートの設定も可能です
 - Android 10 以降は端末の内部音声も収録できます
 - ブラウザ側は特に難しいことしていない
