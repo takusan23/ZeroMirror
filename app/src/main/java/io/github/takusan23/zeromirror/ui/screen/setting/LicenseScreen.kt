@@ -39,7 +39,10 @@ fun LicenseScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         }
     ) {

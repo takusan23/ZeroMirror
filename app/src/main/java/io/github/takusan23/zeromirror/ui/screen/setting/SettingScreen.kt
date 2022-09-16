@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
@@ -33,7 +34,10 @@ fun SettingScreen(
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         }
     ) {

@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
@@ -47,7 +48,10 @@ fun CurrentTimeTitle(
             IconButton(onClick = onSettingClick) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
             }
-        }
+        },
+        colors =TopAppBarDefaults.largeTopAppBarColors(
+            containerColor = Color.Transparent
+        )
     )
 }
 

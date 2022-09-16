@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 private val LightThemeColors = lightColorScheme(
 
@@ -68,12 +69,12 @@ private val DarkThemeColors = darkColorScheme(
 
 /**
  * テーマ
- *
  * アノテーションで警告を黙らせてるけどちゃんと動くようにしてあるのでおｋ
+ * [ColorScheme.background]は[ColorScheme.surface]へ[2.dp]したものになります。
  *
  * @param isUseDynamicColor ダイナミックカラーを利用するか
  * @param darkTheme ダークモード
- * */
+ */
 @SuppressLint("NewApi")
 @Composable
 fun ZeroMirrorTheme(
@@ -91,7 +92,9 @@ fun ZeroMirrorTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = colorScheme.copy(background = colorScheme.surfaceColorAtElevation(ElevationDp)),
         content = content
     )
 }
+
+private val ElevationDp = 2.dp

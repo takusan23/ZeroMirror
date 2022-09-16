@@ -18,7 +18,7 @@ import androidx.core.graphics.red
  * @param color 変更する色
  * */
 @Composable
-fun SetNavigationBarColor(color: Color = MaterialTheme.colorScheme.surface) {
+fun SetNavigationBarColor(color: Color = MaterialTheme.colorScheme.background) {
     val context = LocalContext.current
 
     // ナビゲーションバーの色
@@ -38,7 +38,7 @@ fun SetNavigationBarColor(color: Color = MaterialTheme.colorScheme.surface) {
  * @param color 変更する色
  * */
 @Composable
-fun SetStatusBarColor(color: Color = MaterialTheme.colorScheme.surface) {
+fun SetStatusBarColor(color: Color = MaterialTheme.colorScheme.background) {
     val context = LocalContext.current
 
     // ナビゲーションバーの色

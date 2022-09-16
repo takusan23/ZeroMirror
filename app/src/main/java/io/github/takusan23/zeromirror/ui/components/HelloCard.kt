@@ -29,9 +29,10 @@ fun HelloCard(
     onHelloClick: () -> Unit,
     onClose: () -> Unit,
 ) {
-    OutlinedCard(
+    Card(
         modifier = modifier,
-        onClick = onHelloClick
+        onClick = onHelloClick,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Row(
             modifier = Modifier.padding(5.dp),
