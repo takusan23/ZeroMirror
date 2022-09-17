@@ -11,8 +11,11 @@ object DashManifestTool {
     /**
      * ISO 8601 で映像データの利用可能時間を指定する必要があるため
      * MPEG-DASHの場合は指定時間になるまで再生を開始しない機能があるらしい。
+     *
+     * 本当は ["yyyy-MM-dd'T'HH:mm:ssXXX"] が正解だが、X が 7以降 のため、Z を使っている。
+     * JavaScriptでパース出来ているので問題ないはず。
      */
-    private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.JAPAN)
+    private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.JAPAN)
 
     /**
      * マニフェストを作成する

@@ -13,7 +13,10 @@ It is a specification that there is a momentary reading when switching images (W
     <string name="setting_about_this_app_description">Open source</string>
     <string name="setting_license_title">License</string>
     <string name="setting_license_description">thank you !!!</string>
-    <string name="about_this_app_message">Just prepare a browser\nEasy screen sharing (mirroring) app</string>
+    <string name="about_this_app_message">
+I...? ,\n
+It\'s a simple screen sharing (mirroring) application that requires only a browser.
+    </string>
     <string name="about_this_app_open_github">Open on GitHub (open source)</string>
     <string name="about_this_app_version">Version</string>
     <string name="about_this_app_twitter">Twitter</string>

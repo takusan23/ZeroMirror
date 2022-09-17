@@ -15,7 +15,8 @@ class ServerTest {
     /** サーバー */
     private val server = Server(
         portNumber = portNumber,
-        hostingFolder = hostingFileList
+        hostingFolder = hostingFileList,
+        indexHtml = """<h1>Hello World</h1>"""
     )
 
     /** サーバーを開始できること */

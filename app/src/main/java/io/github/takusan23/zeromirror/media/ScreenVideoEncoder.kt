@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
 /**
  * 画面録画して H.264 / VP9 でエンコードする
  *
- * ファイル保存は別クラスに譲渡している [ContainerFileWriter]
+ * ファイル保存は別クラスに譲渡している
  *
  * @param displayDpi DPI
  * @param mediaProjection [MediaProjection]、画面収録するのに使います。

@@ -14,7 +14,10 @@
     <string name="setting_about_this_app_description">オープンソースです</string>
     <string name="setting_license_title">ライセンス</string>
     <string name="setting_license_description">ありがとうございます！！！</string>
-    <string name="about_this_app_message">ブラウザを用意するだけ\nお手軽画面共有(ミラーリング)アプリ</string>
+    <string name="about_this_app_message">
+わたし・・・？、\n
+ブラウザを用意するだけのお手軽画面共有(ミラーリング)アプリ だよ。
+    </string>
     <string name="about_this_app_open_github">GitHubで開く (オープンソース)</string>
     <string name="about_this_app_version">バージョン</string>
     <string name="about_this_app_twitter">Twitter</string>

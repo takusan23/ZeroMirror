@@ -51,7 +51,9 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
     /** ミラーリング設定を初期値に戻す */
     fun resetMirrorSetting() {
         scope.launch {
+            // リセットしたら設定画面を閉じる（InitValueなんたらは初期値のみ受け付けるので）
             MirroringSettingData.resetDataStore(context)
+            onBack()
         }
     }
 
