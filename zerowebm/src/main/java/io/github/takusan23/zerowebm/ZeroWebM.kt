@@ -103,6 +103,7 @@ class ZeroWebM {
         val videoTrackEntryValue = videoTrackNumber.toElementBytes() + videoTrackUid.toElementBytes() + videoCodecId.toElementBytes() + videoTrackType.toElementBytes() + videoTrack.toElementBytes()
         val videoTrackEntry = EBMLElement(MatroskaTags.TrackEntry, videoTrackEntryValue)
 
+/*
         // 音声トラック情報
         val audioTrackNumber = EBMLElement(MatroskaTags.TrackNumber, AUDIO_TRACK_ID.toByteArray())
         val audioTrackUid = EBMLElement(MatroskaTags.TrackUID, AUDIO_TRACK_ID.toByteArray())
@@ -114,9 +115,10 @@ class ZeroWebM {
         val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes())
         val audioTrackEntryValue = audioTrackNumber.toElementBytes() + audioTrackUid.toElementBytes() + audioCodecId.toElementBytes() + audioTrackType.toElementBytes() + codecPrivate.toElementBytes() + audioTrack.toElementBytes()
         val audioTrackEntry = EBMLElement(MatroskaTags.TrackEntry, audioTrackEntryValue)
+*/
 
         // Tracks を作る
-        return EBMLElement(MatroskaTags.Tracks, videoTrackEntry.toElementBytes() + audioTrackEntry.toElementBytes())
+        return EBMLElement(MatroskaTags.Tracks, videoTrackEntry.toElementBytes() /*+ audioTrackEntry.toElementBytes()*/)
     }
 
     /** Info要素を作成する。 */

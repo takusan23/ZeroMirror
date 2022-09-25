@@ -56,7 +56,7 @@ class DashStreaming(
             deleteGenerateFile()
         }
         // コンテナファイルに書き込むやつ
-        val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
+        // val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
         // dashContainerWriter = DashContainerWriter(tempFile)
         // エンコーダーの用意
         screenVideoEncoder = ScreenVideoEncoder(context.resources.configuration.densityDpi, mediaProjection).apply {
@@ -82,7 +82,7 @@ class DashStreaming(
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
             writeText(DashManifestTool.createManifest(
                 fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
-                hasAudio = mirroringSettingData.isRecordInternalAudio
+                hasAudio = /*mirroringSettingData.isRecordInternalAudio*/ false
             ))
         }
         // MPEG-DASH の初期化セグメントを作成する
