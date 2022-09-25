@@ -13,5 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "ZeroMirror"
-include ':app'
-include ':server'
+include(":app", ":server", ":zerowebm")

@@ -29,7 +29,8 @@ class DashStreaming(
     private lateinit var dashContentManager: DashContentManager
 
     /** コンテナに書き込むクラス */
-    private lateinit var dashContainerWriter: DashContainerWriter
+    // private lateinit var dashContainerWriter: DashContainerWriter
+    private val zeroWebMWriter = ZeroWebMWriter()
 
     /** 映像エンコーダー */
     private lateinit var screenVideoEncoder: ScreenVideoEncoder
@@ -56,7 +57,7 @@ class DashStreaming(
         }
         // コンテナファイルに書き込むやつ
         val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
-        dashContainerWriter = DashContainerWriter(tempFile)
+        // dashContainerWriter = DashContainerWriter(tempFile)
         // エンコーダーの用意
         screenVideoEncoder = ScreenVideoEncoder(context.resources.configuration.densityDpi, mediaProjection).apply {
             // VP9 エンコーダーだと画面解像度を入れると失敗する。1280x720 / 1920x1080 だと成功する
@@ -84,6 +85,10 @@ class DashStreaming(
                 hasAudio = mirroringSettingData.isRecordInternalAudio
             ))
         }
+        // MPEG-DASH の初期化セグメントを作成する
+        dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
+            zeroWebMWriter.createInitSegment(initSegment.path)
+        }
         // サーバー開始
         server = Server(
             portNumber = mirroringSettingData.portNumber,
@@ -96,15 +101,15 @@ class DashStreaming(
 
     override suspend fun startEncode() = withContext(Dispatchers.Default) {
         // MediaMuxer起動
-        dashContainerWriter.resetOrCreateContainerFile()
+        // dashContainerWriter.resetOrCreateContainerFile()
         // 画面録画エンコーダー
         launch {
             screenVideoEncoder.start(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo -> dashContainerWriter.writeVideo(byteBuffer, bufferInfo) },
+                onOutputBufferAvailable = { byteBuffer, bufferInfo -> zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo) },
                 onOutputFormatAvailable = {
-                    dashContainerWriter.setVideoTrack(it)
+                    // dashContainerWriter.setVideoTrack(it)
                     // 開始する
-                    dashContainerWriter.start()
+                    // dashContainerWriter.start()
                 }
             )
         }
@@ -112,9 +117,9 @@ class DashStreaming(
         if (isInitializedInternalAudioEncoder) {
             launch {
                 internalAudioEncoder?.start(
-                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> dashContainerWriter.writeAudio(byteBuffer, bufferInfo) },
+                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo) },
                     onOutputFormatAvailable = {
-                        dashContainerWriter.setAudioTrack(it)
+                        // dashContainerWriter.setAudioTrack(it)
                         // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
                     }
                 )
@@ -125,23 +130,23 @@ class DashStreaming(
         while (isActive) {
             // intervalMs 秒待機したら新しいファイルにする
             delay(mirroringSettingData.intervalMs)
-            // 初回時だけ初期化セグメントを作る
-            if (!dashContainerWriter.isGeneratedInitSegment) {
-                dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
-                    dashContainerWriter.sliceInitSegmentFile(initSegment.path)
-                }
-            }
+//            // 初回時だけ初期化セグメントを作る
+//            if (!dashContainerWriter.isGeneratedInitSegment) {
+//                dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
+//                    dashContainerWriter.sliceInitSegmentFile(initSegment.path)
+//                }
+//            }
             // MediaMuxerで書き込み中のファイルから定期的にデータをコピーして（セグメントファイルが出来る）クライアントで再生する
             // この方法だと、MediaMuxerとMediaMuxerからコピーしたデータで二重に容量を使うけど後で考える
             dashContentManager.createIncrementFile().also { segment ->
-                dashContainerWriter.sliceSegmentFile(segment.path)
+                zeroWebMWriter.createMediaSegment(segment.path)
             }
         }
     }
 
     @SuppressLint("NewApi")
     override fun release() {
-        dashContainerWriter.release()
+        // dashContainerWriter.release()
         server.stopServer()
         screenVideoEncoder.release()
         internalAudioEncoder?.release()

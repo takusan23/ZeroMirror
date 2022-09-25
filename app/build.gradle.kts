@@ -53,8 +53,10 @@ android {
 dependencies {
 
     // マルチモジュール構成になっている
-    // 映像を配信するサーバー
+    // 映像を配信するサーバー（今となっては Ktor のラッパーでしか無い）
     implementation(project(":server"))
+    // WebMファイルを作る
+    implementation(project(":zerowebm"))
 
     // QR code
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
