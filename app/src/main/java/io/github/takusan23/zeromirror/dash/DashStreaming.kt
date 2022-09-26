@@ -82,7 +82,7 @@ class DashStreaming(
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
             writeText(DashManifestTool.createManifest(
                 fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
-                hasAudio = /*mirroringSettingData.isRecordInternalAudio*/ false
+                hasAudio = mirroringSettingData.isRecordInternalAudio
             ))
         }
         // MPEG-DASH の初期化セグメントを作成する
@@ -150,6 +150,14 @@ class DashStreaming(
         server.stopServer()
         screenVideoEncoder.release()
         internalAudioEncoder?.release()
+/*
+        GlobalScope.launch {
+            dashContentManager.createIncrementFile().also { file ->
+                zeroWebMWriter.createInitSegment(file.path)
+                zeroWebMWriter.createMediaSegment(file.path)
+            }
+        }
+*/
     }
 
     companion object {

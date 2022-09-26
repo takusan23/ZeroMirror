@@ -59,7 +59,7 @@ class ZeroWebM {
         val cluster = createStreamingCluster()
 
         val segmentValue = info.toElementBytes() + tracks.toElementBytes() + cluster.toElementBytes()
-        return EBMLElement(MatroskaTags.Segment, segmentValue)
+        return EBMLElement(MatroskaTags.Segment, segmentValue, UNKNOWN_SIZE)
     }
 
     /**
@@ -147,15 +147,14 @@ class ZeroWebM {
         val opusHeader = "OpusHead".toAscii() + byteArrayOf(0x01.toByte()) + byteArrayOf(0x02.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte()) + byteArrayOf(0x80.toByte(), 0xBB.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte())
         val codecPrivate = EBMLElement(MatroskaTags.CodecPrivate, opusHeader)
         // サンプリングレートはfloatなのでひと手間必要
-        val bitDepth = EBMLElement(MatroskaTags.BitDepth, 32.toByteArray())
         val sampleFrequency = EBMLElement(MatroskaTags.SamplingFrequency, SAMPLING_FREQUENCY.toBits().toByteArray())
         val channels = EBMLElement(MatroskaTags.Channels, CHANNELS.toByteArray())
-        val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes() + bitDepth.toElementBytes())
+        val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes())
         val audioTrackEntryValue = audioTrackNumber.toElementBytes() + audioTrackUid.toElementBytes() + audioCodecId.toElementBytes() + audioTrackType.toElementBytes() + codecPrivate.toElementBytes() + audioTrack.toElementBytes()
         val audioTrackEntry = EBMLElement(MatroskaTags.TrackEntry, audioTrackEntryValue)
 
         // Tracks を作る
-        return EBMLElement(MatroskaTags.Tracks, videoTrackEntry.toElementBytes() + audioTrackEntry.toElementBytes())
+        return EBMLElement(MatroskaTags.Tracks, audioTrackEntry.toElementBytes() + videoTrackEntry.toElementBytes())
     }
 
     /** Info要素を作成する。 */

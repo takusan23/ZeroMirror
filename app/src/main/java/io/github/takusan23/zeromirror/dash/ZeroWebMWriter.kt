@@ -24,11 +24,11 @@ class ZeroWebMWriter {
         File(filePath).also { initFile ->
             val ebmlHeader = zeroWebM.createEBMLHeader()
             val segment = zeroWebM.createSegment()
-            val cluster = zeroWebM.createStreamingCluster()
+            // val cluster = zeroWebM.createStreamingCluster()
 
             initFile.appendBytes(ebmlHeader.toElementBytes())
             initFile.appendBytes(segment.toElementBytes())
-            initFile.appendBytes(cluster.toElementBytes())
+            // initFile.appendBytes(cluster.toElementBytes())
         }
     }
 
