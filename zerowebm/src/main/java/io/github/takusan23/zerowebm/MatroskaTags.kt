@@ -43,6 +43,7 @@ enum class MatroskaTags(val id: ByteArray) {
     AudioTrack(byteArrayOf(0xE1.toByte())),
     SamplingFrequency(byteArrayOf(0xB5.toByte())),
     Channels(byteArrayOf(0x9F.toByte())),
+    BitDepth(byteArrayOf(0x62.toByte(), 0x64.toByte())),
 
     Cues(byteArrayOf(0x1C.toByte(), 0x53.toByte(), 0xBB.toByte(), 0x6B.toByte())),
 

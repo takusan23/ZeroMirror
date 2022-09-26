@@ -1,11 +1,38 @@
 package io.github.takusan23.zerowebm
 
+import io.github.takusan23.zerowebm.ZeroWebM.Companion.UNKNOWN_SIZE
+import io.github.takusan23.zerowebm.ZeroWebM.Companion.VIDEO_TRACK_ID
+import java.io.File
+
+val file = File("init.webm")
+
+/** テスト用 */
+fun main(arg: Array<String>) {
+    val zeroWebM = ZeroWebM()
+    val ebmlHeader = zeroWebM.createEBMLHeader()
+    val segment = zeroWebM.createSegment()
+    val simpleBlock = zeroWebM.appendSimpleBlock(VIDEO_TRACK_ID, 100, UNKNOWN_SIZE, true)
+    val newClusterSimpleBlock = zeroWebM.appendSimpleBlock(VIDEO_TRACK_ID, Short.MAX_VALUE.toInt() + 1, UNKNOWN_SIZE, true)
+
+    file.appendBytes(ebmlHeader.toElementBytes())
+    file.appendBytes(segment.toElementBytes())
+    file.appendBytes(simpleBlock)
+    file.appendBytes(newClusterSimpleBlock)
+
+    // Segment > Tracks > Audio の CodecPrivate に入れる中身
+    // OpusHeaderをつくる
+    val opusHeader = "OpusHead".toAscii() + byteArrayOf(0x01.toByte()) + byteArrayOf(0x02.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte()) + byteArrayOf(0x80.toByte(), 0xBB.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte(), 0x00.toByte())
+
+    println(EBMLElement(MatroskaTags.CodecPrivate, opusHeader).toElementBytes().toHexString(" "))
+
+}
+
 class ZeroWebM {
 
     companion object {
         const val DOC_TYPE_WEBM = "webm"
-        const val MUXING_APP = "zeromirror_writer"
-        const val WRITING_APP = "zeromirror_writer"
+        const val MUXING_APP = "zeromirror_zerowebm"
+        const val WRITING_APP = "zeromirror_zerowebm"
 
         const val VIDEO_TRACK_ID = 1
         const val VIDEO_CODEC = "V_VP9"
@@ -14,9 +41,8 @@ class ZeroWebM {
 
         const val AUDIO_TRACK_ID = 2
         const val AUDIO_CODEC = "A_OPUS"
-        const val SAMPLING_FREQUENCY = 48_000
+        const val SAMPLING_FREQUENCY = 48_000.0F
         const val CHANNELS = 2
-        const val AUDIO_CODEC_PRIVATE = "size 19" // what is ?
 
         const val SIMPLE_BLOCK_FLAGS_KEYFRAME = 0x80
         const val SIMPLE_BLOCK_FLAGS = 0x00
@@ -43,7 +69,7 @@ class ZeroWebM {
      * @param trackNumber トラック番号、映像なのか音声なのか
      * @param timescaleMs エンコードしたデータの時間
      * @param byteArray エンコードされたデータ
-     * @param isKeyFrame キーフレームの場合は true。opusの場合は常にtrueにする
+     * @param isKeyFrame キーフレームの場合は true
      */
     fun appendSimpleBlock(trackNumber: Int, timescaleMs: Int, byteArray: ByteArray, isKeyFrame: Boolean = false): ByteArray {
         // Clusterからの相対時間
@@ -103,22 +129,33 @@ class ZeroWebM {
         val videoTrackEntryValue = videoTrackNumber.toElementBytes() + videoTrackUid.toElementBytes() + videoCodecId.toElementBytes() + videoTrackType.toElementBytes() + videoTrack.toElementBytes()
         val videoTrackEntry = EBMLElement(MatroskaTags.TrackEntry, videoTrackEntryValue)
 
-/*
         // 音声トラック情報
         val audioTrackNumber = EBMLElement(MatroskaTags.TrackNumber, AUDIO_TRACK_ID.toByteArray())
         val audioTrackUid = EBMLElement(MatroskaTags.TrackUID, AUDIO_TRACK_ID.toByteArray())
         val audioCodecId = EBMLElement(MatroskaTags.CodecID, AUDIO_CODEC.toAscii())
         val audioTrackType = EBMLElement(MatroskaTags.TrackType, AUDIO_TRACK_ID.toByteArray())
-        val codecPrivate = EBMLElement(MatroskaTags.CodecPrivate, AUDIO_CODEC_PRIVATE.toAscii())
-        val sampleFrequency = EBMLElement(MatroskaTags.SamplingFrequency, SAMPLING_FREQUENCY.toByteArray())
+        // Segment > Tracks > Audio の CodecPrivate に入れる中身
+        // OpusHeaderをつくる
+        // https://www.rfc-editor.org/rfc/rfc7845
+        // Version = 0x01
+        // Channel Count = 0x02
+        // Pre-Skip = 0x00 0x00
+        // Input Sample Rate ( little endian ) 0x80 0xBB 0x00 0x00
+        // Output Gain 0x00 0x00
+        // Mapping Family 0x00
+        // ??? 0x00 0x00
+        val opusHeader = "OpusHead".toAscii() + byteArrayOf(0x01.toByte()) + byteArrayOf(0x02.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte()) + byteArrayOf(0x80.toByte(), 0xBB.toByte()) + byteArrayOf(0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte())
+        val codecPrivate = EBMLElement(MatroskaTags.CodecPrivate, opusHeader)
+        // サンプリングレートはfloatなのでひと手間必要
+        val bitDepth = EBMLElement(MatroskaTags.BitDepth, 32.toByteArray())
+        val sampleFrequency = EBMLElement(MatroskaTags.SamplingFrequency, SAMPLING_FREQUENCY.toBits().toByteArray())
         val channels = EBMLElement(MatroskaTags.Channels, CHANNELS.toByteArray())
-        val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes())
+        val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes() + bitDepth.toElementBytes())
         val audioTrackEntryValue = audioTrackNumber.toElementBytes() + audioTrackUid.toElementBytes() + audioCodecId.toElementBytes() + audioTrackType.toElementBytes() + codecPrivate.toElementBytes() + audioTrack.toElementBytes()
         val audioTrackEntry = EBMLElement(MatroskaTags.TrackEntry, audioTrackEntryValue)
-*/
 
         // Tracks を作る
-        return EBMLElement(MatroskaTags.Tracks, videoTrackEntry.toElementBytes() /*+ audioTrackEntry.toElementBytes()*/)
+        return EBMLElement(MatroskaTags.Tracks, videoTrackEntry.toElementBytes() + audioTrackEntry.toElementBytes())
     }
 
     /** Info要素を作成する。 */
@@ -259,7 +296,7 @@ internal fun Int.toByteArray(): ByteArray {
 internal fun String.toAscii() = this.toByteArray(charset = Charsets.US_ASCII)
 
 /** 16進数に変換するやつ */
-internal fun ByteArray.toHexString() = this.joinToString { "%02x".format(it) }
+internal fun ByteArray.toHexString(separator: String = "") = this.joinToString(separator = separator) { "%02x".format(it) }
 
 /** 16進数に変換するやつ */
 internal fun Byte.toHexString() = "%02x".format(this)
