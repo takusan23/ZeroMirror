@@ -55,7 +55,27 @@ class ZeroWebM {
 
     fun createSegment(): EBMLElement {
         val info = createInfo()
-        val tracks = createTracks()
+        val tracks = EBMLElement(MatroskaTags.Tracks, createAudioTrackEntryElement().toElementBytes() + createVideoTrackEntryElement().toElementBytes())
+        val cluster = createStreamingCluster()
+
+        val segmentValue = info.toElementBytes() + tracks.toElementBytes() + cluster.toElementBytes()
+        return EBMLElement(MatroskaTags.Segment, segmentValue, UNKNOWN_SIZE)
+    }
+
+    /** トラックが映像のみのセグメントを作る */
+    fun createVideoSegment(): EBMLElement {
+        val info = createInfo()
+        val tracks = EBMLElement(MatroskaTags.Tracks, createVideoTrackEntryElement().toElementBytes())
+        val cluster = createStreamingCluster()
+
+        val segmentValue = info.toElementBytes() + tracks.toElementBytes() + cluster.toElementBytes()
+        return EBMLElement(MatroskaTags.Segment, segmentValue, UNKNOWN_SIZE)
+    }
+
+    /** トラックが音声のみのセグメントを作る */
+    fun createAudioSegment(): EBMLElement {
+        val info = createInfo()
+        val tracks = EBMLElement(MatroskaTags.Tracks, createAudioTrackEntryElement().toElementBytes())
         val cluster = createStreamingCluster()
 
         val segmentValue = info.toElementBytes() + tracks.toElementBytes() + cluster.toElementBytes()
@@ -115,20 +135,8 @@ class ZeroWebM {
         return EBMLElement(MatroskaTags.Cluster, clusterValue, UNKNOWN_SIZE)
     }
 
-    /** Track要素を作成する */
-    fun createTracks(): EBMLElement {
-
-        // 動画トラック情報
-        val videoTrackNumber = EBMLElement(MatroskaTags.TrackNumber, VIDEO_TRACK_ID.toByteArray())
-        val videoTrackUid = EBMLElement(MatroskaTags.TrackUID, VIDEO_TRACK_ID.toByteArray())
-        val videoCodecId = EBMLElement(MatroskaTags.CodecID, VIDEO_CODEC.toAscii())
-        val videoTrackType = EBMLElement(MatroskaTags.TrackType, VIDEO_TRACK_ID.toByteArray())
-        val pixelWidth = EBMLElement(MatroskaTags.PixelWidth, VIDEO_WIDTH.toByteArray())
-        val pixelHeight = EBMLElement(MatroskaTags.PixelHeight, VIDEO_HEIGHT.toByteArray())
-        val videoTrack = EBMLElement(MatroskaTags.VideoTrack, pixelWidth.toElementBytes() + pixelHeight.toElementBytes())
-        val videoTrackEntryValue = videoTrackNumber.toElementBytes() + videoTrackUid.toElementBytes() + videoCodecId.toElementBytes() + videoTrackType.toElementBytes() + videoTrack.toElementBytes()
-        val videoTrackEntry = EBMLElement(MatroskaTags.TrackEntry, videoTrackEntryValue)
-
+    /** 音声のTrackを作成する */
+    fun createAudioTrackEntryElement(): EBMLElement {
         // 音声トラック情報
         val audioTrackNumber = EBMLElement(MatroskaTags.TrackNumber, AUDIO_TRACK_ID.toByteArray())
         val audioTrackUid = EBMLElement(MatroskaTags.TrackUID, AUDIO_TRACK_ID.toByteArray())
@@ -151,10 +159,21 @@ class ZeroWebM {
         val channels = EBMLElement(MatroskaTags.Channels, CHANNELS.toByteArray())
         val audioTrack = EBMLElement(MatroskaTags.AudioTrack, sampleFrequency.toElementBytes() + channels.toElementBytes())
         val audioTrackEntryValue = audioTrackNumber.toElementBytes() + audioTrackUid.toElementBytes() + audioCodecId.toElementBytes() + audioTrackType.toElementBytes() + codecPrivate.toElementBytes() + audioTrack.toElementBytes()
-        val audioTrackEntry = EBMLElement(MatroskaTags.TrackEntry, audioTrackEntryValue)
+        return EBMLElement(MatroskaTags.TrackEntry, audioTrackEntryValue)
+    }
 
-        // Tracks を作る
-        return EBMLElement(MatroskaTags.Tracks, audioTrackEntry.toElementBytes() + videoTrackEntry.toElementBytes())
+    /** 映像のTrackを作成する */
+    fun createVideoTrackEntryElement(): EBMLElement {
+        // 動画トラック情報
+        val videoTrackNumber = EBMLElement(MatroskaTags.TrackNumber, VIDEO_TRACK_ID.toByteArray())
+        val videoTrackUid = EBMLElement(MatroskaTags.TrackUID, VIDEO_TRACK_ID.toByteArray())
+        val videoCodecId = EBMLElement(MatroskaTags.CodecID, VIDEO_CODEC.toAscii())
+        val videoTrackType = EBMLElement(MatroskaTags.TrackType, VIDEO_TRACK_ID.toByteArray())
+        val pixelWidth = EBMLElement(MatroskaTags.PixelWidth, VIDEO_WIDTH.toByteArray())
+        val pixelHeight = EBMLElement(MatroskaTags.PixelHeight, VIDEO_HEIGHT.toByteArray())
+        val videoTrack = EBMLElement(MatroskaTags.VideoTrack, pixelWidth.toElementBytes() + pixelHeight.toElementBytes())
+        val videoTrackEntryValue = videoTrackNumber.toElementBytes() + videoTrackUid.toElementBytes() + videoCodecId.toElementBytes() + videoTrackType.toElementBytes() + videoTrack.toElementBytes()
+        return EBMLElement(MatroskaTags.TrackEntry, videoTrackEntryValue)
     }
 
     /** Info要素を作成する。 */

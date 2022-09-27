@@ -14,14 +14,20 @@ import java.io.File
  *      - 一時的に保存する必要のあるファイル
  *
  * @param parentFolder 保存先
- * @param prefixName ファイルの先頭につける文字列
+ * @param audioPrefixName 音声ファイルの先頭につける文字列
+ * @param videoPrefixName 映像ファイルの先頭につける文字列
  */
 class DashContentManager(
     private val parentFolder: File,
-    private val prefixName: String,
+    private val audioPrefixName: String,
+    private val videoPrefixName: String,
 ) {
-    /** 作るたびにインクリメントする */
-    private var count = 0
+    // TODO ここなんか連番なファイルにするクラスにしたい
+    /** 作るたびにインクリメントする、音声版 */
+    private var audioCount = 0
+
+    /** 作るたびにインクリメントする、映像版 */
+    private var videoCount = 0
 
     /** 一時作業用フォルダ */
     private val tempFolder = File(parentFolder, TEMP_FOLDER_NAME).apply { mkdir() }
@@ -30,38 +36,36 @@ class DashContentManager(
     val outputFolder = File(parentFolder, OUTPUT_VIDEO_FOLDER_NAME).apply { mkdir() }
 
     /**
-     * 連番なファイル名になった[File]を作成する
+     * 連番な音声ファイルを作る
      *
      * @return [File]
      */
-    suspend fun createIncrementFile() = withContext(Dispatchers.IO) {
-        File(outputFolder, "$prefixName${count++}.$WEBM_EXTENSION").apply {
+    suspend fun createIncrementAudioFile() = withContext(Dispatchers.IO) {
+        File(outputFolder, "$audioPrefixName${audioCount++}.$WEBM_EXTENSION").apply {
+            createNewFile()
+        }
+    }
+
+    /**
+     * 連番な映像ファイルを作る
+     *
+     * @return [File]
+     */
+    suspend fun createIncrementVideoFile() = withContext(Dispatchers.IO) {
+        File(outputFolder, "$videoPrefixName${videoCount++}.$WEBM_EXTENSION").apply {
             createNewFile()
         }
     }
 
     /**
      * ファイルを生成する関数。
-     * ファイル名変更が出来る以外は [createIncrementFile] と同じ。
+     * ファイル名変更が出来る以外は [createIncrementAudioFile] [createIncrementVideoFile] と同じ。
      *
      * @param fileName ファイル名
      * @return [File]
      */
     suspend fun createFile(fileName: String) = withContext(Dispatchers.IO) {
         File(outputFolder, fileName).apply {
-            createNewFile()
-        }
-    }
-
-
-    /**
-     * 一時ファイルを生成する関数
-     *
-     * @param fileName ファイル名
-     * @return [File]
-     */
-    suspend fun generateTempFile(fileName: String) = withContext(Dispatchers.IO) {
-        File(tempFolder, fileName).apply {
             createNewFile()
         }
     }

@@ -28,22 +28,46 @@ object DashManifestTool {
         // コンテンツが利用可能になる時間（ISO-8601）
         // この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
         val formattedAvailabilityStartTime = isoDateFormat.format(System.currentTimeMillis())
-        val codecs = if (hasAudio) "vp9,opus" else "vp9"
         // minimumUpdatePeriod="P60S" みたいな感じに指定すると、マニフェストファイルを指定した時間の間隔で更新してくれるみたい
-        return """
+        return if (hasAudio) {
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$formattedAvailabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
               <BaseURL>/</BaseURL>
               <Period start="PT0S">
-                <AdaptationSet mimeType="video/webm">
+              
+                <AdaptationSet mimeType="video/webm" contentType="video">
                   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
                   <!-- duration が更新頻度っぽい -->
-                  <SegmentTemplate duration="$fileIntervalSec" initialization="/init.webm" media="/file_${"$"}Number${'$'}.webm" startNumber="0"/>
-                  <Representation id="default" codecs="$codecs"/>
+                  <SegmentTemplate duration="$fileIntervalSec" initialization="/video_init.webm" media="/video${"$"}Number${'$'}.webm" startNumber="0"/>
+                  <Representation id="default" codecs="vp9"/>
+                </AdaptationSet>
+                
+                <AdaptationSet mimeType="audio/webm" contentType="audio">
+                  <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
+                  <!-- duration が更新頻度っぽい -->
+                  <SegmentTemplate duration="$fileIntervalSec" initialization="/audio_init.webm" media="/audio${"$"}Number${'$'}.webm" startNumber="0"/>
+                  <Representation id="default" codecs="opus"/>
                 </AdaptationSet>
               </Period>
             </MPD>
         """.trimIndent()
+        } else {
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$formattedAvailabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+              <BaseURL>/</BaseURL>
+              <Period start="PT0S">              
+                <AdaptationSet mimeType="video/webm" contentType="video">
+                  <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
+                  <!-- duration が更新頻度っぽい -->
+                  <SegmentTemplate duration="$fileIntervalSec" initialization="/video_init.webm" media="/video${"$"}Number${'$'}.webm" startNumber="0"/>
+                  <Representation id="default" codecs="vp9"/>
+                </AdaptationSet>
+              </Period>
+            </MPD>
+        """.trimIndent()
+        }
     }
 
 }

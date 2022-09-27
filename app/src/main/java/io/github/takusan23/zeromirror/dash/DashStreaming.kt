@@ -52,9 +52,11 @@ class DashStreaming(
         videoWidth: Int,
     ) {
         // 前回のデータを消す
-        dashContentManager = DashContentManager(parentFolder, VIDEO_FILE_NAME).apply {
-            deleteGenerateFile()
-        }
+        dashContentManager = DashContentManager(
+            parentFolder = parentFolder,
+            audioPrefixName = AUDIO_FILE_PREFIX_NAME,
+            videoPrefixName = VIDEO_FILE_PREFIX_NAME
+        ).apply { deleteGenerateFile() }
         // コンテナファイルに書き込むやつ
         // val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
         // dashContainerWriter = DashContainerWriter(tempFile)
@@ -86,17 +88,19 @@ class DashStreaming(
             ))
         }
         // MPEG-DASH の初期化セグメントを作成する
-        dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
-            zeroWebMWriter.createInitSegment(initSegment.path)
+        // 映像と音声は別々の WebM で配信されるのでそれぞれ作る
+        dashContentManager.createFile(VIDEO_INIT_SEGMENT_FILENAME).also { init ->
+            zeroWebMWriter.createVideoInitSegment(init.path)
+        }
+        dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
+            zeroWebMWriter.createAudioInitSegment(init.path)
         }
         // サーバー開始
         server = Server(
             portNumber = mirroringSettingData.portNumber,
             hostingFolder = dashContentManager.outputFolder,
             indexHtml = INDEX_HTML
-        ).apply {
-            startServer()
-        }
+        ).apply { startServer() }
     }
 
     override suspend fun startEncode() = withContext(Dispatchers.Default) {
@@ -138,8 +142,11 @@ class DashStreaming(
 //            }
             // MediaMuxerで書き込み中のファイルから定期的にデータをコピーして（セグメントファイルが出来る）クライアントで再生する
             // この方法だと、MediaMuxerとMediaMuxerからコピーしたデータで二重に容量を使うけど後で考える
-            dashContentManager.createIncrementFile().also { segment ->
-                zeroWebMWriter.createMediaSegment(segment.path)
+            dashContentManager.createIncrementAudioFile().also { segment ->
+                zeroWebMWriter.createAudioMediaSegment(segment.path)
+            }
+            dashContentManager.createIncrementVideoFile().also { segment ->
+                zeroWebMWriter.createVideoMediaSegment(segment.path)
             }
         }
     }
@@ -161,14 +168,20 @@ class DashStreaming(
     }
 
     companion object {
-        /** クライアントに見せる最終的な動画のファイル名、拡張子はあとから付ける */
-        private const val VIDEO_FILE_NAME = "file_"
+        /** 音声メディアセグメントの名前 */
+        private const val AUDIO_FILE_PREFIX_NAME = "audio"
+
+        /** 映像メディアセグメントの名前 */
+        private const val VIDEO_FILE_PREFIX_NAME = "video"
 
         /** mp4で moovブロック 移動前のファイル名、MediaMuxerでシーク可能にするために一時的に使う */
         private const val TEMP_VIDEO_FILENAME = "temp_video_file"
 
-        /** 初期化セグメントの名前 */
-        private const val INIT_SEGMENT_FILENAME = "init.webm"
+        /** 音声の初期化セグメントの名前 */
+        private const val AUDIO_INIT_SEGMENT_FILENAME = "audio_init.webm"
+
+        /** 映像の初期化セグメントの名前 */
+        private const val VIDEO_INIT_SEGMENT_FILENAME = "video_init.webm"
 
         /** マニフェストファイルの名前 */
         private const val MANIFEST_FILENAME = "manifest.mpd"
