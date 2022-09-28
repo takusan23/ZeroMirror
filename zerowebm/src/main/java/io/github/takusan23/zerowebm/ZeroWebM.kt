@@ -1,23 +1,17 @@
 package io.github.takusan23.zerowebm
 
-import io.github.takusan23.zerowebm.ZeroWebM.Companion.UNKNOWN_SIZE
-import io.github.takusan23.zerowebm.ZeroWebM.Companion.VIDEO_TRACK_ID
 import java.io.File
 
 val file = File("init.webm")
 
-/** テスト用 */
+/** テスト用、WebMの構造は MKVToolNix が神レベルでわかりやすいです */
 fun main(arg: Array<String>) {
     val zeroWebM = ZeroWebM()
     val ebmlHeader = zeroWebM.createEBMLHeader()
     val segment = zeroWebM.createSegment()
-    val simpleBlock = zeroWebM.appendSimpleBlock(VIDEO_TRACK_ID, 100, UNKNOWN_SIZE, true)
-    val newClusterSimpleBlock = zeroWebM.appendSimpleBlock(VIDEO_TRACK_ID, Short.MAX_VALUE.toInt() + 1, UNKNOWN_SIZE, true)
 
     file.appendBytes(ebmlHeader.toElementBytes())
     file.appendBytes(segment.toElementBytes())
-    file.appendBytes(simpleBlock)
-    file.appendBytes(newClusterSimpleBlock)
 
     // Segment > Tracks > Audio の CodecPrivate に入れる中身
     // OpusHeaderをつくる
@@ -50,8 +44,8 @@ class ZeroWebM {
         val UNKNOWN_SIZE = byteArrayOf(0x01, 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte())
     }
 
-    /** 前回 [createSimpleBlock] を読んだときの Timescale */
-    private var prevTimescale = 0
+    /** 前回 [createSimpleBlock] を呼んだときの Timescale */
+    var prevCreateClusterTimescale = 0
 
     fun createSegment(): EBMLElement {
         val info = createInfo()
@@ -93,10 +87,11 @@ class ZeroWebM {
      */
     fun appendSimpleBlock(trackNumber: Int, timescaleMs: Int, byteArray: ByteArray, isKeyFrame: Boolean = false): ByteArray {
         // Clusterからの相対時間
-        val simpleBlockTimescale = timescaleMs - prevTimescale
+        val simpleBlockTimescale = timescaleMs - prevCreateClusterTimescale
         return if (simpleBlockTimescale > Short.MAX_VALUE) {
             // 16ビットを超える時間の場合は、Clusterを追加し直してからSimpleBlockを追加する
-            createStreamingCluster(timescaleMs).toElementBytes() + createSimpleBlock(trackNumber, 0, byteArray, isKeyFrame).toElementBytes()
+            prevCreateClusterTimescale = timescaleMs
+            (createStreamingCluster(timescaleMs).toElementBytes() + createSimpleBlock(trackNumber, 0, byteArray, isKeyFrame).toElementBytes())
         } else {
             // Clusterを作り直さない
             createSimpleBlock(trackNumber, simpleBlockTimescale, byteArray, isKeyFrame).toElementBytes()
@@ -127,8 +122,7 @@ class ZeroWebM {
      */
     fun createStreamingCluster(timescaleMs: Int = 0): EBMLElement {
         // 時間を16進数にして2バイトのバイト配列にする
-        prevTimescale = timescaleMs
-        val timescaleBytes = timescaleMs.toClusterTimescale() // TODO ここも toByteArray したい
+        val timescaleBytes = timescaleMs.toByteArrayFat() // Cluster 直下の Timescale は 16ビットを超えるので
         val timescale = EBMLElement(MatroskaTags.Timestamp, timescaleBytes)
         val clusterValue = timescale.toElementBytes()
 
@@ -321,3 +315,5 @@ internal fun Byte.toHexString() = "%02x".format(this)
 
 /** ByteをInt型に変換する。Byteは符号なしの値である必要があります。 */
 internal fun Byte.toUnsignedInt() = this.toInt() and 0xFF
+
+internal fun Int.toUnsignedInt() = this and 0xFF

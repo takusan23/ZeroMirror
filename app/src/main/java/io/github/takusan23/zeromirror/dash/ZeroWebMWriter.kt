@@ -12,8 +12,11 @@ import java.nio.ByteBuffer
  */
 class ZeroWebMWriter {
 
-    /** WebM コンテナフォーマット を扱うクラス */
-    private val zeroWebM = ZeroWebM()
+    /** WebM コンテナフォーマット を扱うクラス、音声用 */
+    private val audioZeroWebM = ZeroWebM()
+
+    /** WebM コンテナフォーマット を扱うクラス、映像用 */
+    private val videoZeroWebM = ZeroWebM()
 
     /** 映像のデータ、ファイルに書き込んだらクリアされる */
     private val videoAppendBytes = arrayListOf<ByteArray>()
@@ -22,29 +25,14 @@ class ZeroWebMWriter {
     private val audioAppendBytes = arrayListOf<ByteArray>()
 
     /**
-     * 初期化セグメントを作成する
-     *
-     * @return ファイル
-     */
-    suspend fun createInitSegment(filePath: String) = withContext(Dispatchers.IO) {
-        File(filePath).also { initFile ->
-            val ebmlHeader = zeroWebM.createEBMLHeader()
-            val segment = zeroWebM.createSegment()
-
-            initFile.appendBytes(ebmlHeader.toElementBytes())
-            initFile.appendBytes(segment.toElementBytes())
-        }
-    }
-
-    /**
      * 音声の初期化セグメントを作成します
      *
      * @param filePath ファイルパス
      */
     suspend fun createAudioInitSegment(filePath: String) = withContext(Dispatchers.IO) {
         File(filePath).also { initFile ->
-            val ebmlHeader = zeroWebM.createEBMLHeader()
-            val audioTrackSegment = zeroWebM.createAudioSegment()
+            val ebmlHeader = audioZeroWebM.createEBMLHeader()
+            val audioTrackSegment = audioZeroWebM.createAudioSegment()
 
             initFile.appendBytes(ebmlHeader.toElementBytes())
             initFile.appendBytes(audioTrackSegment.toElementBytes())
@@ -58,8 +46,8 @@ class ZeroWebMWriter {
      */
     suspend fun createVideoInitSegment(filePath: String) = withContext(Dispatchers.IO) {
         File(filePath).also { initFile ->
-            val ebmlHeader = zeroWebM.createEBMLHeader()
-            val segment = zeroWebM.createVideoSegment()
+            val ebmlHeader = videoZeroWebM.createEBMLHeader()
+            val segment = videoZeroWebM.createVideoSegment()
 
             initFile.appendBytes(ebmlHeader.toElementBytes())
             initFile.appendBytes(segment.toElementBytes())
@@ -105,7 +93,7 @@ class ZeroWebMWriter {
     fun appendAudioEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
         val byteArray = toByteArray(byteBuffer)
         val isKeyFrame = bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME
-        audioAppendBytes += zeroWebM.appendSimpleBlock(ZeroWebM.AUDIO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+        audioAppendBytes += audioZeroWebM.appendSimpleBlock(ZeroWebM.AUDIO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
     }
 
     /**
@@ -117,7 +105,7 @@ class ZeroWebMWriter {
     fun appendVideoEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
         val byteArray = toByteArray(byteBuffer)
         val isKeyFrame = bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME
-        videoAppendBytes += zeroWebM.appendSimpleBlock(ZeroWebM.VIDEO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+        videoAppendBytes += videoZeroWebM.appendSimpleBlock(ZeroWebM.VIDEO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
     }
 
     /** [ByteBuffer]を[ByteArray]に変換する */
