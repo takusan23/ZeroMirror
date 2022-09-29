@@ -80,13 +80,6 @@ class DashStreaming(
                 )
             }
         }
-        // MPEG-DASHのマニフェストファイルをホスティングする
-        dashContentManager.createFile(MANIFEST_FILENAME).apply {
-            writeText(DashManifestTool.createManifest(
-                fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
-                hasAudio = mirroringSettingData.isRecordInternalAudio
-            ))
-        }
         // MPEG-DASH の初期化セグメントを作成する
         // 映像と音声は別々の WebM で配信されるのでそれぞれ作る
         dashContentManager.createFile(VIDEO_INIT_SEGMENT_FILENAME).also { init ->
@@ -94,6 +87,13 @@ class DashStreaming(
         }
         dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
             zeroWebMWriter.createAudioInitSegment(init.path)
+        }
+        // MPEG-DASHのマニフェストファイルをホスティングする
+        dashContentManager.createFile(MANIFEST_FILENAME).apply {
+            writeText(DashManifestTool.createManifest(
+                fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
+                hasAudio = mirroringSettingData.isRecordInternalAudio
+            ))
         }
         // サーバー開始
         server = Server(
@@ -142,10 +142,10 @@ class DashStreaming(
 //            }
             // MediaMuxerで書き込み中のファイルから定期的にデータをコピーして（セグメントファイルが出来る）クライアントで再生する
             // この方法だと、MediaMuxerとMediaMuxerからコピーしたデータで二重に容量を使うけど後で考える
-            dashContentManager.createIncrementAudioFile().also { segment ->
+            dashContentManager.createIncrementAudioFile { segment ->
                 zeroWebMWriter.createAudioMediaSegment(segment.path)
             }
-            dashContentManager.createIncrementVideoFile().also { segment ->
+            dashContentManager.createIncrementVideoFile { segment ->
                 zeroWebMWriter.createVideoMediaSegment(segment.path)
             }
         }

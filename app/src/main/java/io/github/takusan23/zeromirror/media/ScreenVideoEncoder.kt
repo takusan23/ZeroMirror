@@ -32,7 +32,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param videoHeight 動画の高さ
      * @param bitRate ビットレート
      * @param frameRate フレームレート
-     * @param iFrameInterval Iフレーム
+     * @param iFrameInterval キーフレーム生成間隔
      * @param isVp9 VP9コーデックを利用する場合はtrue
      */
     fun prepareEncoder(

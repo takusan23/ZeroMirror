@@ -36,25 +36,38 @@ class DashContentManager(
     val outputFolder = File(parentFolder, OUTPUT_VIDEO_FOLDER_NAME).apply { mkdir() }
 
     /**
-     * 連番な音声ファイルを作る
+     * 連番な音声ファイルを作る。
+     * ファイル書き込み中は .temp がおしりにつく。
+     * なんか書き込み中だったのかよくわからないのですが、Ktorがファイルデカすぎ例外を吐いたので...書き込み中はファイル名を一時的なものに
      *
-     * @return [File]
+     * @param fileIO この関数内でファイル操作ができます。作業が終わると、ファイル名は一時的なものから変更されます。
+     * @return 完成したファイル
      */
-    suspend fun createIncrementAudioFile() = withContext(Dispatchers.IO) {
-        File(outputFolder, "$audioPrefixName${audioCount++}.$WEBM_EXTENSION").apply {
-            createNewFile()
-        }
+    suspend fun createIncrementAudioFile(fileIO: suspend (File) -> Unit) = withContext(Dispatchers.IO) {
+        val index = audioCount++
+        val resultFile = File(outputFolder, "$audioPrefixName${index}.$WEBM_EXTENSION")
+        val tempFile = File(outputFolder, "$audioPrefixName${index}.$WEBM_EXTENSION.$FILE_WRITING_SUFFIX")
+        // ファイル作業する...
+        fileIO(tempFile)
+        tempFile.renameTo(resultFile)
+        return@withContext resultFile
     }
 
     /**
-     * 連番な映像ファイルを作る
+     * 連番な映像ファイルを生成する。
+     * [createIncrementAudioFile]の映像ファイル版になります。
      *
-     * @return [File]
+     * @param fileIO ファイル作業
+     * @return 完成したファイル
      */
-    suspend fun createIncrementVideoFile() = withContext(Dispatchers.IO) {
-        File(outputFolder, "$videoPrefixName${videoCount++}.$WEBM_EXTENSION").apply {
-            createNewFile()
-        }
+    suspend fun createIncrementVideoFile(fileIO: suspend (File) -> Unit) = withContext(Dispatchers.IO) {
+        val index = videoCount++
+        val resultFile = File(outputFolder, "$videoPrefixName${index}.$WEBM_EXTENSION")
+        val tempFile = File(outputFolder, "$videoPrefixName${index}.$WEBM_EXTENSION.$FILE_WRITING_SUFFIX")
+        // ファイル作業する...
+        fileIO(tempFile)
+        tempFile.renameTo(resultFile)
+        return@withContext resultFile
     }
 
     /**
@@ -85,6 +98,9 @@ class DashContentManager(
 
         /** 一時作業用フォルダ */
         private const val TEMP_FOLDER_NAME = "temp"
+
+        /** 書き込み中ファイルの末尾につける */
+        private const val FILE_WRITING_SUFFIX = ".temp"
     }
 
 }
