@@ -100,7 +100,7 @@ class DashContentManager(
         private const val TEMP_FOLDER_NAME = "temp"
 
         /** 書き込み中ファイルの末尾につける */
-        private const val FILE_WRITING_SUFFIX = ".temp"
+        private const val FILE_WRITING_SUFFIX = "temp"
     }
 
 }

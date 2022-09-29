@@ -24,15 +24,18 @@ object DashManifestTool {
      * @param hasAudio 音声を動画に含めている場合はtrue
      * @return XML
      */
-    fun createManifest(fileIntervalSec: Int = 3, hasAudio: Boolean = false): String {
+    fun createManifest(fileIntervalSec: Int = 1, hasAudio: Boolean = false): String {
+        // なんか dynamic のときは必要？
+        val publishTime = isoDateFormat.format(System.currentTimeMillis())
         // コンテンツが利用可能になる時間（ISO-8601）
         // この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
-        val formattedAvailabilityStartTime = isoDateFormat.format(System.currentTimeMillis())
+        // コンテンツが利用可能になる時間、生成後 fileIntervalSec を足した後に出来ると思う
+        val availabilityStartTime = isoDateFormat.format(System.currentTimeMillis() + (fileIntervalSec * 1_000))
         // minimumUpdatePeriod="P60S" みたいな感じに指定すると、マニフェストファイルを指定した時間の間隔で更新してくれるみたい
         return if (hasAudio) {
             """
             <?xml version="1.0" encoding="utf-8"?>
-            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$formattedAvailabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" publishTime="$publishTime" availabilityStartTime="$availabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
               <BaseURL>/</BaseURL>
               <Period start="PT0S">
               
@@ -55,7 +58,7 @@ object DashManifestTool {
         } else {
             """
             <?xml version="1.0" encoding="utf-8"?>
-            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" availabilityStartTime="$formattedAvailabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" publishTime="$publishTime" availabilityStartTime="$availabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
               <BaseURL>/</BaseURL>
               <Period start="PT0S">              
                 <AdaptationSet mimeType="video/webm" contentType="video">
