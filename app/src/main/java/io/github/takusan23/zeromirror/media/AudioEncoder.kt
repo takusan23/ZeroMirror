@@ -55,9 +55,9 @@ class AudioEncoder {
      * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun startAudioEncode(
-        onRecordInput: (ByteArray) -> Int,
-        onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
-        onOutputFormatAvailable: (MediaFormat) -> Unit,
+        onRecordInput: suspend (ByteArray) -> Int,
+        onOutputBufferAvailable: suspend (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
+        onOutputFormatAvailable: suspend (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         val bufferInfo = MediaCodec.BufferInfo()
         mediaCodec!!.start()

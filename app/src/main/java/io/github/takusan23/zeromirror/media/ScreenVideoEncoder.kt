@@ -72,8 +72,8 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun start(
-        onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
-        onOutputFormatAvailable: (MediaFormat) -> Unit,
+        onOutputBufferAvailable: suspend (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
+        onOutputFormatAvailable: suspend (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         videoEncoder.startVideoEncode(
             onOutputBufferAvailable = { byteBuffer, bufferInfo ->

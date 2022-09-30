@@ -68,8 +68,8 @@ class InternalAudioEncoder(mediaProjection: MediaProjection) {
      * @param onOutputFormatAvailable エンコード後のMediaFormatが入手できる
      */
     suspend fun start(
-        onOutputBufferAvailable: (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
-        onOutputFormatAvailable: (MediaFormat) -> Unit,
+        onOutputBufferAvailable: suspend (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
+        onOutputFormatAvailable: suspend (MediaFormat) -> Unit,
     ) = withContext(Dispatchers.Default) {
         // エンコードする
         audioEncoder.startAudioEncode(

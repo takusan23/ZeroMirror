@@ -9,7 +9,9 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -106,10 +108,22 @@ class DashStreaming(
     override suspend fun startEncode() = withContext(Dispatchers.Default) {
         // MediaMuxer起動
         // dashContainerWriter.resetOrCreateContainerFile()
-        // 画面録画エンコーダー
+        // 画面録画エンコーダー、ファイル保存処理
         launch {
+            var prevTime = System.currentTimeMillis()
+            val intervalMs = mirroringSettingData.intervalMs
             screenVideoEncoder.start(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo -> zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo) },
+                onOutputBufferAvailable = { byteBuffer, bufferInfo ->
+                    zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo)
+                    // 定期的に動画ファイルを作る処理
+                    // 多分別スレッドとかでやると映像が乱れるのでここに書かないとだめ？
+                    if ((System.currentTimeMillis() - prevTime) > intervalMs) {
+                        dashContentManager.createIncrementVideoFile { segment ->
+                            zeroWebMWriter.createVideoMediaSegment(segment.path)
+                        }
+                        prevTime = System.currentTimeMillis()
+                    }
+                },
                 onOutputFormatAvailable = {
                     // dashContainerWriter.setVideoTrack(it)
                     // 開始する
@@ -120,8 +134,18 @@ class DashStreaming(
         // 内部音声エンコーダー
         if (isInitializedInternalAudioEncoder) {
             launch {
+                var prevTime = System.currentTimeMillis()
+                val intervalMs = mirroringSettingData.intervalMs
                 internalAudioEncoder?.start(
-                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo) },
+                    onOutputBufferAvailable = { byteBuffer, bufferInfo ->
+                        zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo)
+                        if ((System.currentTimeMillis() - prevTime) > intervalMs) {
+                            dashContentManager.createIncrementAudioFile { segment ->
+                                zeroWebMWriter.createAudioMediaSegment(segment.path)
+                            }
+                            prevTime = System.currentTimeMillis()
+                        }
+                    },
                     onOutputFormatAvailable = {
                         // dashContainerWriter.setAudioTrack(it)
                         // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
@@ -129,6 +153,7 @@ class DashStreaming(
                 )
             }
         }
+/*
         // セグメントファイルを作る
         // 後は MPEG-DASHプレイヤー側 で定期的に取得してくれる
         while (isActive) {
@@ -149,6 +174,7 @@ class DashStreaming(
                 zeroWebMWriter.createVideoMediaSegment(segment.path)
             }
         }
+*/
     }
 
     @SuppressLint("NewApi")
