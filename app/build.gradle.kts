@@ -6,6 +6,7 @@ plugins {
 }
 
 android {
+    namespace = "io.github.takusan23.zeromirror"
     compileSdk = 32
 
     defaultConfig {
