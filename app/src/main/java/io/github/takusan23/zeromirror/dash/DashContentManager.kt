@@ -29,6 +29,12 @@ class DashContentManager(
     /** 作るたびにインクリメントする、映像版 */
     private var videoCount = 0
 
+    /** 生成したメディアセグメントを保持する、音声用 */
+    private val audioFileList = arrayListOf<File>()
+
+    /** 生成したメディアセグメントを保持する、映像用 */
+    private val videoFileList = arrayListOf<File>()
+
     /** 一時作業用フォルダ */
     private val tempFolder = File(parentFolder, TEMP_FOLDER_NAME).apply { mkdir() }
 
@@ -50,6 +56,9 @@ class DashContentManager(
         // ファイル作業する...
         fileIO(tempFile)
         tempFile.renameTo(resultFile)
+        // 古くなったデータを消す
+        audioFileList.add(resultFile)
+        removeUnUseFile(audioFileList)
         return@withContext resultFile
     }
 
@@ -67,6 +76,8 @@ class DashContentManager(
         // ファイル作業する...
         fileIO(tempFile)
         tempFile.renameTo(resultFile)
+        videoFileList.add(resultFile)
+        removeUnUseFile(videoFileList)
         return@withContext resultFile
     }
 
@@ -89,6 +100,19 @@ class DashContentManager(
         outputFolder.listFiles()?.forEach { it.delete() }
     }
 
+    /**
+     * もう利用しないであろうメディアセグメントを削除する
+     * 新しいのを [FILE_HOLD_COUNT]個 残して後は消す
+     *
+     * @param fileList メディアセグメントの配列
+     */
+    private suspend fun removeUnUseFile(fileList: ArrayList<File>) = withContext(Dispatchers.IO) {
+        val deleteItemSize = fileList.size - FILE_HOLD_COUNT
+        if (deleteItemSize >= 0) {
+            fileList.take(deleteItemSize).forEach { it.delete() }
+        }
+    }
+
     companion object {
         /** 拡張子 */
         private const val WEBM_EXTENSION = "webm"
@@ -101,6 +125,9 @@ class DashContentManager(
 
         /** 書き込み中ファイルの末尾につける */
         private const val FILE_WRITING_SUFFIX = "temp"
+
+        /** 動画保持数 */
+        private const val FILE_HOLD_COUNT = 5
     }
 
 }

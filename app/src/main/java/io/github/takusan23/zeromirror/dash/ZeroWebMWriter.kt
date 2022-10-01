@@ -9,6 +9,11 @@ import java.nio.ByteBuffer
 
 /**
  * [ZeroWebM]のラッパー
+ *
+ * エンコーダーからの出力を一時的に持つ [appendVideoEncodeData] と
+ * 実際にファイルに書き込む [createVideoMediaSegment] は同じスレッドから呼び出す必要があります（多分）。
+ *
+ * 別スレッドで [createVideoMediaSegment] を呼び出すと多分映像が乱れてしまいます。
  */
 class ZeroWebMWriter {
 
@@ -112,4 +117,5 @@ class ZeroWebMWriter {
     private fun toByteArray(byteBuffer: ByteBuffer) = ByteArray(byteBuffer.limit()).apply {
         byteBuffer.get(this)
     }
+
 }
