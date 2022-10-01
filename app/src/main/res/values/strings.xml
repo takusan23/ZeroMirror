@@ -83,4 +83,7 @@ Mirroring is performed by transmitting the chopped video with WebSocket.\n
 The video codec is H.264, the audio codec is AAC, and the container is MP4.
     </string>
     <string name="streaming_setting_type_title">Choosing a streaming method</string>
+    <string name="post_notification_permission_card_title">Can display mirroring information in notification area</string>
+    <string name="post_notification_permission_card_description">Android 13 and higher now require permission to send notifications. You can use it without authorization, but you can display the IP address and QR code in the notification area.</string>
+    <string name="post_notification_permission_card_button">Grant notification rights</string>
 </resources>

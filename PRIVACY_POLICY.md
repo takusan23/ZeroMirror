@@ -14,6 +14,11 @@
 - ブラウザで見るためには同じWi-Fi（同じLAN）に接続されている必要があります。
 
 ## 利用する権限について
+- android.permission.POST_NOTIFICATIONS
+    - Android 13 以降
+    - 通知の権限
+    - 通知領域にQRコードやIPアドレスを表示する場合は必要です
+    - 別に権限なくても動きます
 - android.permission.RECORD_AUDIO
     - マイクの権限
     - 端末内部の音声を録音するのに必要です

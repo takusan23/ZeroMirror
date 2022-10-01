@@ -84,4 +84,7 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
 映像コーデックはH.264、音声コーデックはAAC、コンテナはMP4を利用します。
     </string>
     <string name="streaming_setting_type_title">ストリーミング方式の選択</string>
+    <string name="post_notification_permission_card_title">通知領域にミラーリング情報を表示できます</string>
+    <string name="post_notification_permission_card_description">Android 13 以降は通知を送信するための権限が必要になりました。権限がなくても利用できますが、通知領域にIPアドレスやQRコードを表示できます。</string>
+    <string name="post_notification_permission_card_button">通知権限を付与</string>
 </resources>

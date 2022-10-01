@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -89,10 +90,10 @@ fun ZeroMirrorTheme(
         isUseDynamicColor && !darkTheme -> dynamicLightColorScheme(context)
         darkTheme -> DarkThemeColors
         else -> LightThemeColors
-    }
+    }.copy(background = colorScheme.surfaceColorAtElevation(ElevationDp))
 
     MaterialTheme(
-        colorScheme = colorScheme.copy(background = colorScheme.surfaceColorAtElevation(ElevationDp)),
+        colorScheme = colorScheme,
         content = content
     )
 }

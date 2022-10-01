@@ -53,8 +53,14 @@ fun HomeScreen(
 
     // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
     val isGrantedRecordAudio = remember {
-        mutableStateOf(if (PermissionTool.isAndroidQAndHigher()) {
+        mutableStateOf(if (PermissionTool.isAndroidQAndHigher) {
             !PermissionTool.isGrantedRecordPermission(context)
+        } else false)
+    }
+    // 通知権限があるか、フォアグラウンドサービス実行中を通知として発行したいので
+    val isGrantedPostNotification = remember {
+        mutableStateOf(if (PermissionTool.isAndroidTiramisuAndHigher) {
+            !PermissionTool.isGrantedPostNotificationPermission(context)
         } else false)
     }
 
@@ -145,6 +151,18 @@ fun HomeScreen(
                             val updatedData = mirroringData.value?.copy(isRecordInternalAudio = true) ?: return@launch
                             MirroringSettingData.setDataStore(context, updatedData)
                         }
+                    }
+                )
+            }
+
+            // 通知権限があるといいよ
+            if (isGrantedPostNotification.value) {
+                PostNotificationPermissionCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    permissionResult = { isGranted ->
+                        isGrantedPostNotification.value = !isGranted
                     }
                 )
             }

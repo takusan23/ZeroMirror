@@ -1,5 +1,6 @@
 package io.github.takusan23.zeromirror.ui.components
 
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -16,18 +17,17 @@ import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 
 /**
- * 内部音声
+ * 通知権限を取得するコンポーネント
  *
  * @param modifier [Modifier]
- * @param permissionResult trueが流れてきたら権限ゲットだぜ
+ * @param permissionResult 結果
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InternalAudioPermissionCard(
+fun PostNotificationPermissionCard(
     modifier: Modifier = Modifier,
     permissionResult: (Boolean) -> Unit,
 ) {
-
     /** 権限コールバック */
     val permissionRequest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGrant ->
         permissionResult(isGrant)
@@ -41,24 +41,29 @@ fun InternalAudioPermissionCard(
         ) {
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = stringResource(id = R.string.internal_audio_permission_card_title),
+                text = stringResource(id = R.string.post_notification_permission_card_title),
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.size(10.dp))
+
             Text(
                 modifier = Modifier.padding(5.dp),
-                text = stringResource(id = R.string.internal_audio_permission_card_description)
+                text = stringResource(id = R.string.post_notification_permission_card_description)
             )
             OutlinedButton(
                 modifier = Modifier
                     .align(Alignment.End),
-                onClick = { permissionRequest.launch(android.Manifest.permission.RECORD_AUDIO) }
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionRequest.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
             ) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                Text(text = stringResource(id = R.string.internal_audio_permission_card_button))
+                Text(text = stringResource(id = R.string.post_notification_permission_card_button))
             }
         }
     }

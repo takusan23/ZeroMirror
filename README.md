@@ -44,6 +44,9 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.zeromirror
 多分最新版の`Android Studio`でビルドできると思います。  
 このリポジトリをクローンして`Android Studio`で開いてください。
 
+### Composeの部分が真っ赤になってる
+Android Studio の Invalidate Caches を実行してみてください。
+
 ## ストリーミングしてる部分
 `DashStreaming`、`WSStreaming` クラス参照
 
