@@ -55,12 +55,4 @@ enum class MatroskaTags(val id: ByteArray) {
 
     /** 解析に失敗した場合のみ */
     Undefined(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()));
-
-    companion object {
-
-        /**
-         * バイト配列からタグの名前を探す。ない場合は[Undefined]。
-         */
-        fun findTag(byteArray: ByteArray) = values().firstOrNull { it.id.toList() == byteArray.toList() } ?: Undefined
-    }
 }

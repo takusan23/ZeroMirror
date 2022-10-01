@@ -33,11 +33,24 @@ class ZeroWebMWriter {
      * 音声の初期化セグメントを作成します
      *
      * @param filePath ファイルパス
+     * @param channelCount チャンネル数
+     * @param samplingRate サンプリングレート
      */
-    suspend fun createAudioInitSegment(filePath: String) = withContext(Dispatchers.IO) {
+    suspend fun createAudioInitSegment(
+        filePath: String,
+        channelCount: Int,
+        samplingRate: Int,
+    ) = withContext(Dispatchers.IO) {
         File(filePath).also { initFile ->
             val ebmlHeader = audioZeroWebM.createEBMLHeader()
-            val audioTrackSegment = audioZeroWebM.createAudioSegment()
+            val audioTrackSegment = audioZeroWebM.createAudioSegment(
+                muxingAppName = ZeroWebM.MUXING_APP,
+                writingAppName = ZeroWebM.WRITING_APP,
+                trackId = ZeroWebM.AUDIO_TRACK_ID,
+                codecName = ZeroWebM.OPUS_CODEC_NAME,
+                channelCount = channelCount,
+                samplingRate = samplingRate.toFloat()
+            )
 
             initFile.appendBytes(ebmlHeader.toElementBytes())
             initFile.appendBytes(audioTrackSegment.toElementBytes())
@@ -48,11 +61,25 @@ class ZeroWebMWriter {
      * 映像の初期化セグメントを作成します
      *
      * @param filePath ファイルパス
+     * @param videoHeight 動画の高さ
+     * @param videoWidth 動画の幅
      */
-    suspend fun createVideoInitSegment(filePath: String) = withContext(Dispatchers.IO) {
+    suspend fun createVideoInitSegment(
+        filePath: String,
+        codecName: String = ZeroWebM.VP9_CODEC_NAME,
+        videoWidth: Int,
+        videoHeight: Int,
+    ) = withContext(Dispatchers.IO) {
         File(filePath).also { initFile ->
             val ebmlHeader = videoZeroWebM.createEBMLHeader()
-            val segment = videoZeroWebM.createVideoSegment()
+            val segment = videoZeroWebM.createVideoSegment(
+                muxingAppName = ZeroWebM.MUXING_APP,
+                writingAppName = ZeroWebM.WRITING_APP,
+                trackId = ZeroWebM.VIDEO_TRACK_ID,
+                codecName = codecName,
+                videoWidth = videoWidth,
+                videoHeight = videoHeight
+            )
 
             initFile.appendBytes(ebmlHeader.toElementBytes())
             initFile.appendBytes(segment.toElementBytes())

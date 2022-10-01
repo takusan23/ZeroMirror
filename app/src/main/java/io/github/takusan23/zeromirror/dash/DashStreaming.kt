@@ -84,11 +84,21 @@ class DashStreaming(
         }
         // MPEG-DASH の初期化セグメントを作成する
         // 映像と音声は別々の WebM で配信されるのでそれぞれ作る
-        dashContentManager.createFile(VIDEO_INIT_SEGMENT_FILENAME).also { init ->
-            zeroWebMWriter.createVideoInitSegment(init.path)
+        if (isInitializedInternalAudioEncoder) {
+            dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
+                zeroWebMWriter.createAudioInitSegment(
+                    filePath = init.path,
+                    channelCount = 2,
+                    samplingRate = 48_000
+                )
+            }
         }
-        dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
-            zeroWebMWriter.createAudioInitSegment(init.path)
+        dashContentManager.createFile(VIDEO_INIT_SEGMENT_FILENAME).also { init ->
+            zeroWebMWriter.createVideoInitSegment(
+                filePath = init.path,
+                videoWidth = mirroringSettingData.videoWidth,
+                videoHeight = mirroringSettingData.videoHeight
+            )
         }
         // MPEG-DASHのマニフェストファイルをホスティングする
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
