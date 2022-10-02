@@ -2,6 +2,7 @@ package io.github.takusan23.zeromirror.websocket
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.media.MediaFormat
 import android.media.projection.MediaProjection
 import android.os.Build
 import io.github.takusan23.hlsserver.Server
@@ -62,7 +63,7 @@ class WSStreaming(
                 videoHeight = videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
-                isVp9 = false,
+                codecName = MediaFormat.MIMETYPE_VIDEO_AVC,
             )
         }
         // 内部音声を一緒にエンコードする場合

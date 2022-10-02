@@ -87,4 +87,6 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
     <string name="post_notification_permission_card_title">通知領域にミラーリング情報を表示できます</string>
     <string name="post_notification_permission_card_description">Android 13 以降は通知を送信するための権限が必要になりました。権限がなくても利用できますが、通知領域にIPアドレスやQRコードを表示できます。</string>
     <string name="post_notification_permission_card_button">通知権限を付与</string>
+    <string name="mirroring_setting_mpeg_dash_vp8_title">動画コーデックにVP8を利用する</string>
+    <string name="mirroring_setting_mpeg_dash_vp8_description">MPEG-DASHモードのみ。VP9のエンコーダーがない場合用です。</string>
 </resources>

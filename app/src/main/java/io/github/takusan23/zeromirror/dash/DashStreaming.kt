@@ -2,6 +2,7 @@ package io.github.takusan23.zeromirror.dash
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.media.MediaFormat
 import android.media.projection.MediaProjection
 import android.os.Build
 import io.github.takusan23.hlsserver.Server
@@ -9,6 +10,7 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
+import io.github.takusan23.zerowebm.ZeroWebM
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,6 +64,8 @@ class DashStreaming(
         // コンテナファイルに書き込むやつ
         // val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
         // dashContainerWriter = DashContainerWriter(tempFile)
+        // コーデックにVP8使う場合、基本VP9でいいと思う
+        val isVP8 = mirroringSettingData.isVP8
         // エンコーダーの用意
         screenVideoEncoder = ScreenVideoEncoder(context.resources.configuration.densityDpi, mediaProjection).apply {
             // VP9 エンコーダーだと画面解像度を入れると失敗する。1280x720 / 1920x1080 だと成功する
@@ -70,7 +74,7 @@ class DashStreaming(
                 videoHeight = mirroringSettingData.videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
-                isVp9 = true,
+                codecName = if (isVP8) MediaFormat.MIMETYPE_VIDEO_VP8 else MediaFormat.MIMETYPE_VIDEO_VP9,
             )
         }
         // 内部音声を一緒にエンコードする場合
@@ -96,6 +100,7 @@ class DashStreaming(
         dashContentManager.createFile(VIDEO_INIT_SEGMENT_FILENAME).also { init ->
             zeroWebMWriter.createVideoInitSegment(
                 filePath = init.path,
+                codecName = if (isVP8) ZeroWebM.VP8_CODEC_NAME else ZeroWebM.VP9_CODEC_NAME,
                 videoWidth = mirroringSettingData.videoWidth,
                 videoHeight = mirroringSettingData.videoHeight
             )
@@ -104,7 +109,8 @@ class DashStreaming(
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
             writeText(DashManifestTool.createManifest(
                 fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
-                hasAudio = mirroringSettingData.isRecordInternalAudio
+                hasAudio = mirroringSettingData.isRecordInternalAudio,
+                isVP8 = isVP8
             ))
         }
         // サーバー開始
@@ -209,9 +215,6 @@ class DashStreaming(
 
         /** 映像メディアセグメントの名前 */
         private const val VIDEO_FILE_PREFIX_NAME = "video"
-
-        /** mp4で moovブロック 移動前のファイル名、MediaMuxerでシーク可能にするために一時的に使う */
-        private const val TEMP_VIDEO_FILENAME = "temp_video_file"
 
         /** 音声の初期化セグメントの名前 */
         private const val AUDIO_INIT_SEGMENT_FILENAME = "audio_init.webm"

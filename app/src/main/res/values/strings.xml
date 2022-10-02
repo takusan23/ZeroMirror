@@ -86,4 +86,6 @@ The video codec is H.264, the audio codec is AAC, and the container is MP4.
     <string name="post_notification_permission_card_title">Can display mirroring information in notification area</string>
     <string name="post_notification_permission_card_description">Android 13 and higher now require permission to send notifications. You can use it without authorization, but you can display the IP address and QR code in the notification area.</string>
     <string name="post_notification_permission_card_button">Grant notification rights</string>
+    <string name="mirroring_setting_mpeg_dash_vp8_title">Use VP8 for video codec</string>
+    <string name="mirroring_setting_mpeg_dash_vp8_description">MPEG-DASH mode only. For those who don\'t have a VP9 encoder.</string>
 </resources>

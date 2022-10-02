@@ -216,6 +216,16 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         }
                     )
+
+                    SwitchSettingItem(
+                        title = stringResource(id = R.string.mirroring_setting_mpeg_dash_vp8_title),
+                        subTitle = stringResource(id = R.string.mirroring_setting_mpeg_dash_vp8_description),
+                        iconRes = R.drawable.ic_outline_videocam_24,
+                        isEnable = mirroringData.value!!.isVP8,
+                        onValueChange = { isChecked ->
+                            updateSetting { it.copy(isVP8 = isChecked) }
+                        }
+                    )
                 }
             }
         }

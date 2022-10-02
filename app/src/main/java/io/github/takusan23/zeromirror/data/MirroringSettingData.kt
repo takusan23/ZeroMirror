@@ -17,9 +17,10 @@ import kotlinx.coroutines.flow.map
  * @param intervalMs 動画を切り出す間隔、ミリ秒
  * @param isRecordInternalAudio 内部音声を入れる場合はtrue、権限があるかどうかまでは見ていません
  * @param isCustomResolution 動画の解像度をカスタマイズした場合はtrue、falseなら画面の解像度を利用する
- * @param videoHeight 動画の高さ、0の場合は画面の大きさを利用すること
- * @param videoWidth 動画の幅、0の場合は画面の大きさを利用すること
+ * @param videoHeight 動画の高さ
+ * @param videoWidth 動画の幅
  * @param streamingType ストリーミング方式。デフォルトは[StreamingType.MpegDash]
+ * @param isVP8 [StreamingType.MpegDash]の場合、動画コーデックにVP8を利用する場合はtrue
  */
 data class MirroringSettingData(
     val portNumber: Int,
@@ -32,6 +33,7 @@ data class MirroringSettingData(
     val videoHeight: Int,
     val videoWidth: Int,
     val streamingType: StreamingType,
+    val isVP8: Boolean,
 ) {
 
     companion object {
@@ -51,6 +53,12 @@ data class MirroringSettingData(
         /** デフォルト映像フレームレート */
         private const val DEFAULT_VIDEO_FRAME_RATE = 30
 
+        /** デフォルトの動画の幅 */
+        private const val DEFAULT_VIDEO_WIDTH = 1280
+
+        /** デフォルトの動画の高さ */
+        private const val DEFAULT_VIDEO_HEIGHT = 720
+
         /**
          * データストアから読み出してデータクラスを返す
          *
@@ -67,9 +75,10 @@ data class MirroringSettingData(
                     audioBitRate = data[SettingKeyObject.AUDIO_BIT_RATE] ?: DEFAULT_AUDIO_BIT_RATE,
                     isRecordInternalAudio = data[SettingKeyObject.IS_RECORD_INTERNAL_AUDIO] ?: false,
                     isCustomResolution = data[SettingKeyObject.IS_CUSTOM_RESOLUTION] ?: false,
-                    videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: 1280,
-                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: 720,
-                    streamingType = data[SettingKeyObject.STREAMING_TYPE]?.let { StreamingType.valueOf(it) } ?: StreamingType.MpegDash
+                    videoWidth = data[SettingKeyObject.VIDEO_WIDTH] ?: DEFAULT_VIDEO_WIDTH,
+                    videoHeight = data[SettingKeyObject.VIDEO_HEIGHT] ?: DEFAULT_VIDEO_HEIGHT,
+                    streamingType = data[SettingKeyObject.STREAMING_TYPE]?.let { StreamingType.valueOf(it) } ?: StreamingType.MpegDash,
+                    isVP8 = data[SettingKeyObject.MPEG_DASH_CODEC_VP8] ?: false
                 )
             }
         }
@@ -92,6 +101,7 @@ data class MirroringSettingData(
                 it[SettingKeyObject.VIDEO_WIDTH] = mirroringSettingData.videoWidth
                 it[SettingKeyObject.VIDEO_HEIGHT] = mirroringSettingData.videoHeight
                 it[SettingKeyObject.STREAMING_TYPE] = mirroringSettingData.streamingType.name
+                it[SettingKeyObject.MPEG_DASH_CODEC_VP8] = mirroringSettingData.isVP8
             }
         }
 
@@ -111,9 +121,8 @@ data class MirroringSettingData(
                 it -= SettingKeyObject.VIDEO_WIDTH
                 it -= SettingKeyObject.VIDEO_HEIGHT
                 it -= SettingKeyObject.STREAMING_TYPE
+                it -= SettingKeyObject.MPEG_DASH_CODEC_VP8
             }
         }
-
     }
-
 }

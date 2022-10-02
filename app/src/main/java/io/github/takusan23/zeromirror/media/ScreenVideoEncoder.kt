@@ -33,7 +33,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param bitRate ビットレート
      * @param frameRate フレームレート
      * @param iFrameInterval キーフレーム生成間隔
-     * @param isVp9 VP9コーデックを利用する場合はtrue
+     * @param codecName [MediaFormat.MIMETYPE_VIDEO_VP9]や[MediaFormat.MIMETYPE_VIDEO_AVC]など
      */
     fun prepareEncoder(
         videoWidth: Int,
@@ -41,7 +41,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
         bitRate: Int,
         frameRate: Int,
         iFrameInterval: Int = 1,
-        isVp9: Boolean = false,
+        codecName: String,
     ) {
         videoEncoder.prepareEncoder(
             videoWidth = videoWidth,
@@ -49,7 +49,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             bitRate = bitRate,
             frameRate = frameRate,
             iFrameInterval = iFrameInterval,
-            isVp9 = isVp9
+            codecName = codecName
         )
         val encoderSurface = videoEncoder.createInputSurface()
         virtualDisplay = mediaProjection.createVirtualDisplay(

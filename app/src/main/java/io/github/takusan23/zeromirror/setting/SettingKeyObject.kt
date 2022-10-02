@@ -42,4 +42,7 @@ object SettingKeyObject {
 
     /** ストリーミング方式 */
     val STREAMING_TYPE = stringPreferencesKey("streaming_type")
+
+    /** VP8を利用する場合はtrue、VP9が再生できない場合用 */
+    val MPEG_DASH_CODEC_VP8 = booleanPreferencesKey("streaming_type_mpeg_dash_vp8")
 }

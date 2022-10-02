@@ -40,7 +40,7 @@ class VideoEncoder {
      * @param bitRate ビットレート
      * @param frameRate フレームレート
      * @param iFrameInterval キーフレーム生成間隔
-     * @param isVp9 VP9コーデックを利用する場合はtrue
+     * @param codecName [MediaFormat.MIMETYPE_VIDEO_VP9]や[MediaFormat.MIMETYPE_VIDEO_AVC]など
      */
     fun prepareEncoder(
         videoWidth: Int,
@@ -48,18 +48,16 @@ class VideoEncoder {
         bitRate: Int,
         frameRate: Int,
         iFrameInterval: Int = 1,
-        isVp9: Boolean = false,
+        codecName: String,
     ) {
-        // コーデックの選択
-        val codec = if (isVp9) MediaFormat.MIMETYPE_VIDEO_VP9 else MediaFormat.MIMETYPE_VIDEO_AVC
-        val videoEncodeFormat = MediaFormat.createVideoFormat(codec, videoWidth, videoHeight).apply {
+        val videoEncodeFormat = MediaFormat.createVideoFormat(codecName, videoWidth, videoHeight).apply {
             setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
             setInteger(MediaFormat.KEY_FRAME_RATE, frameRate)
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, iFrameInterval)
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
         }
         // エンコーダー用意
-        mediaCodec = MediaCodec.createEncoderByType(codec).apply {
+        mediaCodec = MediaCodec.createEncoderByType(codecName).apply {
             configure(videoEncodeFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         }
     }

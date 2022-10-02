@@ -62,6 +62,7 @@ class ZeroWebM {
 
         const val INFO_TIMESCALE_MS = 1000000
 
+        const val VP8_CODEC_NAME = "V_VP8"
         const val VP9_CODEC_NAME = "V_VP9"
         const val OPUS_CODEC_NAME = "A_OPUS"
 

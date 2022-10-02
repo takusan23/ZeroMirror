@@ -22,15 +22,21 @@ object DashManifestTool {
      *
      * @param fileIntervalSec 動画ファイルの生成間隔
      * @param hasAudio 音声を動画に含めている場合はtrue
+     * @param isVP8 VP9じゃなくてVP8を使う場合はtrue
      * @return XML
      */
-    fun createManifest(fileIntervalSec: Int = 1, hasAudio: Boolean = false): String {
+    fun createManifest(
+        fileIntervalSec: Int = 1,
+        hasAudio: Boolean = false,
+        isVP8: Boolean = false,
+    ): String {
         // なんか dynamic のときは必要？
         val publishTime = isoDateFormat.format(System.currentTimeMillis())
         // コンテンツが利用可能になる時間（ISO-8601）
         // この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
         // コンテンツが利用可能になる時間、生成後 fileIntervalSec を足した後に出来ると思う
         val availabilityStartTime = isoDateFormat.format(System.currentTimeMillis() + (fileIntervalSec * 1_000))
+        val videoCodec = if (isVP8) "vp8" else "vp9"
         // minimumUpdatePeriod="P60S" みたいな感じに指定すると、マニフェストファイルを指定した時間の間隔で更新してくれるみたい
         return if (hasAudio) {
             """
@@ -43,7 +49,7 @@ object DashManifestTool {
                   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
                   <!-- duration が更新頻度っぽい -->
                   <SegmentTemplate duration="$fileIntervalSec" initialization="/video_init.webm" media="/video${"$"}Number${'$'}.webm" startNumber="0"/>
-                  <Representation id="default" codecs="vp9"/>
+                  <Representation id="default" codecs="$videoCodec"/>
                 </AdaptationSet>
                 
                 <AdaptationSet mimeType="audio/webm" contentType="audio">
@@ -65,7 +71,7 @@ object DashManifestTool {
                   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="main" />
                   <!-- duration が更新頻度っぽい -->
                   <SegmentTemplate duration="$fileIntervalSec" initialization="/video_init.webm" media="/video${"$"}Number${'$'}.webm" startNumber="0"/>
-                  <Representation id="default" codecs="vp9"/>
+                  <Representation id="default" codecs="$videoCodec"/>
                 </AdaptationSet>
               </Period>
             </MPD>
