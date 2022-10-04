@@ -141,10 +141,8 @@ class ZeroWebMWriter {
     }
 
     /** [ByteBuffer]を[ByteArray]に変換する */
-    private fun toByteArray(byteBuffer: ByteBuffer): ByteArray {
-        val byteArray = ByteArray(byteBuffer.remaining())
+    private fun toByteArray(byteBuffer: ByteBuffer) = ByteArray(byteBuffer.remaining()).also { byteArray ->
         byteBuffer.get(byteArray)
-        return byteArray
     }
 
 }

@@ -3,7 +3,6 @@ package io.github.takusan23.zeromirror.websocket
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.media.MediaMuxer
-import io.github.takusan23.zeromirror.media.QtFastStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -126,7 +125,7 @@ class WSContainerWriter(private val tempFile: File) {
         release()
         // mp4 で faststart する場合は moovブロック を移動する
         // 移動させることで、ダウンロードしながら再生が可能（ MediaMuxer が作る mp4 はすべてダウンロードしないと再生できない）
-        QtFastStart.fastStart(tempFile, currentFile)
+        tempFile.renameTo(currentFile!!)
         currentFile!!
     }
 
