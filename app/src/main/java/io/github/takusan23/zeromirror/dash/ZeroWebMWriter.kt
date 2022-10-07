@@ -124,7 +124,7 @@ class ZeroWebMWriter {
      */
     fun appendAudioEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
         val byteArray = toByteArray(byteBuffer)
-        val isKeyFrame = true /*bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME*/
+        val isKeyFrame = bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME
         audioAppendBytes += audioZeroWebM.appendSimpleBlock(ZeroWebM.AUDIO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
     }
 
