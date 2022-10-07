@@ -243,7 +243,7 @@ class DashStreaming(
 </head>
 <body>
     <div>
-        <p>再生されない場合は何回か再読み込みしてみてください。</p>
+        <p>再生されない場合は何回か再読み込みしてしたり、シークバーを先頭に移動させてみてください。</p>
         <video id="videoPlayer" controls muted autoplay></video>
     </div>
     <script src="https://cdn.dashjs.org/latest/dash.all.debug.js"></script>

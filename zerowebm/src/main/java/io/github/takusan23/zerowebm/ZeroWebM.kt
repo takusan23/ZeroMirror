@@ -184,9 +184,10 @@ class ZeroWebM {
     ): ByteArray {
         // Clusterからの相対時間
         val simpleBlockTimescale = timescaleMs - prevCreateClusterTimescale
-        return if (simpleBlockTimescale > Short.MAX_VALUE) {
+        return if (isKeyFrame) {
             // 16ビットを超える時間の場合は、Clusterを追加し直してからSimpleBlockを追加する
-            // TODO Clusterの後はキーフレームであるとより良い
+            // そして Cluster 追加後の SimpleBlock はキーフレームである必要があるため、今回はキーフレームがきたらClusterを作り直すようにした。多く作る分には問題ないはず
+            // AndroidのExoPlayerだとキーフレーム先頭じゃないと再生できなかった
             prevCreateClusterTimescale = timescaleMs
             (createStreamingCluster(timescaleMs).toElementBytes() + createSimpleBlock(trackNumber, 0, byteArray, isKeyFrame).toElementBytes())
         } else {
