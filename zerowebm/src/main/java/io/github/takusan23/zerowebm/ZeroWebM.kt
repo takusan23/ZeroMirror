@@ -174,7 +174,7 @@ class ZeroWebM {
      * @param trackNumber トラック番号、映像なのか音声なのか
      * @param timescaleMs エンコードしたデータの時間
      * @param byteArray エンコードされたデータ
-     * @param isKeyFrame キーフレームの場合は true
+     * @param isKeyFrame キーフレームの場合は true、もしかしたら opus の場合は常にキーフレームかも知れない（AndroidのExoPlayerで再生できなかった
      */
     fun appendSimpleBlock(
         trackNumber: Int,

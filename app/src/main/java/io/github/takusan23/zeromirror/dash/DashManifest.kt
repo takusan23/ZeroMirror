@@ -41,8 +41,7 @@ object DashManifestTool {
         val publishTime = isoDateFormat.format(System.currentTimeMillis())
         // コンテンツが利用可能になる時間（ISO-8601）
         // この値があることで、途中から再生した場合でも途中のセグメントから取得するようになる
-        // コンテンツが利用可能になる時間、生成後 fileIntervalSec を足した後に出来ると思う
-        val availabilityStartTime = isoDateFormat.format(System.currentTimeMillis() + (fileIntervalSec * 1_000))
+        val availabilityStartTime = isoDateFormat.format(System.currentTimeMillis())
         val videoCodec = if (isVP8) "vp8" else "vp9"
         // minimumUpdatePeriod="P60S" みたいな感じに指定すると、マニフェストファイルを指定した時間の間隔で更新してくれるみたい
         return if (hasAudio) {

@@ -33,7 +33,6 @@ class DashStreaming(
     private lateinit var dashContentManager: DashContentManager
 
     /** コンテナに書き込むクラス */
-    // private lateinit var dashContainerWriter: DashContainerWriter
     private val zeroWebMWriter = ZeroWebMWriter()
 
     /** 映像エンコーダー */
@@ -61,9 +60,6 @@ class DashStreaming(
             audioPrefixName = AUDIO_FILE_PREFIX_NAME,
             videoPrefixName = VIDEO_FILE_PREFIX_NAME
         ).apply { deleteGenerateFile() }
-        // コンテナファイルに書き込むやつ
-        // val tempFile = dashContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
-        // dashContainerWriter = DashContainerWriter(tempFile)
         // コーデックにVP8使う場合、基本VP9でいいと思う
         val isVP8 = mirroringSettingData.isVP8
         // エンコーダーの用意
@@ -122,8 +118,6 @@ class DashStreaming(
     }
 
     override suspend fun startEncode() = withContext(Dispatchers.Default) {
-        // MediaMuxer起動
-        // dashContainerWriter.resetOrCreateContainerFile()
         // 画面録画エンコーダー、ファイル保存処理
         launch {
             var prevTime = System.currentTimeMillis()
@@ -141,9 +135,7 @@ class DashStreaming(
                     }
                 },
                 onOutputFormatAvailable = {
-                    // dashContainerWriter.setVideoTrack(it)
-                    // 開始する
-                    // dashContainerWriter.start()
+                    // do nothing
                 }
             )
         }
@@ -163,50 +155,18 @@ class DashStreaming(
                         }
                     },
                     onOutputFormatAvailable = {
-                        // dashContainerWriter.setAudioTrack(it)
-                        // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
+                        // do nothing
                     }
                 )
             }
         }
-/*
-        // セグメントファイルを作る
-        // 後は MPEG-DASHプレイヤー側 で定期的に取得してくれる
-        while (isActive) {
-            // intervalMs 秒待機したら新しいファイルにする
-            delay(mirroringSettingData.intervalMs)
-//            // 初回時だけ初期化セグメントを作る
-//            if (!dashContainerWriter.isGeneratedInitSegment) {
-//                dashContentManager.createFile(INIT_SEGMENT_FILENAME).also { initSegment ->
-//                    dashContainerWriter.sliceInitSegmentFile(initSegment.path)
-//                }
-//            }
-            // MediaMuxerで書き込み中のファイルから定期的にデータをコピーして（セグメントファイルが出来る）クライアントで再生する
-            // この方法だと、MediaMuxerとMediaMuxerからコピーしたデータで二重に容量を使うけど後で考える
-            dashContentManager.createIncrementAudioFile { segment ->
-                zeroWebMWriter.createAudioMediaSegment(segment.path)
-            }
-            dashContentManager.createIncrementVideoFile { segment ->
-                zeroWebMWriter.createVideoMediaSegment(segment.path)
-            }
-        }
-*/
     }
 
     @SuppressLint("NewApi")
     override fun release() {
-        // dashContainerWriter.release()
         server.stopServer()
         screenVideoEncoder.release()
         internalAudioEncoder?.release()
-/*
-        GlobalScope.launch {
-            dashContentManager.createIncrementFile().also { file ->
-                zeroWebMWriter.createInitSegment(file.path)
-                zeroWebMWriter.createMediaSegment(file.path)
-            }
-        }
-*/
     }
 
     companion object {
