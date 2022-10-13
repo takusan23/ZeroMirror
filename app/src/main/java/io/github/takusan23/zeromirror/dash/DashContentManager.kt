@@ -107,7 +107,6 @@ class DashContentManager(
      * @param fileList メディアセグメントの配列
      */
     private suspend fun removeUnUseFile(fileList: ArrayList<File>) = withContext(Dispatchers.IO) {
-        return@withContext
         val deleteItemSize = fileList.size - FILE_HOLD_COUNT
         if (deleteItemSize >= 0) {
             fileList.take(deleteItemSize).forEach { it.delete() }
@@ -128,7 +127,7 @@ class DashContentManager(
         private const val FILE_WRITING_SUFFIX = "temp"
 
         /** 動画保持数 */
-        private const val FILE_HOLD_COUNT = 5
+        private const val FILE_HOLD_COUNT = 10
     }
 
 }

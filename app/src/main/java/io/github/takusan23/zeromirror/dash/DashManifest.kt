@@ -47,7 +47,7 @@ object DashManifestTool {
         return if (hasAudio) {
             """
             <?xml version="1.0" encoding="utf-8"?>
-            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" publishTime="$publishTime" availabilityStartTime="$availabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" minBufferTime="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
+            <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" publishTime="$publishTime" availabilityStartTime="$availabilityStartTime" maxSegmentDuration="PT${fileIntervalSec}S" type="dynamic" profiles="urn:mpeg:dash:profile:isoff-live:2011,http://dashif.org/guidelines/dash-if-simple">
               <BaseURL>/</BaseURL>
               <Period start="PT0S" id="live">
               
