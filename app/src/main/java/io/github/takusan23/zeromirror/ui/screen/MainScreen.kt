@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.compose.ZeroMirrorTheme
 import io.github.takusan23.zeromirror.ui.screen.setting.AboutSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.LicenseScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.MirroringSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.SettingScreen
+import io.github.takusan23.zeromirror.ui.theme.ZeroMirrorTheme
 import io.github.takusan23.zeromirror.ui.tool.SetNavigationBarColor
 import io.github.takusan23.zeromirror.ui.tool.SetStatusBarColor
 

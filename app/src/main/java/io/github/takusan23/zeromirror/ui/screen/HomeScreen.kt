@@ -76,10 +76,10 @@ fun HomeScreen(
         }
     }
 
-    Scaffold {
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(it)
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
 

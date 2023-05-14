@@ -85,7 +85,6 @@ fun AdvMain(
  * @param onTwitterClick Twitter開いてほしいときに呼ばれる
  * @param onGitHubClick GitHub開いてほしいときに呼ばれる
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvMenu(
     isScrollable: Boolean,

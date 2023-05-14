@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
 /**
  * 内部音声をPCMで取り出して、AAC / Opusでエンコードする
  *
- * ファイル保存は別クラスに譲渡している [ContainerFileWriter]
+ * ファイル保存は別クラスに譲渡している
  *
  * @param mediaProjection [MediaProjection]、内部音声を収録するのに使います。
  */

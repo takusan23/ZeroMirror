@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
@@ -30,28 +29,27 @@ fun CurrentTimeTitle(
     onSettingClick: () -> Unit,
 ) {
     val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(key1 = Unit, block = {
+    LaunchedEffect(key1 = Unit) {
         while (isActive) {
             delay(1000L)
             currentTime.value = System.currentTimeMillis()
         }
-    })
+    }
     LargeTopAppBar(
         modifier = modifier,
         title = {
-            Text(text = """
-            ${stringResource(id = R.string.time_component_time_hello)}
-            ${stringResource(id = R.string.time_component_time_now)} ${timeToFormat(currentTime.value)}
-        """.trimIndent())
+            Text(
+                text = """
+                    ${stringResource(id = R.string.time_component_time_hello)}
+                    ${stringResource(id = R.string.time_component_time_now)} ${timeToFormat(currentTime.value)}
+                """.trimIndent()
+            )
         },
         actions = {
             IconButton(onClick = onSettingClick) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
             }
-        },
-        colors =TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = Color.Transparent
-        )
+        }
     )
 }
 

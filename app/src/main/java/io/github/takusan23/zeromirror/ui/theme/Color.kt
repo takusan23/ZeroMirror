@@ -1,4 +1,4 @@
-package com.example.compose
+package io.github.takusan23.zeromirror.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

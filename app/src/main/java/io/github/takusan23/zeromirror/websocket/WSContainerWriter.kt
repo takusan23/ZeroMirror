@@ -94,7 +94,7 @@ class WSContainerWriter(private val tempFile: File) {
     /**
      * 映像データを書き込む
      *
-     * @param byteBuf MediaCodec からもらえるやつ
+     * @param byteBuffer MediaCodec からもらえるやつ
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeVideo(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
@@ -106,7 +106,7 @@ class WSContainerWriter(private val tempFile: File) {
     /**
      * 音声データを書き込む
      *
-     * @param byteBuf MediaCodec からもらえるやつ
+     * @param byteBuffer MediaCodec からもらえるやつ
      * @param bufferInfo MediaCodec からもらえるやつ
      */
     fun writeAudio(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {

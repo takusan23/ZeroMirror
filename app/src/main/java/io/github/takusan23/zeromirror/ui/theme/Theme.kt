@@ -1,4 +1,4 @@
-package com.example.compose
+package io.github.takusan23.zeromirror.ui.theme
 
 import android.annotation.SuppressLint
 import android.os.Build

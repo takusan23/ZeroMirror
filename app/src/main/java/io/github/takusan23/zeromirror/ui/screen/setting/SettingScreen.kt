@@ -40,8 +40,8 @@ fun SettingScreen(
                 )
             )
         }
-    ) {
-        Box(modifier = Modifier.padding(it)) {
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
             LazyColumn {
                 item {
                     SettingItem(

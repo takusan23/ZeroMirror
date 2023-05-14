@@ -13,6 +13,7 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.window.layout.WindowMetricsCalculator
 import io.github.takusan23.zeromirror.dash.DashStreaming
 import io.github.takusan23.zeromirror.data.MirroringSettingData
@@ -49,7 +50,7 @@ class ScreenMirrorService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val resultCode = intent?.getIntExtra(KEY_INTENT_RESULT_CODE, -1)
-        val resultData = intent?.getParcelableExtra<Intent>(KEY_INTENT_RESULT_INTENT)
+        val resultData = intent?.let { IntentCompat.getParcelableExtra(it, KEY_INTENT_RESULT_INTENT, Intent::class.java) }
         val displayHeight = intent?.getIntExtra(KEY_INTENT_HEIGHT, 0) ?: 0
         val displayWidth = intent?.getIntExtra(KEY_INTENT_WIDTH, 0) ?: 0
 

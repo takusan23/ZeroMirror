@@ -2,10 +2,21 @@ package io.github.takusan23.zeromirror.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +41,6 @@ import io.github.takusan23.zeromirror.tool.QrCodeGeneratorTool
  * @param onShareClick 共有押したとき
  * @param onOpenBrowserClick ブラウザーで開く押したとき
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UrlCard(
     modifier: Modifier = Modifier,
