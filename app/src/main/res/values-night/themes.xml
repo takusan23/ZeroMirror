@@ -11,12 +11,13 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">@android:color/transparent</item>
-        <!-- Customize your theme here. -->
-
-        <!-- スプラッシュスクリーン -->
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">
-            @drawable/zeromirror_splash_screen_icon
-        </item>
-        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">1000</item>
     </style>
+
+    <!-- スプラッシュスクリーン -->
+    <style name="Theme.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/zeromirror_splash_screen_icon</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.ZeroMirror</item>
+    </style>
+
 </resources>

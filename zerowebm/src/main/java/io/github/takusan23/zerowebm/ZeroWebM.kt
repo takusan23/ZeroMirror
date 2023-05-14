@@ -2,10 +2,9 @@ package io.github.takusan23.zerowebm
 
 import java.io.File
 
-val file = File("init.webm")
-
 /** テスト用、WebMの構造は MKVToolNix が神レベルでわかりやすいです */
 fun main(arg: Array<String>) {
+    val file = File("init.webm")
     val zeroWebM = ZeroWebM()
     val ebmlHeader = zeroWebM.createEBMLHeader()
     val segment = zeroWebM.createSegment(
