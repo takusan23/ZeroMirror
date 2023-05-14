@@ -53,15 +53,19 @@ fun HomeScreen(
 
     // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
     val isGrantedRecordAudio = remember {
-        mutableStateOf(if (PermissionTool.isAndroidQAndHigher) {
-            !PermissionTool.isGrantedRecordPermission(context)
-        } else false)
+        mutableStateOf(
+            if (PermissionTool.isAndroidQAndHigher) {
+                !PermissionTool.isGrantedRecordPermission(context)
+            } else false
+        )
     }
     // 通知権限があるか、フォアグラウンドサービス実行中を通知として発行したいので
     val isGrantedPostNotification = remember {
-        mutableStateOf(if (PermissionTool.isAndroidTiramisuAndHigher) {
-            !PermissionTool.isGrantedPostNotificationPermission(context)
-        } else false)
+        mutableStateOf(
+            if (PermissionTool.isAndroidTiramisuAndHigher) {
+                !PermissionTool.isGrantedPostNotificationPermission(context)
+            } else false
+        )
     }
 
     // 権限を求めてサービスを起動する
