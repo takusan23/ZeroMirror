@@ -18,9 +18,4 @@ class MainActivity : ComponentActivity() {
         }
 
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        ScreenMirrorService.stopService(this)
-    }
 }

@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
-import io.github.takusan23.zeromirror.tool.DisplayConverter
+import io.github.takusan23.zeromirror.tool.NumberConverter
 import io.github.takusan23.zeromirror.ui.components.SwitchSettingItem
 import io.github.takusan23.zeromirror.ui.components.TextBoxInitValueSettingItem
 import kotlinx.coroutines.launch
@@ -111,7 +111,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                         title = stringResource(id = R.string.mirroring_setting_video_bitrate_title),
                         description = stringResource(id = R.string.mirroring_setting_video_bitrate_description),
                         initValue = (mirroringData.value!!.videoBitRate / 1000).toString(),
-                        inputUnderText = DisplayConverter.convert(mirroringData.value!!.videoBitRate),
+                        inputUnderText = NumberConverter.convert(mirroringData.value!!.videoBitRate),
                         iconRes = R.drawable.ic_outline_videocam_24,
                         onValueChange = {
                             it.toIntOrNull()?.also { videoBitRate ->
@@ -186,7 +186,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                         title = stringResource(id = R.string.mirroring_setting_audio_bitrate_title),
                         description = stringResource(id = R.string.mirroring_setting_audio_bitrate_description),
                         initValue = (mirroringData.value!!.audioBitRate / 1000).toString(),
-                        inputUnderText = DisplayConverter.convert(mirroringData.value!!.audioBitRate),
+                        inputUnderText = NumberConverter.convert(mirroringData.value!!.audioBitRate),
                         iconRes = R.drawable.ic_outline_audiotrack_24,
                         onValueChange = {
                             it.toIntOrNull()?.also { audioBitRate ->

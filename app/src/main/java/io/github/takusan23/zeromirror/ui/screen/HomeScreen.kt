@@ -16,13 +16,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import io.github.takusan23.zeromirror.R
-import io.github.takusan23.zeromirror.ScreenMirrorService
+import io.github.takusan23.zeromirror.ScreenMirroringService
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.setting.SettingKeyObject
 import io.github.takusan23.zeromirror.setting.dataStore
+import io.github.takusan23.zeromirror.tool.DisplayTool
 import io.github.takusan23.zeromirror.tool.IntentTool
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
@@ -42,6 +44,7 @@ fun HomeScreen(
     onNavigate: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
     // IPアドレスをFlowで受け取る
@@ -50,6 +53,10 @@ fun HomeScreen(
     val mirroringData = remember { MirroringSettingData.loadDataStore(context) }.collectAsState(initial = null)
     // DataStore監視
     val dataStore = remember { context.dataStore.data }.collectAsState(initial = null)
+    // ミラーリングサービスとバインドして、インスタンスを取得する
+    val mirroringService = remember { ScreenMirroringService.bindScreenMirrorService(context, lifecycleOwner) }.collectAsState(initial = null)
+    // ミラーリング中かどうか
+    val isScreenMirroring = mirroringService.value?.isScreenMirroring?.collectAsState()
 
     // マイク録音権限があるか、Android 10 以前は対応していないので一律 false、Android 10 以降は権限がなければtrueになる
     val isGrantedRecordAudio = remember {
@@ -73,8 +80,8 @@ fun HomeScreen(
     val requestCapture = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         // ミラーリングサービス開始
         if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
-            // Activity 以外は無いはず...
-            ScreenMirrorService.startService((context as Activity), result.resultCode, result.data!!)
+            val (height, width) = DisplayTool.getDisplaySize((context as Activity))
+            mirroringService.value?.startMirroring(result.resultCode, result.data!!, height, width)
         } else {
             Toast.makeText(context, context.getString(R.string.home_screen_permission_result_fail), Toast.LENGTH_SHORT).show()
         }
@@ -98,13 +105,14 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(10.dp),
+                isScreenMirroring = isScreenMirroring?.value == true,
                 onStartClick = {
                     // キャプチャー権限を求める
                     requestCapture.launch(mediaProjectionManager.createScreenCaptureIntent())
                 },
                 onStopClick = {
                     // 終了させる
-                    ScreenMirrorService.stopService(context)
+                    mirroringService.value?.stopMirroring()
                 }
             )
 

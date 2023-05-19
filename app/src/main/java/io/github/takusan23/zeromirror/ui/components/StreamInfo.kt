@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
-import io.github.takusan23.zeromirror.tool.DisplayConverter
+import io.github.takusan23.zeromirror.tool.NumberConverter
 
 /**
  * 更新間隔、ビットレート、fpsとかを表示する
@@ -60,7 +60,7 @@ fun StreamInfo(
         }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_video_bitrate))
-            Text(text = DisplayConverter.convert(mirroringData.videoBitRate))
+            Text(text = NumberConverter.convert(mirroringData.videoBitRate))
         }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_video_fps))
@@ -74,7 +74,7 @@ fun StreamInfo(
         }
         Column(modifier = Modifier.padding(5.dp)) {
             Text(fontSize = 20.sp, text = stringResource(id = R.string.stream_info_audio_bitrate))
-            Text(text = DisplayConverter.convert(mirroringData.audioBitRate))
+            Text(text = NumberConverter.convert(mirroringData.audioBitRate))
         }
 
         OutlinedButton(

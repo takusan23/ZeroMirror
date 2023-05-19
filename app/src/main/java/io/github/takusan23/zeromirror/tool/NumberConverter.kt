@@ -5,7 +5,7 @@ package io.github.takusan23.zeromirror.tool
  *
  * テストコードが存在します。
  */
-object DisplayConverter {
+object NumberConverter {
 
     /**
      * 適切な単位に変換する
