@@ -39,7 +39,7 @@ class DashContentManager(
     private val tempFolder = File(parentFolder, TEMP_FOLDER_NAME).apply { mkdir() }
 
     /** 完成品を公開するフォルダ */
-    val outputFolder = File(parentFolder, OUTPUT_VIDEO_FOLDER_NAME).apply { mkdir() }
+    private val outputFolder = getOutputFolder(parentFolder).apply { mkdir() }
 
     /**
      * 連番な音声ファイルを作る。
@@ -128,6 +128,14 @@ class DashContentManager(
 
         /** 動画保持数 */
         private const val FILE_HOLD_COUNT = 10
+
+        /**
+         * 生成した 動画/音声 の保存先を返す
+         *
+         * @param parentFolder 親の [File]
+         * @return 保存先 [File]
+         */
+        fun getOutputFolder(parentFolder: File): File = parentFolder.resolve(OUTPUT_VIDEO_FOLDER_NAME)
     }
 
 }

@@ -1,6 +1,5 @@
 package io.github.takusan23.zeromirror.dash
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.media.MediaFormat
 import android.media.projection.MediaProjection
@@ -50,16 +49,10 @@ class DashStreaming(
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && internalAudioEncoder != null
 
     override suspend fun startServer() = withContext(Dispatchers.Default) {
-        // コンテンツ管理。前回のデータを消す
-        dashContentManager = DashContentManager(
-            parentFolder = parentFolder,
-            audioPrefixName = AUDIO_FILE_PREFIX_NAME,
-            videoPrefixName = VIDEO_FILE_PREFIX_NAME
-        ).apply { deleteGenerateFile() }
         // サーバー開始。この段階でブラウザ側の視聴ページは利用可能になる
         server = Server(
             portNumber = mirroringSettingData.portNumber,
-            hostingFolder = dashContentManager!!.outputFolder,
+            hostingFolder = DashContentManager.getOutputFolder(parentFolder),
             indexHtml = INDEX_HTML
         ).apply { startServer() }
     }
@@ -69,7 +62,12 @@ class DashStreaming(
         videoHeight: Int,
         videoWidth: Int,
     ) {
-        val dashContentManager = dashContentManager!!
+        // コンテンツ管理。前回のデータを消す
+        dashContentManager = DashContentManager(
+            parentFolder = parentFolder,
+            audioPrefixName = AUDIO_FILE_PREFIX_NAME,
+            videoPrefixName = VIDEO_FILE_PREFIX_NAME
+        ).apply { deleteGenerateFile() }
         // コーデックにVP8使う場合、基本VP9でいいと思う
         val isVP8 = mirroringSettingData.isVP8
         // エンコーダーの用意
@@ -95,6 +93,7 @@ class DashStreaming(
         // MPEG-DASH の初期化セグメントを作成する
         zeroWebMWriter = ZeroWebMWriter()
         val zeroWebMWriter = zeroWebMWriter!!
+        val dashContentManager = dashContentManager!!
         // 映像と音声は別々の WebM で配信されるのでそれぞれ作る
         if (isInitializedInternalAudioEncoder) {
             dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
@@ -133,34 +132,15 @@ class DashStreaming(
         val videoEncoderJob = launch {
             var prevTime = System.currentTimeMillis()
             val intervalMs = mirroringSettingData.intervalMs
-            screenVideoEncoder.start(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                    zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo)
-                    // 定期的に動画ファイルを作る処理
-                    // 多分別スレッドとかでやると映像が乱れるのでここに書かないとだめ？
-                    if ((System.currentTimeMillis() - prevTime) > intervalMs) {
-                        dashContentManager.createIncrementVideoFile { segment ->
-                            zeroWebMWriter.createVideoMediaSegment(segment.path)
-                        }
-                        prevTime = System.currentTimeMillis()
-                    }
-                },
-                onOutputFormatAvailable = {
-                    // do nothing
-                }
-            )
-        }
-        // 内部音声エンコーダー
-        val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
-            launch {
-                var prevTime = System.currentTimeMillis()
-                val intervalMs = mirroringSettingData.intervalMs
-                internalAudioEncoder?.start(
+            try {
+                screenVideoEncoder.start(
                     onOutputBufferAvailable = { byteBuffer, bufferInfo ->
-                        zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo)
+                        zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo)
+                        // 定期的に動画ファイルを作る処理
+                        // 多分別スレッドとかでやると映像が乱れるのでここに書かないとだめ？
                         if ((System.currentTimeMillis() - prevTime) > intervalMs) {
-                            dashContentManager.createIncrementAudioFile { segment ->
-                                zeroWebMWriter.createAudioMediaSegment(segment.path)
+                            dashContentManager.createIncrementVideoFile { segment ->
+                                zeroWebMWriter.createVideoMediaSegment(segment.path)
                             }
                             prevTime = System.currentTimeMillis()
                         }
@@ -169,17 +149,38 @@ class DashStreaming(
                         // do nothing
                     }
                 )
+            } finally {
+                screenVideoEncoder.release()
+            }
+        }
+        // 内部音声エンコーダー
+        val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
+            launch {
+                var prevTime = System.currentTimeMillis()
+                val intervalMs = mirroringSettingData.intervalMs
+                try {
+                    internalAudioEncoder?.start(
+                        onOutputBufferAvailable = { byteBuffer, bufferInfo ->
+                            zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo)
+                            if ((System.currentTimeMillis() - prevTime) > intervalMs) {
+                                dashContentManager.createIncrementAudioFile { segment ->
+                                    zeroWebMWriter.createAudioMediaSegment(segment.path)
+                                }
+                                prevTime = System.currentTimeMillis()
+                            }
+                        },
+                        onOutputFormatAvailable = {
+                            // do nothing
+                        }
+                    )
+                } finally {
+                    internalAudioEncoder?.release()
+                }
             }
         } else null
         // キャンセルされるまで join で待機する
         videoEncoderJob.join()
         audioEncoderJob?.join()
-    }
-
-    @SuppressLint("NewApi")
-    override fun stopEncode() {
-        screenVideoEncoder?.release()
-        internalAudioEncoder?.release()
     }
 
     override fun destroy() {

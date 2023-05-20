@@ -152,7 +152,6 @@ class ScreenMirroringService : Service() {
                     // コルーチンキャンセル時にリソース開放をする
                     // フォアグラウンドサービスも解除
                     _isScreenMirroring.value = false
-                    streaming?.stopEncode()
                     mediaProjection?.stop()
                     ServiceCompat.stopForeground(this@ScreenMirroringService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 }

@@ -41,11 +41,9 @@ interface StreamingInterface {
     /**
      * 映像、内部音声のエンコードをして、ファイルを連続で生成していく。
      * エンコード中はすっと一時停止します。
+     * ミラーリング終了時はコルーチンがキャンセルされるので、try-finally でリソース開放してください。
      */
     suspend fun startEncode()
-
-    /** エンコードを停止する。[startEncode]のリソース開放に */
-    fun stopEncode()
 
     /** 破棄時に呼ばれる。[startServer]のリソース開放に */
     fun destroy()

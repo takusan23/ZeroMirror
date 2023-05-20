@@ -1,6 +1,5 @@
 package io.github.takusan23.zeromirror.websocket
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.media.MediaFormat
 import android.media.projection.MediaProjection
@@ -10,7 +9,11 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -96,56 +99,61 @@ class WSStreaming(
         wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
         // 画面録画エンコーダー
         val videoEncoderJob = launch {
-            screenVideoEncoder.start(
-                onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeVideo(byteBuffer, bufferInfo) },
-                onOutputFormatAvailable = {
-                    wsContainerWriter.setVideoTrack(it)
-                    // 開始する
-                    wsContainerWriter.start()
-                }
-            )
+            try {
+                screenVideoEncoder.start(
+                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeVideo(byteBuffer, bufferInfo) },
+                    onOutputFormatAvailable = {
+                        wsContainerWriter.setVideoTrack(it)
+                        // 開始する
+                        wsContainerWriter.start()
+                    }
+                )
+            } finally {
+                screenVideoEncoder.release()
+            }
         }
         // 内部音声エンコーダー
         val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
             launch {
-                internalAudioEncoder?.start(
-                    onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeAudio(byteBuffer, bufferInfo) },
-                    onOutputFormatAvailable = {
-                        wsContainerWriter.setAudioTrack(it)
-                        // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
-                    }
-                )
+                try {
+                    internalAudioEncoder?.start(
+                        onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeAudio(byteBuffer, bufferInfo) },
+                        onOutputFormatAvailable = {
+                            wsContainerWriter.setAudioTrack(it)
+                            // ここでは start が呼べない、なぜなら音声が再生されてない場合は何もエンコードされないから
+                        }
+                    )
+                } finally {
+                    internalAudioEncoder?.release()
+                }
             }
         } else null
         // コルーチンの中なので whileループ できます
         val mixingJob = launch {
-            while (isActive) {
-                // intervalMs 秒待機したら新しいファイルにする
-                delay(mirroringSettingData.intervalMs)
-                // クライアント側にWebSocketでファイルが出来たことを通知する
-                val publishFile = wsContainerWriter.stopAndRelease()
-                server.updateVideoFileName(publishFile.name)
-                // エンコーダー内部で持っている時間をリセットする
-                screenVideoEncoder.resetInternalTime()
-                if (isInitializedInternalAudioEncoder) {
-                    internalAudioEncoder?.resetInternalTime()
+            try {
+                while (isActive) {
+                    // intervalMs 秒待機したら新しいファイルにする
+                    delay(mirroringSettingData.intervalMs)
+                    // クライアント側にWebSocketでファイルが出来たことを通知する
+                    val publishFile = wsContainerWriter.stopAndRelease()
+                    server.updateVideoFileName(publishFile.name)
+                    // エンコーダー内部で持っている時間をリセットする
+                    screenVideoEncoder.resetInternalTime()
+                    if (isInitializedInternalAudioEncoder) {
+                        internalAudioEncoder?.resetInternalTime()
+                    }
+                    // それぞれ格納するファイルを用意
+                    wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
+                    wsContainerWriter.start()
                 }
-                // それぞれ格納するファイルを用意
-                wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
-                wsContainerWriter.start()
+            } finally {
+                wsContainerWriter?.release()
             }
         }
         // キャンセルされるまで join で待機する
         videoEncoderJob.join()
         audioEncoderJob?.join()
         mixingJob.join()
-    }
-
-    @SuppressLint("NewApi")
-    override fun stopEncode() {
-        wsContainerWriter?.release()
-        screenVideoEncoder?.release()
-        internalAudioEncoder?.release()
     }
 
     override fun destroy() {
