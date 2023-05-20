@@ -1,6 +1,5 @@
 package io.github.takusan23.zeromirror
 
-import android.annotation.SuppressLint
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context
@@ -11,6 +10,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,6 +25,7 @@ import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.QrCodeGeneratorTool
 import io.github.takusan23.zeromirror.websocket.WSStreaming
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
@@ -33,42 +34,81 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
 /**
- * ミラーリングサービス
+ * ミラーリングサービス。
+ * バインドして利用する。
  */
 class ScreenMirroringService : Service() {
     // コルーチン
-    private val coroutineScope = CoroutineScope(Job())
+    private val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
     private var mirroringJob: Job? = null
     private val _isScreenMirroring = MutableStateFlow(false)
-
-    /** ミラーリング中かどうか */
-    val isScreenMirroring = _isScreenMirroring.asStateFlow()
 
     /** バインドする */
     private val localBinder = LocalBinder(this)
 
+    /** DataStore にある設定を読み出す */
+    private val mirroringSettingDataFlow by lazy { MirroringSettingData.loadDataStore(this@ScreenMirroringService) }
+
     // ミラーリングで使う
     private val mediaProjectionManager by lazy { getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
-    private lateinit var mediaProjection: MediaProjection
+    private var mediaProjection: MediaProjection? = null
 
     /** ミラーリングするやつ */
-    private lateinit var streaming: StreamingInterface
+    private var streaming: StreamingInterface? = null
 
-    @SuppressLint("NewApi")
+    /** ミラーリング中かどうか */
+    val isScreenMirroring = _isScreenMirroring.asStateFlow()
+
+    override fun onBind(intent: Intent): IBinder = localBinder
+
+    override fun onCreate() {
+        super.onCreate()
+        // DataStore の設定内容を監視し反映させる
+        coroutineScope.launch {
+            mirroringSettingDataFlow.collect { mirroringSettingData ->
+                // もしミラーリング中なら終了させる
+                if (isScreenMirroring.value) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@ScreenMirroringService, "設定が変更されたため、ミラーリングを停止しました。", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                mirroringJob?.cancelAndJoin()
+                streaming?.destroy()
+
+                // インスタンスを生成し、Webサーバー起動
+                streaming = if (mirroringSettingData.streamingType == StreamingType.MpegDash) {
+                    DashStreaming(
+                        context = this@ScreenMirroringService,
+                        parentFolder = getExternalFilesDir(null)!!,
+                        mirroringSettingData = mirroringSettingData
+                    )
+                } else {
+                    WSStreaming(
+                        context = this@ScreenMirroringService,
+                        parentFolder = getExternalFilesDir(null)!!,
+                        mirroringSettingData = mirroringSettingData
+                    )
+                }.apply { startServer() }
+            }
+        }
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // TODO タスクから消した時に終了する設定を追加する
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
-        streaming.release()
-        mediaProjection.stop()
+        mirroringJob?.cancel()
+        streaming?.destroy()
     }
-
-    override fun onBind(intent: Intent): IBinder = localBinder
 
     /**
      * ミラーリングを開始する
@@ -78,70 +118,62 @@ class ScreenMirroringService : Service() {
      * @param displayHeight 画面の高さ
      * @param displayWidth 画面の幅
      */
-    fun startMirroring(
+    fun startScreenMirroring(
         resultCode: Int,
         resultData: Intent,
         displayHeight: Int,
         displayWidth: Int
     ) {
         coroutineScope.launch {
-            // すでに起動中なら終了
+            // すでに起動中なら終了。join で終わるのを待つ
             mirroringJob?.cancelAndJoin()
             mirroringJob = launch {
-                // フォアグラウンドサービスにするため、通知を出す
-                notifyForegroundNotification()
-                // 設定を読み出す
-                val mirroringSettingData = MirroringSettingData.loadDataStore(this@ScreenMirroringService).first()
 
-                // 起動できる場合は起動
-                mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-                // ミラーリング用意
-                streaming = if (mirroringSettingData.streamingType == StreamingType.MpegDash) {
-                    DashStreaming(this@ScreenMirroringService, mirroringSettingData)
-                } else {
-                    WSStreaming(this@ScreenMirroringService, mirroringSettingData)
-                }.apply {
-                    init(getExternalFilesDir(null)!!, mediaProjection, displayHeight, displayWidth)
+                // フォアグラウンドサービスにするため、通知を出す
+                notifyIpAddress()
+                launch {
+                    val mirroringSettingData = mirroringSettingDataFlow.first()
+                    IpAddressTool.collectIpAddress(this@ScreenMirroringService).collect { ipAddress ->
+                        val url = "http://$ipAddress:${mirroringSettingData.portNumber}"
+                        notifyIpAddress(contentText = "${getString(R.string.ip_address)}：$url", url = url)
+                        Log.d(TAG, url)
+                    }
                 }
 
-                // エンコーダー開始
-                launch { streaming.startEncode() }
-                _isScreenMirroring.value = true
+                // ミラーリングの準備
+                mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
+                streaming?.prepareEncoder(mediaProjection!!, displayHeight, displayWidth)
 
-                // IPアドレスを通知として出す
-                IpAddressTool.collectIpAddress(this@ScreenMirroringService).onEach { ipAddress ->
-                    val url = "http://$ipAddress:${mirroringSettingData.portNumber}"
-                    notifyForegroundNotification(url = url, contentText = "${getString(R.string.ip_address)}：$url")
-                    Log.d(TAG, url)
-                }.launchIn(coroutineScope)
+                try {
+                    // エンコーダー開始
+                    _isScreenMirroring.value = true
+                    streaming?.startEncode()
+                } finally {
+                    // コルーチンキャンセル時にリソース開放をする
+                    // フォアグラウンドサービスも解除
+                    _isScreenMirroring.value = false
+                    streaming?.stopEncode()
+                    mediaProjection?.stop()
+                    ServiceCompat.stopForeground(this@ScreenMirroringService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                }
             }
         }
     }
 
-    /**
-     * ミラーリングを終了する。
-     * フォアグラウンドサービスも解除される。
-     */
-    fun stopMirroring() {
-        coroutineScope.launch {
-            mirroringJob?.cancelAndJoin()
-            ServiceCompat.stopForeground(this@ScreenMirroringService, ServiceCompat.STOP_FOREGROUND_REMOVE)
-            _isScreenMirroring.value = false
-        }
+    /** ミラーリングを終了する。フォアグラウンドサービスも解除される。 */
+    fun stopScreenMirroringAndServerRestart() {
+        mirroringJob?.cancel()
     }
 
     /**
-     * フォアグラウンドサービスの通知を発行する
+     * 通知を作って出す
      *
      * @param contentText 通知本文
      * @param url QRコードにするURL、あるなら
      */
-    private fun notifyForegroundNotification(
-        contentText: String = getString(R.string.zeromirror_service_notification_content),
-        url: String? = null,
-    ) {
+    private fun notifyIpAddress(contentText: String = getString(R.string.zeromirror_service_notification_content), url: String? = null) {
         // 通知チャンネル
-        val notificationManagerCompat = NotificationManagerCompat.from(this)
+        val notificationManagerCompat = NotificationManagerCompat.from(this@ScreenMirroringService)
         //通知チャンネルが存在しないときは登録する
         if (notificationManagerCompat.getNotificationChannel(NOTIFICATION_CHANNEL_ID) == null) {
             val channel = NotificationChannelCompat.Builder(NOTIFICATION_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW).apply {
@@ -150,12 +182,14 @@ class ScreenMirroringService : Service() {
             notificationManagerCompat.createNotificationChannel(channel)
         }
         //通知作成
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).also { builder ->
+        val notification = NotificationCompat.Builder(this@ScreenMirroringService, NOTIFICATION_CHANNEL_ID).also { builder ->
             builder.setContentTitle(getString(R.string.zeromirror_service_notification_title))
             builder.setContentText(contentText)
             builder.setSmallIcon(R.drawable.zeromirror_android)
-            url?.let { QrCodeGeneratorTool.generateQrCode(it) }
-                ?.also { bitmap -> builder.setLargeIcon(bitmap) }
+            if (url != null) {
+                val bitmap = QrCodeGeneratorTool.generateQrCode(url)
+                builder.setLargeIcon(bitmap)
+            }
         }.build()
         startForeground(NOTIFICATION_ID, notification)
     }

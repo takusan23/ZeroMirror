@@ -1,26 +1,38 @@
 package io.github.takusan23.zeromirror.media
 
 import android.media.projection.MediaProjection
+import io.github.takusan23.zeromirror.data.MirroringSettingData
 import java.io.File
 
 /**
- * 以下のクラスの基礎インターフェース
+ * 以下のクラスの基礎インターフェース。
+ * [destroyEncoder] 関数以外は呼ばれない場合があります。（ミラーリング配信しなかった場合は [prepareEncoder] が呼ばれない）
  *
  * [io.github.takusan23.zeromirror.dash.DashStreaming]
  * [io.github.takusan23.zeromirror.websocket.WSStreaming]
  */
 interface StreamingInterface {
 
+    /** 保存先 */
+    val parentFolder: File
+
+    /** ミラーリング設定 */
+    val mirroringSettingData: MirroringSettingData
+
     /**
-     * 初期化する
+     * ブラウザ視聴のためのWebサーバーを開始する。
+     * ミラーリング開始前でもアクセスできるように。
+     */
+    suspend fun startServer()
+
+    /**
+     * エンコーダーの初期化をする
      *
-     * @param parentFolder 保存先
      * @param mediaProjection [MediaProjection]
      * @param videoHeight 動画の高さ
      * @param videoWidth 動画の幅
      */
-    suspend fun init(
-        parentFolder: File,
+    suspend fun prepareEncoder(
         mediaProjection: MediaProjection,
         videoHeight: Int,
         videoWidth: Int,
@@ -28,10 +40,13 @@ interface StreamingInterface {
 
     /**
      * 映像、内部音声のエンコードをして、ファイルを連続で生成していく。
-     * エンコード中はずっと一時停止します。
+     * エンコード中はすっと一時停止します。
      */
     suspend fun startEncode()
 
-    /** リソース開放 */
-    fun release()
+    /** エンコードを停止する。[startEncode]のリソース開放に */
+    fun stopEncode()
+
+    /** 破棄時に呼ばれる。[startServer]のリソース開放に */
+    fun destroy()
 }

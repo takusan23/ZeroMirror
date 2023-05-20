@@ -21,38 +21,48 @@ import java.io.File
  */
 class WSStreaming(
     private val context: Context,
-    private val mirroringSettingData: MirroringSettingData,
+    override val parentFolder: File,
+    override val mirroringSettingData: MirroringSettingData
 ) : StreamingInterface {
 
     /** 生成したファイルの管理 */
-    private lateinit var wsContentManager: WSContentManager
+    private var wsContentManager: WSContentManager? = null
 
     /** コンテナに書き込むクラス */
-    private lateinit var wsContainerWriter: WSContainerWriter
+    private var wsContainerWriter: WSContainerWriter? = null
 
     /** 映像エンコーダー */
-    private lateinit var screenVideoEncoder: ScreenVideoEncoder
+    private var screenVideoEncoder: ScreenVideoEncoder? = null
 
     /** 内部音声エンコーダー。利用しない場合は null になる */
     private var internalAudioEncoder: InternalAudioEncoder? = null
 
     /** サーバー これだけ別モジュール */
-    private lateinit var server: Server
+    private var server: Server? = null
 
     /** 内部音声エンコーダーを初期化したか */
     private val isInitializedInternalAudioEncoder: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && internalAudioEncoder != null
 
-    override suspend fun init(
-        parentFolder: File,
-        mediaProjection: MediaProjection,
-        videoHeight: Int,
-        videoWidth: Int,
-    ) {
+    override suspend fun startServer() = withContext(Dispatchers.Default) {
         // 前回のデータを消す
         wsContentManager = WSContentManager(parentFolder, VIDEO_FILE_NAME).apply {
             deleteGenerateFile()
         }
+        // サーバー開始
+        server = Server(
+            portNumber = mirroringSettingData.portNumber,
+            hostingFolder = wsContentManager!!.outputFolder,
+            indexHtml = INDEX_HTML
+        ).apply { startServer() }
+    }
+
+    override suspend fun prepareEncoder(
+        mediaProjection: MediaProjection,
+        videoHeight: Int,
+        videoWidth: Int,
+    ) {
+        val wsContentManager = wsContentManager!!
         // コンテナファイルに書き込むやつ
         val tempFile = wsContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
         wsContainerWriter = WSContainerWriter(tempFile)
@@ -75,21 +85,17 @@ class WSStreaming(
                 )
             }
         }
-        // サーバー開始
-        server = Server(
-            portNumber = mirroringSettingData.portNumber,
-            hostingFolder = wsContentManager.outputFolder,
-            indexHtml = INDEX_HTML
-        ).apply {
-            startServer()
-        }
     }
 
     override suspend fun startEncode() = withContext(Dispatchers.Default) {
+        val wsContentManager = wsContentManager!!
+        val wsContainerWriter = wsContainerWriter!!
+        val screenVideoEncoder = screenVideoEncoder!!
+        val server = server!!
         // 初回用
         wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
         // 画面録画エンコーダー
-        launch {
+        val videoEncoderJob = launch {
             screenVideoEncoder.start(
                 onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeVideo(byteBuffer, bufferInfo) },
                 onOutputFormatAvailable = {
@@ -100,7 +106,7 @@ class WSStreaming(
             )
         }
         // 内部音声エンコーダー
-        if (isInitializedInternalAudioEncoder) {
+        val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
             launch {
                 internalAudioEncoder?.start(
                     onOutputBufferAvailable = { byteBuffer, bufferInfo -> wsContainerWriter.writeAudio(byteBuffer, bufferInfo) },
@@ -110,31 +116,40 @@ class WSStreaming(
                     }
                 )
             }
-        }
+        } else null
         // コルーチンの中なので whileループ できます
-        while (isActive) {
-            // intervalMs 秒待機したら新しいファイルにする
-            delay(mirroringSettingData.intervalMs)
-            // クライアント側にWebSocketでファイルが出来たことを通知する
-            val publishFile = wsContainerWriter.stopAndRelease()
-            server.updateVideoFileName(publishFile.name)
-            // エンコーダー内部で持っている時間をリセットする
-            screenVideoEncoder.resetInternalTime()
-            if (isInitializedInternalAudioEncoder) {
-                internalAudioEncoder?.resetInternalTime()
+        val mixingJob = launch {
+            while (isActive) {
+                // intervalMs 秒待機したら新しいファイルにする
+                delay(mirroringSettingData.intervalMs)
+                // クライアント側にWebSocketでファイルが出来たことを通知する
+                val publishFile = wsContainerWriter.stopAndRelease()
+                server.updateVideoFileName(publishFile.name)
+                // エンコーダー内部で持っている時間をリセットする
+                screenVideoEncoder.resetInternalTime()
+                if (isInitializedInternalAudioEncoder) {
+                    internalAudioEncoder?.resetInternalTime()
+                }
+                // それぞれ格納するファイルを用意
+                wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
+                wsContainerWriter.start()
             }
-            // それぞれ格納するファイルを用意
-            wsContainerWriter.createContainer(wsContentManager.generateNewFile().path)
-            wsContainerWriter.start()
         }
+        // キャンセルされるまで join で待機する
+        videoEncoderJob.join()
+        audioEncoderJob?.join()
+        mixingJob.join()
     }
 
     @SuppressLint("NewApi")
-    override fun release() {
-        wsContainerWriter.release()
-        server.stopServer()
-        screenVideoEncoder.release()
+    override fun stopEncode() {
+        wsContainerWriter?.release()
+        screenVideoEncoder?.release()
         internalAudioEncoder?.release()
+    }
+
+    override fun destroy() {
+        server?.stopServer()
     }
 
     companion object {

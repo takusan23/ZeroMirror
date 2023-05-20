@@ -20,46 +20,56 @@ import java.io.File
  * MPEG-DASH でミラーリングをストリーミングする場合に利用するクラス。
  * WebM を定期的に切り出して MPEG-DASH で配信する。
  *
- * [init]関数のサイズはVP9の場合は無視されます。
+ * [prepareEncoder]関数のサイズはVP9の場合は無視されます。
  *
  * @param context [Context]
  * @param mirroringSettingData ミラーリング設定情報
  */
 class DashStreaming(
     private val context: Context,
-    private val mirroringSettingData: MirroringSettingData,
+    override val parentFolder: File,
+    override val mirroringSettingData: MirroringSettingData,
 ) : StreamingInterface {
     /** 生成したファイルの管理 */
-    private lateinit var dashContentManager: DashContentManager
+    private var dashContentManager: DashContentManager? = null
 
     /** コンテナに書き込むクラス */
-    private val zeroWebMWriter = ZeroWebMWriter()
+    private var zeroWebMWriter: ZeroWebMWriter? = null
 
     /** 映像エンコーダー */
-    private lateinit var screenVideoEncoder: ScreenVideoEncoder
+    private var screenVideoEncoder: ScreenVideoEncoder? = null
 
     /** 内部音声エンコーダー。利用しない場合は null になる */
     private var internalAudioEncoder: InternalAudioEncoder? = null
 
     /** サーバー これだけ別モジュール */
-    private lateinit var server: Server
+    private var server: Server? = null
 
     /** 内部音声エンコーダーを初期化したか */
     private val isInitializedInternalAudioEncoder: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && internalAudioEncoder != null
 
-    override suspend fun init(
-        parentFolder: File,
-        mediaProjection: MediaProjection,
-        videoHeight: Int,
-        videoWidth: Int,
-    ) {
-        // 前回のデータを消す
+    override suspend fun startServer() = withContext(Dispatchers.Default) {
+        // コンテンツ管理。前回のデータを消す
         dashContentManager = DashContentManager(
             parentFolder = parentFolder,
             audioPrefixName = AUDIO_FILE_PREFIX_NAME,
             videoPrefixName = VIDEO_FILE_PREFIX_NAME
         ).apply { deleteGenerateFile() }
+        // サーバー開始。この段階でブラウザ側の視聴ページは利用可能になる
+        server = Server(
+            portNumber = mirroringSettingData.portNumber,
+            hostingFolder = dashContentManager!!.outputFolder,
+            indexHtml = INDEX_HTML
+        ).apply { startServer() }
+    }
+
+    override suspend fun prepareEncoder(
+        mediaProjection: MediaProjection,
+        videoHeight: Int,
+        videoWidth: Int,
+    ) {
+        val dashContentManager = dashContentManager!!
         // コーデックにVP8使う場合、基本VP9でいいと思う
         val isVP8 = mirroringSettingData.isVP8
         // エンコーダーの用意
@@ -83,6 +93,8 @@ class DashStreaming(
             }
         }
         // MPEG-DASH の初期化セグメントを作成する
+        zeroWebMWriter = ZeroWebMWriter()
+        val zeroWebMWriter = zeroWebMWriter!!
         // 映像と音声は別々の WebM で配信されるのでそれぞれ作る
         if (isInitializedInternalAudioEncoder) {
             dashContentManager.createFile(AUDIO_INIT_SEGMENT_FILENAME).also { init ->
@@ -103,23 +115,22 @@ class DashStreaming(
         }
         // MPEG-DASHのマニフェストファイルをホスティングする
         dashContentManager.createFile(MANIFEST_FILENAME).apply {
-            writeText(DashManifestTool.createManifest(
-                fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
-                hasAudio = mirroringSettingData.isRecordInternalAudio,
-                isVP8 = isVP8
-            ))
+            writeText(
+                DashManifestTool.createManifest(
+                    fileIntervalSec = (mirroringSettingData.intervalMs / 1_000).toInt(),
+                    hasAudio = mirroringSettingData.isRecordInternalAudio,
+                    isVP8 = isVP8
+                )
+            )
         }
-        // サーバー開始
-        server = Server(
-            portNumber = mirroringSettingData.portNumber,
-            hostingFolder = dashContentManager.outputFolder,
-            indexHtml = INDEX_HTML
-        ).apply { startServer() }
     }
 
-    override suspend fun startEncode() = withContext(Dispatchers.Default) {
+    override suspend fun startEncode(): Unit = withContext(Dispatchers.Default) {
+        val screenVideoEncoder = screenVideoEncoder!!
+        val dashContentManager = dashContentManager!!
+        val zeroWebMWriter = zeroWebMWriter!!
         // 画面録画エンコーダー、ファイル保存処理
-        launch {
+        val videoEncoderJob = launch {
             var prevTime = System.currentTimeMillis()
             val intervalMs = mirroringSettingData.intervalMs
             screenVideoEncoder.start(
@@ -140,7 +151,7 @@ class DashStreaming(
             )
         }
         // 内部音声エンコーダー
-        if (isInitializedInternalAudioEncoder) {
+        val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
             launch {
                 var prevTime = System.currentTimeMillis()
                 val intervalMs = mirroringSettingData.intervalMs
@@ -159,14 +170,20 @@ class DashStreaming(
                     }
                 )
             }
-        }
+        } else null
+        // キャンセルされるまで join で待機する
+        videoEncoderJob.join()
+        audioEncoderJob?.join()
     }
 
     @SuppressLint("NewApi")
-    override fun release() {
-        server.stopServer()
-        screenVideoEncoder.release()
+    override fun stopEncode() {
+        screenVideoEncoder?.release()
         internalAudioEncoder?.release()
+    }
+
+    override fun destroy() {
+        server?.stopServer()
     }
 
     companion object {

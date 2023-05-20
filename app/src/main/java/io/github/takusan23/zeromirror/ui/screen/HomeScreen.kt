@@ -81,7 +81,7 @@ fun HomeScreen(
         // ミラーリングサービス開始
         if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
             val (height, width) = DisplayTool.getDisplaySize((context as Activity))
-            mirroringService.value?.startMirroring(result.resultCode, result.data!!, height, width)
+            mirroringService.value?.startScreenMirroring(result.resultCode, result.data!!, height, width)
         } else {
             Toast.makeText(context, context.getString(R.string.home_screen_permission_result_fail), Toast.LENGTH_SHORT).show()
         }
@@ -112,7 +112,7 @@ fun HomeScreen(
                 },
                 onStopClick = {
                     // 終了させる
-                    mirroringService.value?.stopMirroring()
+                    mirroringService.value?.stopScreenMirroringAndServerRestart()
                 }
             )
 
