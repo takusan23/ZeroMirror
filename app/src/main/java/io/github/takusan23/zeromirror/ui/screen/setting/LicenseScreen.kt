@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import io.github.takusan23.zeromirror.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LicenseScreen(onBack: () -> Unit) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val licenseList = listOf(
         coroutine,
         ktor,
@@ -31,17 +33,16 @@ fun LicenseScreen(onBack: () -> Unit) {
         dashJs
     )
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = { Text(text = stringResource(id = R.string.setting_license_title)) },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
                     }
-                },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = Color.Transparent
-                )
+                }
             )
         }
     ) {
@@ -76,7 +77,8 @@ private fun LicenseItem(licenseData: LicenseData) {
     }
 }
 
-private val coroutine = LicenseData("Kotlin/kotlinx.coroutines", """
+private val coroutine = LicenseData(
+    "Kotlin/kotlinx.coroutines", """
    Copyright 2000-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
    
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,9 +92,11 @@ private val coroutine = LicenseData("Kotlin/kotlinx.coroutines", """
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-""".trimIndent())
+""".trimIndent()
+)
 
-private val ktor = LicenseData("ktorio/ktor", """
+private val ktor = LicenseData(
+    "ktorio/ktor", """
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -104,9 +108,11 @@ private val ktor = LicenseData("ktorio/ktor", """
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-""".trimIndent())
+""".trimIndent()
+)
 
-private val materialIcon = LicenseData("google/material-design-icons", """
+private val materialIcon = LicenseData(
+    "google/material-design-icons", """
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -118,9 +124,11 @@ private val materialIcon = LicenseData("google/material-design-icons", """
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-""".trimIndent())
+""".trimIndent()
+)
 
-private val materialComponentsAndroid = LicenseData("material-components/material-components-android", """
+private val materialComponentsAndroid = LicenseData(
+    "material-components/material-components-android", """
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -132,9 +140,11 @@ private val materialComponentsAndroid = LicenseData("material-components/materia
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-""".trimIndent())
+""".trimIndent()
+)
 
-private val zxingAndroid = LicenseData("journeyapps/zxing-android-embedded", """
+private val zxingAndroid = LicenseData(
+    "journeyapps/zxing-android-embedded", """
     Copyright (C) 2012-201 ZXing authors, Journey Mobile
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -148,9 +158,11 @@ private val zxingAndroid = LicenseData("journeyapps/zxing-android-embedded", """
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-""".trimIndent())
+""".trimIndent()
+)
 
-private val dashJs = LicenseData("Dash-Industry-Forum/dash.js", """
+private val dashJs = LicenseData(
+    "Dash-Industry-Forum/dash.js", """
     dash.js BSD License Agreement
     The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
 
@@ -161,7 +173,8 @@ private val dashJs = LicenseData("Dash-Industry-Forum/dash.js", """
     Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
     Neither the name of the Dash Industry Forum nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-""".trimIndent())
+""".trimIndent()
+)
 
 /**
  * ライセンス情報データクラス

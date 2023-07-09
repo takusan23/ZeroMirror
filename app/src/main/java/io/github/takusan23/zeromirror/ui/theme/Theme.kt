@@ -2,17 +2,13 @@ package io.github.takusan23.zeromirror.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 
 private val LightThemeColors = lightColorScheme(
 
@@ -76,7 +72,6 @@ private val DarkThemeColors = darkColorScheme(
 /**
  * テーマ
  * アノテーションで警告を黙らせてるけどちゃんと動くようにしてあるのでおｋ
- * [ColorScheme.background]は[ColorScheme.surface]へ[2.dp]したものになります。
  *
  * @param isUseDynamicColor ダイナミックカラーを利用するか
  * @param darkTheme ダークモード
@@ -92,8 +87,7 @@ fun ZeroMirrorTheme(
     val colorScheme = if (darkTheme) {
         if (isUseDynamicColor) dynamicDarkColorScheme(context) else DarkThemeColors
     } else {
-        (if (isUseDynamicColor) dynamicLightColorScheme(context) else LightThemeColors)
-            .copy(background = colorScheme.surfaceColorAtElevation(ElevationDp))
+        if (isUseDynamicColor) dynamicLightColorScheme(context) else LightThemeColors
     }
 
     MaterialTheme(
@@ -101,5 +95,3 @@ fun ZeroMirrorTheme(
         content = content
     )
 }
-
-private val ElevationDp = 2.dp

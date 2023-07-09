@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.github.takusan23.zeromirror.R
@@ -21,12 +20,14 @@ import java.util.*
  * いま何時！そうねだいだいたいねえ～♪
  *
  * @param modifier [Modifier]
+ * @param scrollBehavior スクロール時に TopAppBar を小さくするやつ
  * @param onSettingClick 設定押したとき
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrentTimeTitle(
     modifier: Modifier = Modifier,
+    scrollBehavior: TopAppBarScrollBehavior,
     onSettingClick: () -> Unit,
 ) {
     val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
@@ -39,6 +40,7 @@ fun CurrentTimeTitle(
 
     LargeTopAppBar(
         modifier = modifier,
+        scrollBehavior = scrollBehavior,
         title = {
             Text(
                 text = """
@@ -51,10 +53,7 @@ fun CurrentTimeTitle(
             IconButton(onClick = onSettingClick) {
                 Icon(painter = painterResource(id = R.drawable.ic_outline_settings_24), contentDescription = null)
             }
-        },
-        colors = TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = Color.Transparent
-        )
+        }
     )
 }
 

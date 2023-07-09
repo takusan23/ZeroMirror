@@ -9,16 +9,14 @@ import io.github.takusan23.zeromirror.ui.screen.setting.LicenseScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.MirroringSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.SettingScreen
 import io.github.takusan23.zeromirror.ui.theme.ZeroMirrorTheme
-import io.github.takusan23.zeromirror.ui.tool.SetNavigationBarColor
-import io.github.takusan23.zeromirror.ui.tool.SetStatusBarColor
+import io.github.takusan23.zeromirror.ui.tool.SetFitsSystemWindow
 
 /** メイン画面、Activityに置いてる画面です */
 @Composable
 fun MainScreen() {
     ZeroMirrorTheme {
         // システムバーの色
-        SetStatusBarColor()
-        SetNavigationBarColor()
+        SetFitsSystemWindow()
 
         // メイン画面のルーティング
         val mainScreenNavigation = rememberNavController()

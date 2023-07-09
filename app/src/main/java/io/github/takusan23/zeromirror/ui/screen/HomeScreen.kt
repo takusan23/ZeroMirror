@@ -7,14 +7,13 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -47,6 +46,8 @@ fun HomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
+    // スクロールしたら AppBar を小さくするやつ
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     // IPアドレスをFlowで受け取る
     val idAddress = remember { IpAddressTool.collectIpAddress(context) }.collectAsState(initial = null)
     // ミラーリング情報
@@ -87,135 +88,151 @@ fun HomeScreen(
         }
     }
 
-    Scaffold { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
-
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
             // 現在時刻
             CurrentTimeTitle(
                 modifier = Modifier.fillMaxWidth(),
+                scrollBehavior = scrollBehavior,
                 onSettingClick = onSettingClick
             )
+        }
+    ) { paddingValues ->
 
-            // 開始 / 終了 ボタン
-            MirroringButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                isScreenMirroring = isScreenMirroring?.value == true,
-                onStartClick = {
-                    // キャプチャー権限を求める
-                    requestCapture.launch(mediaProjectionManager.createScreenCaptureIntent())
-                },
-                onStopClick = {
-                    // 終了させる
-                    mirroringService.value?.stopScreenMirroringAndServerRestart()
-                }
-            )
+        LazyColumn(modifier = Modifier.padding(paddingValues)) {
 
-            // はじめまして画面誘導カード
-            if (dataStore.value?.contains(SettingKeyObject.IS_HIDE_HELLO_CARD) == false) {
-                HelloCard(
+            item {
+                // 開始 / 終了 ボタン
+                MirroringButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(10.dp),
-                    onHelloClick = { onNavigate(MainScreenNavigationLinks.HelloScreen) },
-                    onClose = {
-                        // もう出さない
-                        scope.launch {
-                            context.dataStore.edit { it[SettingKeyObject.IS_HIDE_HELLO_CARD] = true }
-                        }
+                    isScreenMirroring = isScreenMirroring?.value == true,
+                    onStartClick = {
+                        // キャプチャー権限を求める
+                        requestCapture.launch(mediaProjectionManager.createScreenCaptureIntent())
+                    },
+                    onStopClick = {
+                        // 終了させる
+                        mirroringService.value?.stopScreenMirroringAndServerRestart()
                     }
                 )
             }
 
+            // はじめまして画面誘導カード
+            if (dataStore.value?.contains(SettingKeyObject.IS_HIDE_HELLO_CARD) == false) {
+                item {
+                    HelloCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        onHelloClick = { onNavigate(MainScreenNavigationLinks.HelloScreen) },
+                        onClose = {
+                            // もう出さない
+                            scope.launch {
+                                context.dataStore.edit { it[SettingKeyObject.IS_HIDE_HELLO_CARD] = true }
+                            }
+                        }
+                    )
+                }
+            }
+
             if (mirroringData.value != null && idAddress.value != null) {
-                // URLを作る
-                val url = "http://${idAddress.value}:${mirroringData.value?.portNumber}"
-                UrlCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    url = url,
-                    onShareClick = {
-                        context.startActivity(IntentTool.createShareIntent(url))
-                    },
-                    onOpenBrowserClick = {
-                        context.startActivity(IntentTool.createOpenBrowserIntent(url))
-                    }
-                )
+                item {
+                    // URLを作る
+                    val url = "http://${idAddress.value}:${mirroringData.value?.portNumber}"
+                    UrlCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        url = url,
+                        onShareClick = {
+                            context.startActivity(IntentTool.createShareIntent(url))
+                        },
+                        onOpenBrowserClick = {
+                            context.startActivity(IntentTool.createOpenBrowserIntent(url))
+                        }
+                    )
+                }
             }
 
             // 内部音声にはマイク権限
             if (isGrantedRecordAudio.value) {
-                InternalAudioPermissionCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    permissionResult = { isGranted ->
-                        // trueなら非表示にするためfalseを入れる
-                        isGrantedRecordAudio.value = !isGranted
-                        // 内部音声を収録する設定を有効にする
-                        scope.launch {
-                            val updatedData = mirroringData.value?.copy(isRecordInternalAudio = true) ?: return@launch
-                            MirroringSettingData.setDataStore(context, updatedData)
+                item {
+                    InternalAudioPermissionCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        permissionResult = { isGranted ->
+                            // trueなら非表示にするためfalseを入れる
+                            isGrantedRecordAudio.value = !isGranted
+                            // 内部音声を収録する設定を有効にする
+                            scope.launch {
+                                val updatedData = mirroringData.value?.copy(isRecordInternalAudio = true) ?: return@launch
+                                MirroringSettingData.setDataStore(context, updatedData)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             // 通知権限があるといいよ
             if (isGrantedPostNotification.value) {
-                PostNotificationPermissionCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    permissionResult = { isGranted ->
-                        isGrantedPostNotification.value = !isGranted
-                    }
-                )
+                item {
+                    PostNotificationPermissionCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        permissionResult = { isGranted ->
+                            isGrantedPostNotification.value = !isGranted
+                        }
+                    )
+                }
             }
 
             // ストリーミング方式の選択
             if (mirroringData.value != null) {
-                StreamingTypeCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    currentType = mirroringData.value!!.streamingType,
-                    onClick = { type ->
-                        // 設定を保存
-                        scope.launch {
-                            MirroringSettingData.setDataStore(context, mirroringData.value!!.copy(streamingType = type))
-                        }
-                    }
-                )
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.secondary
-                ),
-            ) {
-                // エンコーダー
-                if (mirroringData.value != null) {
-                    StreamInfo(
+                item {
+                    StreamingTypeCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(10.dp),
-                        mirroringData = mirroringData.value!!,
-                        isGrantedAudioPermission = isGrantedRecordAudio.value,
-                        onSettingClick = { onNavigate(MainScreenNavigationLinks.SettingMirroringSettingScreen) }
+                        currentType = mirroringData.value!!.streamingType,
+                        onClick = { type ->
+                            // 設定を保存
+                            scope.launch {
+                                MirroringSettingData.setDataStore(context, mirroringData.value!!.copy(streamingType = type))
+                            }
+                        }
                     )
                 }
             }
+
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ),
+                ) {
+                    // エンコーダー
+                    if (mirroringData.value != null) {
+                        StreamInfo(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            mirroringData = mirroringData.value!!,
+                            isGrantedAudioPermission = isGrantedRecordAudio.value,
+                            onSettingClick = { onNavigate(MainScreenNavigationLinks.SettingMirroringSettingScreen) }
+                        )
+                    }
+                }
+            }
+
         }
     }
 }

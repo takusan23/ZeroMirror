@@ -29,10 +29,9 @@ fun HelloCard(
     onHelloClick: () -> Unit,
     onClose: () -> Unit,
 ) {
-    Card(
+    OutlinedCard(
         modifier = modifier,
-        onClick = onHelloClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        onClick = onHelloClick
     ) {
         Row(
             modifier = Modifier.padding(5.dp),
@@ -58,8 +57,8 @@ fun HelloCard(
                 Text(text = stringResource(id = R.string.hello_card_description))
             }
             IconButton(
-                onClick = onClose)
-            { Icon(painter = painterResource(id = R.drawable.ic_outline_close_24), contentDescription = null) }
+                onClick = onClose
+            ) { Icon(painter = painterResource(id = R.drawable.ic_outline_close_24), contentDescription = null) }
         }
     }
 }
