@@ -33,6 +33,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param bitRate ビットレート
      * @param frameRate フレームレート
      * @param iFrameInterval キーフレーム生成間隔
+     * @param isMirroringExternalDisplay 外部ディスプレイ出力をミラーリングする場合は true
      * @param codecName [MediaFormat.MIMETYPE_VIDEO_VP9]や[MediaFormat.MIMETYPE_VIDEO_AVC]など
      */
     fun prepareEncoder(
@@ -41,6 +42,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
         bitRate: Int,
         frameRate: Int,
         iFrameInterval: Int = 1,
+        isMirroringExternalDisplay: Boolean,
         codecName: String,
     ) {
         videoEncoder.prepareEncoder(
@@ -57,7 +59,14 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             videoWidth,
             videoHeight,
             displayDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            if (isMirroringExternalDisplay) {
+                // 外部ディスプレイ出力をミラーリングします
+                // HDMI に接続したような挙動になります
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
+            } else {
+                // 端末側のミラーリング
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR
+            },
             encoderSurface,
             null,
             null

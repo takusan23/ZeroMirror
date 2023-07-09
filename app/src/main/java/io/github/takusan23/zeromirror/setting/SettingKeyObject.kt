@@ -40,6 +40,9 @@ object SettingKeyObject {
     /** 動画の幅 */
     val VIDEO_WIDTH = intPreferencesKey("video_width")
 
+    /** 外部出力ディスプレイ（HDMI など）をミラーリングする */
+    val IS_MIRRORING_EXTERNAL_DISPLAY = booleanPreferencesKey("is_mirroring_external_display")
+
     /** ストリーミング方式 */
     val STREAMING_TYPE = stringPreferencesKey("streaming_type")
 

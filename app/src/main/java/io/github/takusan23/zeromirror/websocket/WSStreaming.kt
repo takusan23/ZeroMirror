@@ -76,6 +76,7 @@ class WSStreaming(
                 videoHeight = videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
+                isMirroringExternalDisplay = mirroringSettingData.isMirroringExternalDisplay,
                 codecName = MediaFormat.MIMETYPE_VIDEO_AVC,
             )
         }

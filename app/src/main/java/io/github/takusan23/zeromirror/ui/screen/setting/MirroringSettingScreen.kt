@@ -182,6 +182,17 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         )
 
+                        SwitchSettingItem(
+                            title = stringResource(id = R.string.mirroring_setting_mirroring_external_display_title),
+                            subTitle = stringResource(id = R.string.mirroring_setting_mirroring_external_display_description),
+                            description = stringResource(id = R.string.mirroring_setting_mirroring_external_display_hint),
+                            isEnable = mirroringSettingData.isMirroringExternalDisplay,
+                            iconRes = R.drawable.outline_settings_input_hdmi_24,
+                            onValueChange = { after ->
+                                updateSetting { it.copy(isMirroringExternalDisplay = after) }
+                            }
+                        )
+
                         TextBoxInitValueSettingItem(
                             title = stringResource(id = R.string.mirroring_setting_audio_bitrate_title),
                             description = stringResource(id = R.string.mirroring_setting_audio_bitrate_description),

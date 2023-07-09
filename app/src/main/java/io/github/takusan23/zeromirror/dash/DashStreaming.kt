@@ -78,6 +78,7 @@ class DashStreaming(
                 videoHeight = mirroringSettingData.videoHeight,
                 bitRate = mirroringSettingData.videoBitRate,
                 frameRate = mirroringSettingData.videoFrameRate,
+                isMirroringExternalDisplay = mirroringSettingData.isMirroringExternalDisplay,
                 codecName = if (isVP8) MediaFormat.MIMETYPE_VIDEO_VP8 else MediaFormat.MIMETYPE_VIDEO_VP9,
             )
         }

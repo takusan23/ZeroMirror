@@ -88,4 +88,8 @@ The video codec is H.264, the audio codec is AAC, and the container is MP4.
     <string name="post_notification_permission_card_button">Grant notification rights</string>
     <string name="mirroring_setting_mpeg_dash_vp8_title">Use VP8 for video codec</string>
     <string name="mirroring_setting_mpeg_dash_vp8_description">MPEG-DASH mode only. For those who don\'t have a VP9 encoder.</string>
+    <string name="mirroring_setting_mirroring_external_display_title">Mirror the output of your external display</string>
+    <string name="mirroring_setting_mirroring_external_display_description">For apps that support external display output, mirror the output of the external display instead of mirroring the device.</string>
+    <string name="mirroring_setting_mirroring_external_display_hint">Behavior when connected to an external display</string>
+    <string name="zeromirror_service_stop_because_setting_update">Settings changed during mirroring, so exited.</string>
 </resources>

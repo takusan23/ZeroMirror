@@ -89,4 +89,8 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
     <string name="post_notification_permission_card_button">通知権限を付与</string>
     <string name="mirroring_setting_mpeg_dash_vp8_title">動画コーデックにVP8を利用する</string>
     <string name="mirroring_setting_mpeg_dash_vp8_description">MPEG-DASHモードのみ。VP9のエンコーダーがない場合用です。</string>
+    <string name="mirroring_setting_mirroring_external_display_title">外部ディスプレイの出力をミラーリングする</string>
+    <string name="mirroring_setting_mirroring_external_display_description">外部ディスプレイの出力に対応したアプリの場合、端末側のミラーリングではなく、外部ディスプレイ側の出力をミラーリングするようにします。</string>
+    <string name="mirroring_setting_mirroring_external_display_hint">外部ディスプレイと接続した時の挙動をします</string>
+    <string name="zeromirror_service_stop_because_setting_update">ミラーリング中に設定が変更されたので、終了しました。</string>
 </resources>

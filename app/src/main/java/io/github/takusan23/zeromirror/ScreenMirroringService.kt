@@ -74,21 +74,22 @@ class ScreenMirroringService : Service() {
                 // もしミラーリング中なら終了させる
                 if (isScreenMirroring.value) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(this@ScreenMirroringService, "設定が変更されたため、ミラーリングを停止しました。", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ScreenMirroringService, R.string.zeromirror_service_stop_because_setting_update, Toast.LENGTH_SHORT).show()
                     }
                 }
                 mirroringJob?.cancelAndJoin()
                 streaming?.destroy()
 
                 // インスタンスを生成し、Webサーバー起動
-                streaming = if (mirroringSettingData.streamingType == StreamingType.MpegDash) {
-                    DashStreaming(
+                streaming = when (mirroringSettingData.streamingType) {
+
+                    StreamingType.MpegDash -> DashStreaming(
                         context = this@ScreenMirroringService,
                         parentFolder = getExternalFilesDir(null)!!,
                         mirroringSettingData = mirroringSettingData
                     )
-                } else {
-                    WSStreaming(
+
+                    StreamingType.WebSocket -> WSStreaming(
                         context = this@ScreenMirroringService,
                         parentFolder = getExternalFilesDir(null)!!,
                         mirroringSettingData = mirroringSettingData
