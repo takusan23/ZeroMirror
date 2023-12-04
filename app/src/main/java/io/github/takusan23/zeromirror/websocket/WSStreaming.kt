@@ -148,7 +148,7 @@ class WSStreaming(
                     wsContainerWriter.start()
                 }
             } finally {
-                wsContainerWriter?.release()
+                wsContainerWriter.release()
             }
         }
         // キャンセルされるまで join で待機する

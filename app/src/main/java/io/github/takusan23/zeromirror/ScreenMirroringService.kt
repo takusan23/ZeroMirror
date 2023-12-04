@@ -5,9 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ServiceInfo
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -16,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import io.github.takusan23.zeromirror.dash.DashStreaming
 import io.github.takusan23.zeromirror.data.MirroringSettingData
@@ -101,7 +104,11 @@ class ScreenMirroringService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // TODO タスクから消した時に終了する設定を追加する
+        // ミラーリング中であれば、サービスを終了しない。
+        // ミラーリングしていないなら、終了してリソース開放する
+        if (!isScreenMirroring.value) {
+            stopSelf()
+        }
     }
 
     override fun onDestroy() {
@@ -191,7 +198,13 @@ class ScreenMirroringService : Service() {
                 builder.setLargeIcon(bitmap)
             }
         }.build()
-        startForeground(NOTIFICATION_ID, notification)
+        ServiceCompat.startForeground(
+            this,
+            NOTIFICATION_ID,
+            notification,
+            // Android 10 未満は使われてい無さそう
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION else 0
+        )
     }
 
     private class LocalBinder(service: ScreenMirroringService) : Binder() {
@@ -213,14 +226,19 @@ class ScreenMirroringService : Service() {
          * ミラーリングサービスとバインドして、サービスのインスタンスを取得する。
          * ライフサイクルを追跡して自動で解除します。
          *
+         * ミラーリング中にアプリ一覧画面から56したときは、[onTaskRemoved]でミラーリング中であれば終了しないようにします。
+         *
          * @param context [Context]
-         * @param lifecycleOwner [LifecycleOwner]
+         * @param lifecycle [Lifecycle]
          */
-        fun bindScreenMirrorService(context: Context, lifecycleOwner: LifecycleOwner) = callbackFlow {
+        fun bindScreenMirrorService(
+            context: Context,
+            lifecycle: Lifecycle
+        ) = callbackFlow {
             val serviceConnection = object : ServiceConnection {
                 override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                    val encoderService = (service as LocalBinder).service
-                    trySend(encoderService)
+                    val screenMirroringService = (service as LocalBinder).service
+                    trySend(screenMirroringService)
                 }
 
                 override fun onServiceDisconnected(name: ComponentName?) {
@@ -229,9 +247,9 @@ class ScreenMirroringService : Service() {
             }
             // ライフサイクルを監視してバインド、バインド解除する
             val lifecycleObserver = object : DefaultLifecycleObserver {
+                val intent = Intent(context, ScreenMirroringService::class.java)
                 override fun onStart(owner: LifecycleOwner) {
                     super.onStart(owner)
-                    val intent = Intent(context, ScreenMirroringService::class.java)
                     context.startService(intent)
                     context.bindService(intent, serviceConnection, BIND_AUTO_CREATE)
                 }
@@ -241,8 +259,8 @@ class ScreenMirroringService : Service() {
                     context.unbindService(serviceConnection)
                 }
             }
-            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
-            awaitClose { lifecycleOwner.lifecycle.removeObserver(lifecycleObserver) }
+            lifecycle.addObserver(lifecycleObserver)
+            awaitClose { lifecycle.removeObserver(lifecycleObserver) }
         }
     }
 }

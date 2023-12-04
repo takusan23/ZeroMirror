@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "io.github.takusan23.zeromirror"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "io.github.takusan23.zeromirror"
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 3
         versionName = "3.0.0"
 
@@ -34,7 +34,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.7"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -65,22 +65,22 @@ dependencies {
     implementation("com.google.zxing:core:3.3.0")
 
     // Coroutine
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
 
-    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Activity Result API
-    implementation("androidx.activity:activity-ktx:1.7.1")
-    implementation("androidx.fragment:fragment-ktx:1.5.7")
+    implementation("androidx.activity:activity-ktx:1.8.1")
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
     // AndroidX WindowMetrics
-    implementation("androidx.window:window:1.1.0-rc01")
-    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.window:window:1.2.0")
+    implementation("com.google.android.material:material:1.10.0")
 
     // JetpackCompose BOM指定
-    implementation(platform("androidx.compose:compose-bom:2023.04.01"))
+    implementation(platform("androidx.compose:compose-bom:2023.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -89,7 +89,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     // BOM にない
-    implementation("androidx.navigation:navigation-compose:2.5.3")
+    implementation("androidx.navigation:navigation-compose:2.7.5")
     implementation("com.google.accompanist:accompanist-swiperefresh:0.20.0")
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")

@@ -10,8 +10,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +36,14 @@ import io.github.takusan23.zeromirror.tool.DisplayTool
 import io.github.takusan23.zeromirror.tool.IntentTool
 import io.github.takusan23.zeromirror.tool.IpAddressTool
 import io.github.takusan23.zeromirror.tool.PermissionTool
-import io.github.takusan23.zeromirror.ui.components.*
+import io.github.takusan23.zeromirror.ui.components.CurrentTimeTitle
+import io.github.takusan23.zeromirror.ui.components.HelloCard
+import io.github.takusan23.zeromirror.ui.components.InternalAudioPermissionCard
+import io.github.takusan23.zeromirror.ui.components.MirroringButton
+import io.github.takusan23.zeromirror.ui.components.PostNotificationPermissionCard
+import io.github.takusan23.zeromirror.ui.components.StreamInfo
+import io.github.takusan23.zeromirror.ui.components.StreamingTypeCard
+import io.github.takusan23.zeromirror.ui.components.UrlCard
 import kotlinx.coroutines.launch
 
 /**
@@ -55,7 +71,7 @@ fun HomeScreen(
     // DataStore監視
     val dataStore = remember { context.dataStore.data }.collectAsState(initial = null)
     // ミラーリングサービスとバインドして、インスタンスを取得する
-    val mirroringService = remember { ScreenMirroringService.bindScreenMirrorService(context, lifecycleOwner) }.collectAsState(initial = null)
+    val mirroringService = remember { ScreenMirroringService.bindScreenMirrorService(context, lifecycleOwner.lifecycle) }.collectAsState(initial = null)
     // ミラーリング中かどうか
     val isScreenMirroring = mirroringService.value?.isScreenMirroring?.collectAsState()
 
