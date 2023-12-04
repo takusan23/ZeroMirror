@@ -226,7 +226,7 @@ class ScreenMirroringService : Service() {
          * ミラーリングサービスとバインドして、サービスのインスタンスを取得する。
          * ライフサイクルを追跡して自動で解除します。
          *
-         * ミラーリング中にアプリ一覧画面から56したときは、[onTaskRemoved]でミラーリング中であれば終了しないようにします。
+         * ミラーリング中にアプリ一覧画面から56したとき、[onTaskRemoved]でミラーリング中であれば終了しないようにします。
          *
          * @param context [Context]
          * @param lifecycle [Lifecycle]

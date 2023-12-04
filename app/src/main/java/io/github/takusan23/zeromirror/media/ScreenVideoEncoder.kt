@@ -36,7 +36,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param isMirroringExternalDisplay 外部ディスプレイ出力をミラーリングする場合は true
      * @param codecName [MediaFormat.MIMETYPE_VIDEO_VP9]や[MediaFormat.MIMETYPE_VIDEO_AVC]など
      */
-    fun prepareEncoder(
+    suspend fun prepareEncoder(
         videoWidth: Int,
         videoHeight: Int,
         bitRate: Int,
@@ -54,6 +54,27 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             codecName = codecName
         )
         val encoderSurface = videoEncoder.createInputSurface()
+        // Android 14 から全画面以外にアプリの画面を指定できるようになった
+        // UI スレッドで呼び出す
+        withContext(Dispatchers.Main) {
+            mediaProjection.registerCallback(object : MediaProjection.Callback() {
+                override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
+                    super.onCapturedContentVisibilityChanged(isVisible)
+                    // 単一アプリが非表示になった
+                }
+
+                override fun onCapturedContentResize(width: Int, height: Int) {
+                    super.onCapturedContentResize(width, height)
+                    // 単一アプリのサイズが変化した
+                }
+
+                override fun onStop() {
+                    super.onStop()
+                    // MediaProjection が終了したとき
+                }
+
+            }, null)
+        }
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "io.github.takusan23.zeromirror",
             videoWidth,
