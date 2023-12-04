@@ -1,5 +1,6 @@
 package io.github.takusan23.zeromirror
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context
@@ -193,6 +194,7 @@ class ScreenMirroringService : Service() {
             builder.setContentTitle(getString(R.string.zeromirror_service_notification_title))
             builder.setContentText(contentText)
             builder.setSmallIcon(R.drawable.zeromirror_android)
+            builder.setContentIntent(PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             if (url != null) {
                 val bitmap = QrCodeGeneratorTool.generateQrCode(url)
                 builder.setLargeIcon(bitmap)
