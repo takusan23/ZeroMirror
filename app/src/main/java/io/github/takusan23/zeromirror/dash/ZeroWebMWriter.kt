@@ -3,18 +3,13 @@ package io.github.takusan23.zeromirror.dash
 import android.media.MediaCodec
 import io.github.takusan23.zerowebm.ZeroWebM
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
 
-/**
- * [ZeroWebM]のラッパー
- *
- * エンコーダーからの出力を一時的に持つ [appendVideoEncodeData] と
- * 実際にファイルに書き込む [createVideoMediaSegment] は同じスレッドから呼び出す必要があります（多分）。
- *
- * 別スレッドで [createVideoMediaSegment] を呼び出すと多分映像が乱れてしまいます。
- */
+/** [ZeroWebM]のラッパー */
 class ZeroWebMWriter {
 
     /** WebM コンテナフォーマット を扱うクラス、音声用 */
@@ -28,6 +23,15 @@ class ZeroWebMWriter {
 
     /** 音声のデータ、ファイルに書き込んだらクリアされる */
     private val audioAppendBytes = arrayListOf<ByteArray>()
+
+    // 多分、映像を書き込む処理と、セグメントファイルを作り直す処理が同時に走ったりすると（それぞれ別のJob）、同時に書き込みされて？映像が乱れてしまう。
+    // 別々の Job から書き込みされても、直列にしか書き込まないようにするための Mutex。
+
+    /** 映像データの書き込みを同時に行わないように */
+    private val videoFileWriteMutex = Mutex()
+
+    /** 音声データの書き込みを同時に行わないように */
+    private val audioFileWriteMutex = Mutex()
 
     /**
      * 音声の初期化セグメントを作成します
@@ -92,12 +96,14 @@ class ZeroWebMWriter {
      * @param filePath ファイル
      */
     suspend fun createAudioMediaSegment(filePath: String) = withContext(Dispatchers.IO) {
-        File(filePath).also { segmentFile ->
-            // ConcurrentModificationException 対策にforを使う
-            for (i in 0 until audioAppendBytes.size) {
-                segmentFile.appendBytes(audioAppendBytes[i])
+        audioFileWriteMutex.withLock {
+            File(filePath).also { segmentFile ->
+                // ConcurrentModificationException 対策にforを使う
+                for (i in 0 until audioAppendBytes.size) {
+                    segmentFile.appendBytes(audioAppendBytes[i])
+                }
+                audioAppendBytes.clear()
             }
-            audioAppendBytes.clear()
         }
     }
 
@@ -107,12 +113,14 @@ class ZeroWebMWriter {
      * @param filePath ファイル
      */
     suspend fun createVideoMediaSegment(filePath: String) = withContext(Dispatchers.IO) {
-        File(filePath).also { segmentFile ->
-            // ConcurrentModificationException 対策にforを使う
-            for (i in 0 until videoAppendBytes.size) {
-                segmentFile.appendBytes(videoAppendBytes[i])
+        videoFileWriteMutex.withLock {
+            File(filePath).also { segmentFile ->
+                // ConcurrentModificationException 対策にforを使う
+                for (i in 0 until videoAppendBytes.size) {
+                    segmentFile.appendBytes(videoAppendBytes[i])
+                }
+                videoAppendBytes.clear()
             }
-            videoAppendBytes.clear()
         }
     }
 
@@ -122,11 +130,13 @@ class ZeroWebMWriter {
      * @param bufferInfo MediaCodecでもらえる
      * @param byteBuffer エンコード結果
      */
-    fun appendAudioEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        val byteArray = toByteArray(byteBuffer)
-        // Opusの場合は常にキーフレームかもしれないです
-        val isKeyFrame = true
-        audioAppendBytes += audioZeroWebM.appendSimpleBlock(ZeroWebM.AUDIO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+    suspend fun appendAudioEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
+        audioFileWriteMutex.withLock {
+            val byteArray = byteBuffer.asByteArray()
+            // Opusの場合は常にキーフレームかもしれないです
+            val isKeyFrame = true
+            audioAppendBytes += audioZeroWebM.appendSimpleBlock(ZeroWebM.AUDIO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+        }
     }
 
     /**
@@ -135,15 +145,17 @@ class ZeroWebMWriter {
      * @param bufferInfo MediaCodecでもらえる
      * @param byteBuffer エンコード結果
      */
-    fun appendVideoEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
-        val byteArray = toByteArray(byteBuffer)
-        val isKeyFrame = bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME
-        videoAppendBytes += videoZeroWebM.appendSimpleBlock(ZeroWebM.VIDEO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+    suspend fun appendVideoEncodeData(byteBuffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
+        videoFileWriteMutex.withLock {
+            val byteArray = byteBuffer.asByteArray()
+            val isKeyFrame = bufferInfo.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME
+            videoAppendBytes += videoZeroWebM.appendSimpleBlock(ZeroWebM.VIDEO_TRACK_ID, (bufferInfo.presentationTimeUs / 1000).toInt(), byteArray, isKeyFrame)
+        }
     }
 
     /** [ByteBuffer]を[ByteArray]に変換する */
-    private fun toByteArray(byteBuffer: ByteBuffer) = ByteArray(byteBuffer.remaining()).also { byteArray ->
-        byteBuffer.get(byteArray)
+    private fun ByteBuffer.asByteArray() = ByteArray(this.remaining()).also { byteArray ->
+        this.get(byteArray)
     }
 
 }

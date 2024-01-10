@@ -11,6 +11,8 @@ import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
 import io.github.takusan23.zerowebm.ZeroWebM
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -131,20 +133,10 @@ class DashStreaming(
         val zeroWebMWriter = zeroWebMWriter!!
         // 画面録画エンコーダー、ファイル保存処理
         val videoEncoderJob = launch {
-            var prevTime = System.currentTimeMillis()
-            val intervalMs = mirroringSettingData.intervalMs
             try {
                 screenVideoEncoder.start(
                     onOutputBufferAvailable = { byteBuffer, bufferInfo ->
                         zeroWebMWriter.appendVideoEncodeData(byteBuffer, bufferInfo)
-                        // 定期的に動画ファイルを作る処理
-                        // 多分別スレッドとかでやると映像が乱れるのでここに書かないとだめ？
-                        if ((System.currentTimeMillis() - prevTime) > intervalMs) {
-                            dashContentManager.createIncrementVideoFile { segment ->
-                                zeroWebMWriter.createVideoMediaSegment(segment.path)
-                            }
-                            prevTime = System.currentTimeMillis()
-                        }
                     },
                     onOutputFormatAvailable = {
                         // do nothing
@@ -157,18 +149,10 @@ class DashStreaming(
         // 内部音声エンコーダー
         val audioEncoderJob = if (isInitializedInternalAudioEncoder) {
             launch {
-                var prevTime = System.currentTimeMillis()
-                val intervalMs = mirroringSettingData.intervalMs
                 try {
                     internalAudioEncoder?.start(
                         onOutputBufferAvailable = { byteBuffer, bufferInfo ->
                             zeroWebMWriter.appendAudioEncodeData(byteBuffer, bufferInfo)
-                            if ((System.currentTimeMillis() - prevTime) > intervalMs) {
-                                dashContentManager.createIncrementAudioFile { segment ->
-                                    zeroWebMWriter.createAudioMediaSegment(segment.path)
-                                }
-                                prevTime = System.currentTimeMillis()
-                            }
                         },
                         onOutputFormatAvailable = {
                             // do nothing
@@ -179,9 +163,25 @@ class DashStreaming(
                 }
             }
         } else null
+        // ファイル保存処理
+        val segmentFileCreateJob = launch {
+            while (isActive) {
+                // intervalMs 秒待機したら新しいファイルにする
+                delay(mirroringSettingData.intervalMs)
+                // 新しいセグメントファイルを作る
+                // ブラウザがこのファイルをアクセスしに来る
+                dashContentManager.createIncrementAudioFile { segment ->
+                    zeroWebMWriter.createAudioMediaSegment(segment.path)
+                }
+                dashContentManager.createIncrementVideoFile { segment ->
+                    zeroWebMWriter.createVideoMediaSegment(segment.path)
+                }
+            }
+        }
         // キャンセルされるまで join で待機する
         videoEncoderJob.join()
         audioEncoderJob?.join()
+        segmentFileCreateJob.join()
     }
 
     override fun destroy() {
