@@ -149,14 +149,12 @@ class ScreenMirroringService : Service() {
                     }
                 }
 
-                // ミラーリングの準備
-                mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-                streaming?.prepareEncoder(mediaProjection!!, displayHeight, displayWidth)
-
                 try {
-                    // エンコーダー開始
+                    mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
                     _isScreenMirroring.value = true
-                    streaming?.startEncode()
+                    // ミラーリングの準備と開始
+                    // エンコード中はコルーチンが一時停止する
+                    streaming?.prepareAndStartEncode(mediaProjection!!, displayHeight, displayWidth)
                 } finally {
                     // コルーチンキャンセル時にリソース開放をする
                     // フォアグラウンドサービスも解除

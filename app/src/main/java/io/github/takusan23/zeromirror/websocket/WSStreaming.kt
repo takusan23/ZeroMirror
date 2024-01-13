@@ -9,6 +9,7 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
+import io.github.takusan23.zeromirror.tool.AltImageBitmapTool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -60,7 +61,14 @@ class WSStreaming(
         ).apply { startServer() }
     }
 
-    override suspend fun prepareEncoder(
+    override suspend fun prepareAndStartEncode(mediaProjection: MediaProjection, videoHeight: Int, videoWidth: Int) {
+        // エンコーダーを初期化する
+        prepareEncoder(mediaProjection, videoHeight, videoWidth)
+        // エンコード開始。終わるまで一時停止
+        startEncode()
+    }
+
+    private suspend fun prepareEncoder(
         mediaProjection: MediaProjection,
         videoHeight: Int,
         videoWidth: Int,
@@ -78,6 +86,7 @@ class WSStreaming(
                 frameRate = mirroringSettingData.videoFrameRate,
                 isMirroringExternalDisplay = mirroringSettingData.isMirroringExternalDisplay,
                 codecName = MediaFormat.MIMETYPE_VIDEO_AVC,
+                altImageBitmap = AltImageBitmapTool.generateAltImageBitmap(videoWidth, videoHeight)
             )
         }
         // 内部音声を一緒にエンコードする場合
@@ -91,7 +100,7 @@ class WSStreaming(
         }
     }
 
-    override suspend fun startEncode() = withContext(Dispatchers.Default) {
+    private suspend fun startEncode() = withContext(Dispatchers.Default) {
         val wsContentManager = wsContentManager!!
         val wsContainerWriter = wsContainerWriter!!
         val screenVideoEncoder = screenVideoEncoder!!

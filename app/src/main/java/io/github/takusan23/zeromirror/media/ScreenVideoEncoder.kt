@@ -1,5 +1,6 @@
 package io.github.takusan23.zeromirror.media
 
+import android.graphics.Bitmap
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.MediaCodec
@@ -35,6 +36,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
      * @param iFrameInterval キーフレーム生成間隔
      * @param isMirroringExternalDisplay 外部ディスプレイ出力をミラーリングする場合は true
      * @param codecName [MediaFormat.MIMETYPE_VIDEO_VP9]や[MediaFormat.MIMETYPE_VIDEO_AVC]など
+     * @param altImageBitmap 単一アプリミラーリング時に、アプリが画面に表示されていないときに代わりに表示する画像。アプリを切り替えたとき等。参照：[MediaProjection.Callback.onCapturedContentVisibilityChanged]
      */
     suspend fun prepareEncoder(
         videoWidth: Int,
@@ -44,6 +46,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
         iFrameInterval: Int = 1,
         isMirroringExternalDisplay: Boolean,
         codecName: String,
+        altImageBitmap: Bitmap
     ) {
         videoEncoder.prepareEncoder(
             videoWidth = videoWidth,
@@ -51,9 +54,9 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             bitRate = bitRate,
             frameRate = frameRate,
             iFrameInterval = iFrameInterval,
-            codecName = codecName
+            codecName = codecName,
+            altImageBitmap = altImageBitmap
         )
-        val encoderSurface = videoEncoder.createInputSurface()
         // Android 14 から全画面以外にアプリの画面を指定できるようになった
         // UI スレッドで呼び出す
         withContext(Dispatchers.Main) {
@@ -61,16 +64,20 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
                 override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
                     super.onCapturedContentVisibilityChanged(isVisible)
                     // 単一アプリが非表示になった
+                    // 代わりに代替画像を流す
+                    videoEncoder.isDrawAltImage = !isVisible
                 }
 
                 override fun onCapturedContentResize(width: Int, height: Int) {
                     super.onCapturedContentResize(width, height)
                     // 単一アプリのサイズが変化した
+                    // do nothing
                 }
 
                 override fun onStop() {
                     super.onStop()
                     // MediaProjection が終了したとき
+                    // do nothing
                 }
 
             }, null)
@@ -88,7 +95,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
                 // 端末側のミラーリング
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR
             },
-            encoderSurface,
+            videoEncoder.drawSurface,
             null,
             null
         )
@@ -104,7 +111,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     suspend fun start(
         onOutputBufferAvailable: suspend (ByteBuffer, MediaCodec.BufferInfo) -> Unit,
         onOutputFormatAvailable: suspend (MediaFormat) -> Unit,
-    ) = withContext(Dispatchers.Default) {
+    ) {
         videoEncoder.startVideoEncode(
             onOutputBufferAvailable = { byteBuffer, bufferInfo ->
                 // エンコードされたデータが来る

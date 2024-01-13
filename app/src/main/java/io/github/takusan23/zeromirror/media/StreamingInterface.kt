@@ -26,24 +26,21 @@ interface StreamingInterface {
     suspend fun startServer()
 
     /**
-     * エンコーダーの初期化をする
+     * エンコーダーの初期化とエンコードの開始をする
+     *
+     * 映像、内部音声のエンコードをして、ファイルを連続で生成していく。
+     * エンコード中はすっと一時停止します。
+     * ミラーリング終了時はコルーチンがキャンセルされるので、try-finally でリソース開放してください。
      *
      * @param mediaProjection [MediaProjection]
      * @param videoHeight 動画の高さ
      * @param videoWidth 動画の幅
      */
-    suspend fun prepareEncoder(
+    suspend fun prepareAndStartEncode(
         mediaProjection: MediaProjection,
         videoHeight: Int,
-        videoWidth: Int,
+        videoWidth: Int
     )
-
-    /**
-     * 映像、内部音声のエンコードをして、ファイルを連続で生成していく。
-     * エンコード中はすっと一時停止します。
-     * ミラーリング終了時はコルーチンがキャンセルされるので、try-finally でリソース開放してください。
-     */
-    suspend fun startEncode()
 
     /** 破棄時に呼ばれる。[startServer]のリソース開放に */
     fun destroy()
