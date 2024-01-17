@@ -93,4 +93,11 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
     <string name="mirroring_setting_mirroring_external_display_description">外部ディスプレイの出力に対応したアプリの場合、端末側のミラーリングではなく、外部ディスプレイ側の出力をミラーリングするようにします。</string>
     <string name="mirroring_setting_mirroring_external_display_hint">外部ディスプレイと接続した時の挙動をします</string>
     <string name="zeromirror_service_stop_because_setting_update">ミラーリング中に設定が変更されたので、終了しました。</string>
+    <string name="zeromirror_service_partical_mirroring_pause">
+現在アプリが画面に表示されていません。\n
+(他のアプリが画面に表示されています)\n
+\n
+アプリが画面に表示されるようになると、\n
+ミラーリングが再開されます。
+    </string>
 </resources>

@@ -92,4 +92,11 @@ The video codec is H.264, the audio codec is AAC, and the container is MP4.
     <string name="mirroring_setting_mirroring_external_display_description">For apps that support external display output, mirror the output of the external display instead of mirroring the device.</string>
     <string name="mirroring_setting_mirroring_external_display_hint">Behavior when connected to an external display</string>
     <string name="zeromirror_service_stop_because_setting_update">Settings changed during mirroring, so exited.</string>
+    <string name="zeromirror_service_partical_mirroring_pause">
+The app is currently not displayed on the screen.\n
+(Another app is displayed on the screen)\n
+\n
+Once the app appears on the screen,\n
+Mirroring will resume.
+    </string>
 </resources>
