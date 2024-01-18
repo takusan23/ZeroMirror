@@ -9,7 +9,7 @@ import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.media.InternalAudioEncoder
 import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
-import io.github.takusan23.zeromirror.tool.ParticalMirroringPauseImageTool
+import io.github.takusan23.zeromirror.tool.PartialMirroringPauseImageTool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -86,7 +86,7 @@ class WSStreaming(
                 frameRate = mirroringSettingData.videoFrameRate,
                 isMirroringExternalDisplay = mirroringSettingData.isMirroringExternalDisplay,
                 codecName = MediaFormat.MIMETYPE_VIDEO_AVC,
-                altImageBitmap = ParticalMirroringPauseImageTool.generateParticalMirroringPauseImage(context,videoWidth, videoHeight)
+                altImageBitmap = PartialMirroringPauseImageTool.generatePartialMirroringPauseImage(context,videoWidth, videoHeight)
             )
         }
         // 内部音声を一緒にエンコードする場合

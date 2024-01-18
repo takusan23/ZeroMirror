@@ -10,7 +10,7 @@ import androidx.core.graphics.drawable.toBitmap
 import io.github.takusan23.zeromirror.R
 
 /** [io.github.takusan23.zeromirror.media.VideoEncoder.isDrawAltImage] で使う代替画像を作る */
-object ParticalMirroringPauseImageTool {
+object PartialMirroringPauseImageTool {
 
     /**
      * 代替画像を作る
@@ -20,7 +20,7 @@ object ParticalMirroringPauseImageTool {
      * @param height 画像の高さ
      * @return [Bitmap]
      */
-    fun generateParticalMirroringPauseImage(
+    fun generatePartialMirroringPauseImage(
         context: Context,
         width: Int,
         height: Int
@@ -37,7 +37,7 @@ object ParticalMirroringPauseImageTool {
         // お絵かきする
         canvas.drawColor(Color.BLACK)
         // 画像
-        ContextCompat.getDrawable(context, R.drawable.partical_mirroring_pause)?.let { drawable ->
+        ContextCompat.getDrawable(context, R.drawable.partial_mirroring_pause)?.let { drawable ->
             // 画像は Canvas の高さの 1/3 くらいにする
             val aspectRate = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
             val toHeight = height / 3
@@ -52,7 +52,7 @@ object ParticalMirroringPauseImageTool {
         // 文字との間
         yPos += 100
         // 描画する文字列
-        context.getString(R.string.zeromirror_service_partical_mirroring_pause).lines().forEach { textLine ->
+        context.getString(R.string.zeromirror_service_partial_mirroring_pause).lines().forEach { textLine ->
             // 真ん中に出す
             val textWidth = paint.measureText(textLine)
             val xPos = (width - textWidth) / 2
