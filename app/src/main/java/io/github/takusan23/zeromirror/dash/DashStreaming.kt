@@ -14,9 +14,11 @@ import io.github.takusan23.zerowebm.ZeroWebM
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.system.measureTimeMillis
 
 /**
  * MPEG-DASH でミラーリングをストリーミングする場合に利用するクラス。
@@ -164,17 +166,31 @@ class DashStreaming(
         } else null
         // ファイル保存処理
         val segmentFileCreateJob = launch {
+            // 初回時
+            delay(mirroringSettingData.intervalMs)
+            // 定期的にファイルを作り直して、MPEG-DASH で使うセグメントファイルを連番で作る
             while (isActive) {
-                // intervalMs 秒待機したら新しいファイルにする
-                delay(mirroringSettingData.intervalMs)
-                // 新しいセグメントファイルを作る
-                // ブラウザがこのファイルをアクセスしに来る
-                dashContentManager.createIncrementAudioFile { segment ->
-                    zeroWebMWriter.createAudioMediaSegment(segment.path)
+                // ファイル保存にかかる時間を測る
+                val time = measureTimeMillis {
+                    // 新しいセグメントファイルを作る
+                    // ブラウザがこのファイルをアクセスしに来る
+                    // 一つファイル作るのに 50ms くらいかかるので並列にしてみる
+                    listOf(
+                        launch {
+                            dashContentManager.createIncrementAudioFile { segment ->
+                                zeroWebMWriter.createAudioMediaSegment(segment.path)
+                            }
+                        },
+                        launch {
+                            dashContentManager.createIncrementVideoFile { segment ->
+                                zeroWebMWriter.createVideoMediaSegment(segment.path)
+                            }
+                        }
+                    ).joinAll()
                 }
-                dashContentManager.createIncrementVideoFile { segment ->
-                    zeroWebMWriter.createVideoMediaSegment(segment.path)
-                }
+                // ファイル保存にかかった時間分引かないと、保存にかかる時間がちりつもして、セグメントファイルの生成が間に合わなくなる
+                // MPEG-DASH は多分？開始時間から逆算してセグメントファイルをリクエストするので、時間通りにセグメントファイルを作る必要がある
+                delay(mirroringSettingData.intervalMs - time)
             }
         }
         // キャンセルされるまで join で待機する

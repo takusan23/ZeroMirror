@@ -35,9 +35,6 @@ class DashContentManager(
     /** 生成したメディアセグメントを保持する、映像用 */
     private val videoFileList = arrayListOf<File>()
 
-    /** 一時作業用フォルダ */
-    private val tempFolder = File(parentFolder, TEMP_FOLDER_NAME).apply { mkdir() }
-
     /** 完成品を公開するフォルダ */
     private val outputFolder = getOutputFolder(parentFolder).apply { mkdir() }
 
@@ -96,7 +93,6 @@ class DashContentManager(
 
     /** 生成したファイルを削除する */
     suspend fun deleteGenerateFile() = withContext(Dispatchers.IO) {
-        tempFolder.listFiles()?.forEach { it.delete() }
         outputFolder.listFiles()?.forEach { it.delete() }
     }
 
@@ -120,13 +116,10 @@ class DashContentManager(
         /** 完成品の動画が入るフォルダの名前 */
         private const val OUTPUT_VIDEO_FOLDER_NAME = "dist"
 
-        /** 一時作業用フォルダ */
-        private const val TEMP_FOLDER_NAME = "temp"
-
         /** 書き込み中ファイルの末尾につける */
         private const val FILE_WRITING_SUFFIX = "temp"
 
-        /** 動画保持数 */
+        /** セグメントファイル保持数、少なすぎると途中から MPEG-DASH 再生が出来ない？ */
         private const val FILE_HOLD_COUNT = 10
 
         /**
