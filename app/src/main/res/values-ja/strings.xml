@@ -100,4 +100,7 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
 アプリが画面に表示されるようになると、\n
 ミラーリングが再開されます。
     </string>
+    <string name="hello_partial_mirroring_card_description">
+Android 14 QPR2 から利用できる、部分的な画面共有に対応しました。\n
+画面全体ではなく、指定したアプリのみのミラーリングが可能になりました！。</string>
 </resources>

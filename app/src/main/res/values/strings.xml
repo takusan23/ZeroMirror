@@ -99,4 +99,8 @@ The app is currently not displayed on the screen.\n
 Once the app appears on the screen,\n
 Mirroring will resume.
     </string>
+    <string name="hello_partial_mirroring_card_description">
+Partial screen sharing is now supported starting with Android 14 QPR2.\n
+It is now possible to mirror only the specified app instead of the entire screen! .
+    </string>
 </resources>

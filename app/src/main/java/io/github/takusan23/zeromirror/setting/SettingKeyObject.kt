@@ -31,6 +31,9 @@ object SettingKeyObject {
     /** はじめまして画面への誘導を消すかどうか */
     val IS_HIDE_HELLO_CARD = booleanPreferencesKey("is_hide_hello_card")
 
+    /** Android 14 の部分的な画面共有が利用できるようになったよ Card を表示するか */
+    val IS_HIDE_HELLO_PARTIAL_MIRRORING_CARD = booleanPreferencesKey("is_hide_hello_partial_mirroring_card")
+
     /** 解像度を指定する場合はtrue */
     val IS_CUSTOM_RESOLUTION = booleanPreferencesKey("is_custom_resolution")
 
