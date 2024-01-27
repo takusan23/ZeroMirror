@@ -102,5 +102,7 @@ MediaSource Extensions API が利用可能なブラウザが必要です。
     </string>
     <string name="hello_partial_mirroring_card_description">
 Android 14 QPR2 から利用できる、部分的な画面共有に対応しました。\n
-画面全体ではなく、指定したアプリのみのミラーリングが可能になりました！。</string>
+画面全体ではなく、指定したアプリの部分だけミラーリングが可能になりました。\n
+ステータスバーや通知は映り込みません！
+    </string>
 </resources>

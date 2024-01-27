@@ -41,7 +41,6 @@ object PartialMirroringPauseImageTool {
             // 画像は Canvas の高さの 1/3 くらいにする
             val aspectRate = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
             val toHeight = height / 3
-            println("aspectRate = $aspectRate / toHeight = $toHeight / ${(toHeight * aspectRate).toInt()}")
             drawable.toBitmap(width = (toHeight * aspectRate).toInt(), height = toHeight)
         }?.also { drawableBitmap ->
             // Canvas に書く
