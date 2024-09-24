@@ -9,8 +9,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
 /**
@@ -45,7 +47,7 @@ class Server(
             // 静的ファイル公開するように。動画を配信する
             static {
                 staticRootFolder = hostingFolder
-                files(hostingFolder)
+                filesWithWait(hostingFolder)
             }
             // WebSocket
             webSocket("/wsvideo") {
@@ -75,5 +77,38 @@ class Server(
      */
     fun updateVideoFileName(videoFileName: String) {
         _updateVideoFileName.value = videoFileName
+    }
+
+    private fun Route.filesWithWait(folder: File) {
+        static {
+            files(folder)
+            default("index.html")
+
+            intercept(ApplicationCallPipeline.Features) {
+                val path = call.parameters["path"] ?: return@intercept
+                val requestedFile = File(folder, path)
+
+                // Wait for the file if it doesn't exist yet
+                if (!requestedFile.exists()) {
+                    val fileExists = waitForFile(requestedFile)
+                    if (!fileExists) {
+                        call.respond(HttpStatusCode.NotFound, "File not found or creation timed out.")
+                        return@intercept finish()
+                    }
+                }
+
+                // Serve the file if it exists now
+                call.respondFile(requestedFile)
+            }
+        }
+    }
+
+    suspend fun waitForFile(file: File, timeoutMillis: Long = 30_000): Boolean {
+        return withTimeoutOrNull(timeoutMillis) {
+            while (!file.exists()) {
+                delay(500) // Check every 500ms
+            }
+            true
+        } ?: false
     }
 }
