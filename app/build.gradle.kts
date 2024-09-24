@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -32,9 +33,6 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -80,7 +78,7 @@ dependencies {
     implementation("com.google.android.material:material:1.10.0")
 
     // JetpackCompose BOM指定
-    implementation(platform("androidx.compose:compose-bom:2023.10.01"))
+    implementation(platform("androidx.compose:compose-bom:2024.09.02"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -90,7 +88,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     // BOM にない
     implementation("androidx.navigation:navigation-compose:2.7.5")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.20.0")
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     testImplementation("junit:junit:4.13.2")

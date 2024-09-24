@@ -12,8 +12,7 @@ java {
 dependencies {
     implementation(kotlin("stdlib"))
     // Ktor Webサーバー
-    // Windows Defender にウイルス判定されて削除されるのでバージョンを下げる
-    val ktorVersion = "2.0.0"
+    val ktorVersion = "2.3.12"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
