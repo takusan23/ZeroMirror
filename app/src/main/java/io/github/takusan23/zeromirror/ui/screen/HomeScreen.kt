@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.media.projection.MediaProjectionManager
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -94,7 +93,7 @@ fun HomeScreen(
     val mediaProjectionManager = remember { context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager }
     val requestCapture = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         // ミラーリングサービス開始
-        if (result.resultCode == ComponentActivity.RESULT_OK && result.data != null) {
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val (height, width) = DisplayTool.getDisplaySize((context as Activity))
             mirroringService.value?.startScreenMirroring(result.resultCode, result.data!!, height, width)
         } else {

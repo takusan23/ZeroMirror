@@ -12,11 +12,10 @@ java {
 dependencies {
     implementation(kotlin("stdlib"))
     // Ktor Webサーバー
-    val ktorVersion = "2.3.12"
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-server-websockets:$ktorVersion")
-    implementation("ch.qos.logback:logback-classic:1.2.5")
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.websockets)
+    implementation(libs.logback.classic)
     // JUnit テストコード
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
 }

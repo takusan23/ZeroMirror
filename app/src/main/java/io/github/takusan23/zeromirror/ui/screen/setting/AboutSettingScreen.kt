@@ -51,7 +51,7 @@ fun AboutSettingScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                version = version
+                version = version ?: ""
             )
 
             AdvMenu(
