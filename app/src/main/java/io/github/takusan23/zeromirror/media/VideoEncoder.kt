@@ -9,6 +9,7 @@ import io.github.takusan23.zeromirror.media.opengl.InputSurface
 import io.github.takusan23.zeromirror.media.opengl.TextureRenderer
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ import java.nio.ByteBuffer
  *
  * 入力Surface から H.264 / VP9 をエンコードする。
  */
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 class VideoEncoder {
 
     /** MediaCodec エンコーダー */
@@ -35,6 +37,15 @@ class VideoEncoder {
      * 引かないと音声エンコーダーと合わなくなってしまう。
      */
     private var startUs = 0L
+
+    /**
+     * OpenGL はスレッドでコンテキストを識別するので、OpenGL 関連はこの openGlRelatedDispatcher から呼び出す。
+     * どういうことかと言うと、OpenGL は makeCurrent したスレッド以外で、OpenGL の関数を呼び出してはいけない。
+     * （makeCurrent したスレッドのみ swapBuffers 等できる）。
+     *
+     * 独自 Dispatcher を作ることで、処理するスレッドを指定できたりする。
+     */
+    private val openGlRelatedDispatcher = newSingleThreadContext("ZeroMirrorOpenGlRelatedDispatcher")
 
     /** OpenGL でテクスチャとして使える Surface */
     private var inputOpenGlSurface: InputSurface? = null
@@ -198,23 +209,13 @@ class VideoEncoder {
             drawSurface?.release()
             mediaCodec?.stop()
             mediaCodec?.release()
+            openGlRelatedDispatcher.close()
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     companion object {
-
-        /**
-         * OpenGL はスレッドでコンテキストを識別するので、OpenGL 関連はこの openGlRelatedDispatcher から呼び出す。
-         * どういうことかと言うと、OpenGL は makeCurrent したスレッド以外で、OpenGL の関数を呼び出してはいけない。
-         * （makeCurrent したスレッドのみ swapBuffers 等できる）。
-         *
-         * 独自 Dispatcher を作ることで、処理するスレッドを指定できたりする。
-         */
-        @OptIn(DelicateCoroutinesApi::class)
-        private val openGlRelatedDispatcher = newSingleThreadContext("ZeroMirrorOpenGlRelatedDispatcher")
-
         /** MediaCodec タイムアウト */
         private const val TIMEOUT_US = 10_000L
 

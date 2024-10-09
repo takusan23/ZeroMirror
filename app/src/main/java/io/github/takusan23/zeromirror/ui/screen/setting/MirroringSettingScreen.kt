@@ -3,7 +3,18 @@ package io.github.takusan23.zeromirror.ui.screen.setting
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -105,7 +116,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         )
 
-                        Divider()
+                        HorizontalDivider()
 
                         TextBoxInitValueSettingItem(
                             title = stringResource(id = R.string.mirroring_setting_video_bitrate_title),
@@ -132,7 +143,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             }
                         )
 
-                        Divider()
+                        HorizontalDivider()
 
                         SwitchSettingItem(
                             title = stringResource(id = R.string.mirroring_setting_resolution),
@@ -170,7 +181,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                             )
                         }
 
-                        Divider()
+                        HorizontalDivider()
 
                         SwitchSettingItem(
                             title = stringResource(id = R.string.mirroring_setting_internal_audio_title),
