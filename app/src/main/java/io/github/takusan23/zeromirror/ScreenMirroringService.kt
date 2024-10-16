@@ -37,6 +37,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,13 +141,15 @@ class ScreenMirroringService : Service() {
 
                 // フォアグラウンドサービスにするため、通知を出す
                 notifyIpAddress()
-                launch {
+                val ipAddressNotifyJob = launch {
                     val mirroringSettingData = mirroringSettingDataFlow.first()
-                    IpAddressTool.collectIpAddress(this@ScreenMirroringService).collect { ipAddress ->
-                        val url = "http://$ipAddress:${mirroringSettingData.portNumber}"
-                        notifyIpAddress(contentText = "${getString(R.string.ip_address)}：$url", url = url)
-                        Log.d(TAG, url)
-                    }
+                    IpAddressTool.collectIpAddress(this@ScreenMirroringService)
+                        .distinctUntilChanged()
+                        .collect { ipAddress ->
+                            val url = "http://$ipAddress:${mirroringSettingData.portNumber}"
+                            notifyIpAddress(contentText = "${getString(R.string.ip_address)}：$url", url = url)
+                            Log.d(TAG, url)
+                        }
                 }
 
                 try {
@@ -159,6 +162,7 @@ class ScreenMirroringService : Service() {
                     // コルーチンキャンセル時にリソース開放をする
                     // フォアグラウンドサービスも解除
                     _isScreenMirroring.value = false
+                    ipAddressNotifyJob.cancel()
                     mediaProjection?.stop()
                     ServiceCompat.stopForeground(this@ScreenMirroringService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                 }
@@ -167,7 +171,7 @@ class ScreenMirroringService : Service() {
     }
 
     /** ミラーリングを終了する。フォアグラウンドサービスも解除される。 */
-    fun stopScreenMirroringAndServerRestart() {
+    fun stopScreenMirroring() {
         mirroringJob?.cancel()
     }
 

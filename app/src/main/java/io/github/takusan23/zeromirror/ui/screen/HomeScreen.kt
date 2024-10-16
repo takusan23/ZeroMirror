@@ -139,7 +139,7 @@ fun HomeScreen(
                     },
                     onStopClick = {
                         // 終了させる
-                        mirroringService.value?.stopScreenMirroringAndServerRestart()
+                        mirroringService.value?.stopScreenMirroring()
                     }
                 )
             }

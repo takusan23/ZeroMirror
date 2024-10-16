@@ -30,6 +30,8 @@ interface StreamingInterface {
      *
      * 映像、内部音声のエンコードをして、ファイルを連続で生成していく。
      * エンコード中はすっと一時停止します。
+     *
+     * MediaProjection が終了したときや（Android 15 QPR 1 のステータスバーから終了）、エラーになれば呼び出し元に戻る。
      * ミラーリング終了時はコルーチンがキャンセルされるので、try-finally でリソース開放してください。
      *
      * @param mediaProjection [MediaProjection]

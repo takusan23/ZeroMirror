@@ -27,6 +27,47 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     private var virtualDisplay: VirtualDisplay? = null
 
     /**
+     * [MediaProjection.Callback]を呼び出す。
+     * [prepareEncoder]よりも前に呼び出すこと。
+     *
+     * @param onMediaProjectionVisibilityChanged [MediaProjection.Callback.onCapturedContentVisibilityChanged]
+     * @param onMediaProjectionResize [MediaProjection.Callback.onCapturedContentResize]
+     * @param onMediaProjectionStop [MediaProjection.Callback.onStop]。Android 15 QPR 1 のステータスバーから終了したときなど。
+     */
+    suspend fun registerMediaProjectionCallback(
+        onMediaProjectionVisibilityChanged: (isVisible: Boolean) -> Unit,
+        onMediaProjectionResize: (width: Int, height: Int) -> Unit,
+        onMediaProjectionStop: () -> Unit
+    ) {
+        // Android 14 から全画面以外にアプリの画面を指定できるようになった
+        // UI スレッドで呼び出す
+        withContext(Dispatchers.Main) {
+            mediaProjection.registerCallback(object : MediaProjection.Callback() {
+                override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
+                    super.onCapturedContentVisibilityChanged(isVisible)
+                    // 単一アプリが非表示になった
+                    // 代わりに代替画像を流す
+                    videoEncoder.isDrawAltImage = !isVisible
+                    onMediaProjectionVisibilityChanged(isVisible)
+                }
+
+                override fun onCapturedContentResize(width: Int, height: Int) {
+                    super.onCapturedContentResize(width, height)
+                    // 単一アプリのサイズが変化した（使ってない）
+                    onMediaProjectionResize(width, height)
+                }
+
+                override fun onStop() {
+                    super.onStop()
+                    // MediaProjection が終了したとき
+                    onMediaProjectionStop()
+                }
+
+            }, null)
+        }
+    }
+
+    /**
      * エンコーダーを初期化する
      *
      * @param videoWidth 動画の幅
@@ -57,31 +98,6 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
             codecName = codecName,
             altImageBitmap = altImageBitmap
         )
-        // Android 14 から全画面以外にアプリの画面を指定できるようになった
-        // UI スレッドで呼び出す
-        withContext(Dispatchers.Main) {
-            mediaProjection.registerCallback(object : MediaProjection.Callback() {
-                override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
-                    super.onCapturedContentVisibilityChanged(isVisible)
-                    // 単一アプリが非表示になった
-                    // 代わりに代替画像を流す
-                    videoEncoder.isDrawAltImage = !isVisible
-                }
-
-                override fun onCapturedContentResize(width: Int, height: Int) {
-                    super.onCapturedContentResize(width, height)
-                    // 単一アプリのサイズが変化した
-                    // do nothing
-                }
-
-                override fun onStop() {
-                    super.onStop()
-                    // MediaProjection が終了したとき
-                    // do nothing
-                }
-
-            }, null)
-        }
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "io.github.takusan23.zeromirror",
             videoWidth,
@@ -137,7 +153,7 @@ class ScreenVideoEncoder(private val displayDpi: Int, private val mediaProjectio
     }
 
     /** 終了時に呼ぶ */
-    fun release() {
+    fun destroy() {
         videoEncoder.release()
         virtualDisplay?.release()
     }

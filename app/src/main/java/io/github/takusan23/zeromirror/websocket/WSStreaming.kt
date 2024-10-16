@@ -11,6 +11,7 @@ import io.github.takusan23.zeromirror.media.ScreenVideoEncoder
 import io.github.takusan23.zeromirror.media.StreamingInterface
 import io.github.takusan23.zeromirror.tool.PartialMirroringPauseImageTool
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -61,24 +62,27 @@ class WSStreaming(
         ).apply { startServer() }
     }
 
-    override suspend fun prepareAndStartEncode(mediaProjection: MediaProjection, videoHeight: Int, videoWidth: Int) {
-        // エンコーダーを初期化する
-        prepareEncoder(mediaProjection, videoHeight, videoWidth)
-        // エンコード開始。終わるまで一時停止
-        startEncode()
-    }
-
-    private suspend fun prepareEncoder(
+    override suspend fun prepareAndStartEncode(
         mediaProjection: MediaProjection,
         videoHeight: Int,
-        videoWidth: Int,
-    ) {
+        videoWidth: Int
+    ) = withContext(Dispatchers.Default) {
         val wsContentManager = wsContentManager!!
+
         // コンテナファイルに書き込むやつ
         val tempFile = wsContentManager.generateTempFile(TEMP_VIDEO_FILENAME)
         wsContainerWriter = WSContainerWriter(tempFile)
-        // エンコーダーの用意
         screenVideoEncoder = ScreenVideoEncoder(context.resources.configuration.densityDpi, mediaProjection).apply {
+            // MediaProjection コールバックを設定
+            registerMediaProjectionCallback(
+                onMediaProjectionVisibilityChanged = { /* do nothing */ },
+                onMediaProjectionResize = { _, _ -> /* do nothing */ },
+                onMediaProjectionStop = {
+                    // このコルーチンスコープをキャンセルさせる。並列で動いているエンコーダー等も終了する
+                    this@withContext.cancel()
+                }
+            )
+            // エンコーダーを初期化する
             prepareEncoder(
                 videoWidth = videoWidth,
                 videoHeight = videoHeight,
@@ -86,7 +90,7 @@ class WSStreaming(
                 frameRate = mirroringSettingData.videoFrameRate,
                 isMirroringExternalDisplay = mirroringSettingData.isMirroringExternalDisplay,
                 codecName = MediaFormat.MIMETYPE_VIDEO_AVC,
-                altImageBitmap = PartialMirroringPauseImageTool.generatePartialMirroringPauseImage(context,videoWidth, videoHeight)
+                altImageBitmap = PartialMirroringPauseImageTool.generatePartialMirroringPauseImage(context, videoWidth, videoHeight)
             )
         }
         // 内部音声を一緒にエンコードする場合
@@ -98,10 +102,7 @@ class WSStreaming(
                 )
             }
         }
-    }
 
-    private suspend fun startEncode() = withContext(Dispatchers.Default) {
-        val wsContentManager = wsContentManager!!
         val wsContainerWriter = wsContainerWriter!!
         val screenVideoEncoder = screenVideoEncoder!!
         val server = server!!
@@ -119,7 +120,7 @@ class WSStreaming(
                     }
                 )
             } finally {
-                screenVideoEncoder.release()
+                screenVideoEncoder.destroy()
             }
         }
         // 内部音声エンコーダー

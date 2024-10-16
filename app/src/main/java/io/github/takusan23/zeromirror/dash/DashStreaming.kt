@@ -12,6 +12,7 @@ import io.github.takusan23.zeromirror.media.StreamingInterface
 import io.github.takusan23.zeromirror.tool.PartialMirroringPauseImageTool
 import io.github.takusan23.zerowebm.ZeroWebM
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
@@ -78,6 +79,15 @@ class DashStreaming(
         val isVP8 = mirroringSettingData.isVP8
         // エンコーダーの用意
         screenVideoEncoder = ScreenVideoEncoder(context.resources.configuration.densityDpi, mediaProjection).apply {
+            // MediaProjection コールバックを設定
+            registerMediaProjectionCallback(
+                onMediaProjectionVisibilityChanged = { /* do nothing */ },
+                onMediaProjectionResize = { _, _ -> /* do nothing */ },
+                onMediaProjectionStop = {
+                    // このコルーチンスコープをキャンセルさせる。並列で動いているエンコーダー等も終了する
+                    this@withContext.cancel()
+                }
+            )
             // VP9 エンコーダーだと画面解像度を入れると失敗する。1280x720 / 1920x1080 だと成功する
             prepareEncoder(
                 videoWidth = mirroringSettingData.videoWidth,
@@ -144,7 +154,7 @@ class DashStreaming(
                     }
                 )
             } finally {
-                screenVideoEncoder!!.release()
+                screenVideoEncoder!!.destroy()
             }
         }
         // 内部音声エンコーダー
