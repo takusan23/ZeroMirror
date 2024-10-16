@@ -175,7 +175,7 @@ class DashStreaming(
             }
         } else null
         // ファイル保存処理
-        val segmentFileCreateJob = launch {
+        val segmentFileCreateJob = launch(Dispatchers.IO) {
             // 初回時
             delay(mirroringSettingData.intervalMs)
             // 定期的にファイルを作り直して、MPEG-DASH で使うセグメントファイルを連番で作る
