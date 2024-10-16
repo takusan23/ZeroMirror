@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.takusan23.zeromirror"
         minSdk = 21
         targetSdk = 35
-        versionCode = 5
-        versionName = "6.0.0"
+        versionCode = 6
+        versionName = "5.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
