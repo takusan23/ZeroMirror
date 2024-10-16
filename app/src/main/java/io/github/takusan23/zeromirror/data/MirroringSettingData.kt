@@ -47,7 +47,7 @@ data class MirroringSettingData(
         private const val DEFAULT_INTERVAL_MS = 1_000L
 
         /** デフォルト映像ビットレート */
-        private const val DEFAULT_VIDEO_BIT_RATE = 10_000_000 // 10M
+        private const val DEFAULT_VIDEO_BIT_RATE = 1_000_000
 
         /** デフォルト音声ビットレート */
         private const val DEFAULT_AUDIO_BIT_RATE = 128_000
@@ -56,10 +56,10 @@ data class MirroringSettingData(
         private const val DEFAULT_VIDEO_FRAME_RATE = 30
 
         /** デフォルトの動画の幅 */
-        private const val DEFAULT_VIDEO_WIDTH = 1920
+        private const val DEFAULT_VIDEO_WIDTH = 1280
 
         /** デフォルトの動画の高さ */
-        private const val DEFAULT_VIDEO_HEIGHT = 1080
+        private const val DEFAULT_VIDEO_HEIGHT = 720
 
         /**
          * データストアから読み出してデータクラスを返す
