@@ -249,6 +249,8 @@ class DashStreaming(
     <div>
         <p>再生されない場合は何回か再読み込みしてしたり、シークバーを先頭に移動させてみてください。</p>
         <video id="videoPlayer" controls muted autoplay></video>
+        <input id="latencyButton" type="button" value="遅延を少なくする" />
+        <input id="stableButton" type="button" value="安定性を優先する (デフォルト)" />
     </div>
     <script src="https://cdn.dashjs.org/latest/dash.all.debug.js"></script>
     <script>
@@ -256,6 +258,17 @@ class DashStreaming(
             var url = "manifest.mpd";
             var player = dashjs.MediaPlayer().create();
             player.initialize(document.querySelector("#videoPlayer"), url, true);
+            
+            document.querySelector("#latencyButton").onclick = () => {
+                player.reset();
+                player.updateSettings({ 'streaming': { 'delay': { 'liveDelayFragmentCount': 1 } } });
+                player.initialize(document.querySelector("#videoPlayer"), url, true);
+            };
+            document.querySelector("#stableButton").onclick = () => {
+                player.reset();
+                player.resetSettings();
+                player.initialize(document.querySelector("#videoPlayer"), url, true);
+            };
         })();
     </script>
 </body>
