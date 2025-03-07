@@ -45,6 +45,9 @@ android {
             excludes += "META-INF/io.netty.versions.properties"
         }
     }
+    androidResources {
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {
