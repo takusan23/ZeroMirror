@@ -28,7 +28,7 @@ object IpAddressTool {
                 val linkProperties = connectivityManager.getLinkProperties(network)
                 // IPv4アドレスを探す
                 val address = linkProperties?.linkAddresses
-                    ?.find { it.address?.hostAddress?.toString()?.startsWith("192") == true }
+                    ?.find { it.address?.hostAddress?.startsWith("192") == true }
                     ?.address?.hostAddress
                 if (address != null) {
                     trySend(address)

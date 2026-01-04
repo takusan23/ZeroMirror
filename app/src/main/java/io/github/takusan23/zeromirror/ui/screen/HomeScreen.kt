@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     onSettingClick: () -> Unit = {},
-    onNavigate: (String) -> Unit = {},
+    onNavigate: (MainScreenNavigationLinks) -> Unit = {},
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current

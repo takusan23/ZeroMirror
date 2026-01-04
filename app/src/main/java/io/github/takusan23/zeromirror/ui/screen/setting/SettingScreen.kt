@@ -4,12 +4,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.dropUnlessResumed
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.ui.components.SettingItem
 import io.github.takusan23.zeromirror.ui.screen.MainScreenNavigationLinks
@@ -24,18 +31,18 @@ import io.github.takusan23.zeromirror.ui.screen.MainScreenNavigationLinks
 @Composable
 fun SettingScreen(
     onBack: () -> Unit,
-    onNavigate: (String) -> Unit,
+    onNavigate: (MainScreenNavigationLinks) -> Unit,
 ) {
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = { Text(text = stringResource(id = R.string.setting_screen_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = dropUnlessResumed(block = onBack)) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent
                 )
             )

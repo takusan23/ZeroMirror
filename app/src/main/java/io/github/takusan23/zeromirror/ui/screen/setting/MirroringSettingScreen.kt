@@ -28,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.dropUnlessResumed
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.data.MirroringSettingData
 import io.github.takusan23.zeromirror.tool.NumberConverter
@@ -76,7 +77,7 @@ fun MirroringSettingScreen(onBack: () -> Unit = {}) {
                 title = { Text(text = stringResource(id = R.string.setting_stream_title)) },
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = dropUnlessResumed(block = onBack)) {
                         Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null)
                     }
                 },

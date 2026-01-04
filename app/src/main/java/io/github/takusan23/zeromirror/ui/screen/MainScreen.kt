@@ -1,56 +1,55 @@
 package io.github.takusan23.zeromirror.ui.screen
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import io.github.takusan23.zeromirror.ui.screen.setting.AboutSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.LicenseScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.MirroringSettingScreen
 import io.github.takusan23.zeromirror.ui.screen.setting.SettingScreen
-import io.github.takusan23.zeromirror.ui.theme.ZeroMirrorTheme
 
 /** メイン画面、Activityに置いてる画面です */
 @Composable
 fun MainScreen() {
-    ZeroMirrorTheme {
-        // メイン画面のルーティング
-        val mainScreenNavigation = rememberNavController()
-
-        NavHost(navController = mainScreenNavigation, startDestination = MainScreenNavigationLinks.HomeScreen) {
+    // メイン画面のルーティング
+    val backStack = rememberNavBackStack(MainScreenNavigationLinks.HomeScreen)
+    NavDisplay(
+        backStack = backStack,
+        entryProvider = entryProvider {
             // アプリの説明
-            composable(MainScreenNavigationLinks.HelloScreen) {
+            entry<MainScreenNavigationLinks.HelloScreen> {
                 HelloScreen(
-                    onNextClick = { mainScreenNavigation.popBackStack() },
-                    onBack = { mainScreenNavigation.popBackStack() }
+                    onNextClick = { backStack.removeLastOrNull() },
+                    onBack = { backStack.removeLastOrNull() }
                 )
             }
             // ホーム画面
-            composable(MainScreenNavigationLinks.HomeScreen) {
+            entry<MainScreenNavigationLinks.HomeScreen> {
                 HomeScreen(
-                    onSettingClick = { mainScreenNavigation.navigate(MainScreenNavigationLinks.SettingScreen) },
-                    onNavigate = { mainScreenNavigation.navigate(it) }
+                    onSettingClick = { backStack += MainScreenNavigationLinks.SettingScreen },
+                    onNavigate = { backStack += it }
                 )
             }
             // 設定画面
-            composable(MainScreenNavigationLinks.SettingScreen) {
+            entry<MainScreenNavigationLinks.SettingScreen> {
                 SettingScreen(
-                    onBack = { mainScreenNavigation.popBackStack() },
-                    onNavigate = { mainScreenNavigation.navigate(it) }
+                    onBack = { backStack.removeLastOrNull() },
+                    onNavigate = { backStack += it }
                 )
             }
             // 画面共有設定
-            composable(MainScreenNavigationLinks.SettingMirroringSettingScreen) {
-                MirroringSettingScreen(onBack = { mainScreenNavigation.popBackStack() })
+            entry<MainScreenNavigationLinks.SettingMirroringSettingScreen> {
+                MirroringSettingScreen(onBack = { backStack.removeLastOrNull() })
             }
             // このアプリについて
-            composable(MainScreenNavigationLinks.SettingAboutSettingScreen) {
-                AboutSettingScreen(onBack = { mainScreenNavigation.popBackStack() })
+            entry<MainScreenNavigationLinks.SettingAboutSettingScreen> {
+                AboutSettingScreen(onBack = { backStack.removeLastOrNull() })
             }
             // ライセンス
-            composable(MainScreenNavigationLinks.SettingLicenseSettingScreen) {
-                LicenseScreen(onBack = { mainScreenNavigation.popBackStack() })
+            entry<MainScreenNavigationLinks.SettingLicenseSettingScreen> {
+                LicenseScreen(onBack = { backStack.removeLastOrNull() })
             }
         }
-    }
+    )
 }

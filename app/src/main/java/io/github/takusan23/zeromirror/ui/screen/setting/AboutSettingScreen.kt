@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.dropUnlessResumed
 import io.github.takusan23.zeromirror.R
 import io.github.takusan23.zeromirror.ui.components.AdvMain
 import io.github.takusan23.zeromirror.ui.components.AdvMenu
@@ -44,7 +45,7 @@ fun AboutSettingScreen(
         ) {
             IconButton(
                 modifier = Modifier.align(alignment = Alignment.Start),
-                onClick = onBack
+                onClick = dropUnlessResumed(block = onBack)
             ) { Icon(painter = painterResource(id = R.drawable.ic_outline_arrow_back_24), contentDescription = null) }
 
             AdvMain(

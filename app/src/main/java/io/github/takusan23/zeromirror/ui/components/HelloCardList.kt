@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HelloCardList(
     modifier: Modifier = Modifier,
-    onNavigate: (String) -> Unit
+    onNavigate: (MainScreenNavigationLinks) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

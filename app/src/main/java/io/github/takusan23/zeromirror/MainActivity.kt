@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.takusan23.zeromirror.ui.screen.MainScreen
+import io.github.takusan23.zeromirror.ui.theme.ZeroMirrorTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -15,6 +16,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        setContent { MainScreen() }
+        setContent {
+            ZeroMirrorTheme {
+                MainScreen()
+            }
+        }
     }
 }
