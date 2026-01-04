@@ -11,13 +11,3 @@ tasks.register("clean") {
         delete(rootProject.buildDir)
     }
 }
-
-// TODO 何故か必要。Android Gradle Plugin の更新で要らなくなるはず
-// https://issuetracker.google.com/issues/278118298
-subprojects {
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
-        }
-    }
-}

@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "io.github.takusan23.zeromirror"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.takusan23.zeromirror"
-        minSdk = 21
-        targetSdk = 35
+        minSdk = 26
+        targetSdk = 36
         versionCode = 6
         versionName = "5.1.0"
 
@@ -34,9 +34,6 @@ android {
     buildFeatures {
         compose = true
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
     packagingOptions {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -47,6 +44,12 @@ android {
     }
     androidResources {
         generateLocaleConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
     }
 }
 
