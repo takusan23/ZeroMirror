@@ -21,7 +21,6 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.websockets)
-    implementation(libs.logback.classic)
     // JUnit テストコード
     testImplementation(libs.junit)
 }

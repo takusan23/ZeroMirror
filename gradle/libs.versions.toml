@@ -1,5 +1,6 @@
 [versions]
 agp = "8.13.2"
+core = "3.5.4"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.0"
 kotlin = "2.3.0"
@@ -12,7 +13,6 @@ ktorVersion = "3.3.3"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.2"
 composeBom = "2025.12.01"
-logbackClassic = "1.2.5"
 navigationCompose = "2.9.6"
 window = "1.5.1"
 
@@ -35,11 +35,11 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "core" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktorVersion" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktorVersion" }
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktorVersion" }
-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
