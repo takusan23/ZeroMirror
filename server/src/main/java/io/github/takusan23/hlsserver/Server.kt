@@ -1,14 +1,26 @@
 package io.github.takusan23.hlsserver
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.http.content.*
-import io.ktor.server.netty.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.content.default
+import io.ktor.server.http.content.files
+import io.ktor.server.http.content.static
+import io.ktor.server.http.content.staticRootFolder
+import io.ktor.server.netty.Netty
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.intercept
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -84,7 +96,7 @@ class Server(
             files(folder)
             default("index.html")
 
-            intercept(ApplicationCallPipeline.Features) {
+            intercept(ApplicationCallPipeline.Plugins) {
                 val path = call.parameters["path"] ?: return@intercept
                 val requestedFile = File(folder, path)
 
