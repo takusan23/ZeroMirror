@@ -15,7 +15,6 @@ lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.2"
 composeBom = "2025.12.01"
 nav3Core = "1.0.0"
-lifecycleViewmodelNav3 = "2.10.0"
 window = "1.5.1"
 
 [libraries]
