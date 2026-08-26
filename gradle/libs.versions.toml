@@ -1,20 +1,20 @@
 [versions]
-agp = "8.13.2"
+agp = "9.3.1"
 core = "3.5.4"
 coreSplashscreen = "1.2.0"
-datastorePreferences = "1.2.0"
-kotlin = "2.3.0"
-coreKtx = "1.17.0"
+datastorePreferences = "1.2.1"
+kotlin = "2.4.10"
+coreKtx = "1.19.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-kotlinxCoroutinesAndroid = "1.10.2"
-kotlinxSerialization = "1.10.0-RC"
-ktorVersion = "3.3.3"
-lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.12.2"
-composeBom = "2025.12.01"
-nav3Core = "1.0.0"
+kotlinxCoroutinesAndroid = "1.11.0"
+kotlinxSerialization = "1.11.0"
+ktorVersion = "3.5.2"
+lifecycleRuntimeKtx = "2.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.08.00"
+nav3Core = "1.1.6"
 window = "1.5.1"
 
 [libraries]
@@ -47,6 +47,5 @@ ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.re
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

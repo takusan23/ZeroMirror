@@ -18,6 +18,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.intellij.lang.annotations.Language
 import java.io.File
 import kotlin.system.measureTimeMillis
 
@@ -233,6 +234,7 @@ class DashStreaming(
          * index.html
          * TODO 直書きを辞める
          */
+        @Language("HTML")
         private const val INDEX_HTML = """
 <!doctype html>
 <html>
