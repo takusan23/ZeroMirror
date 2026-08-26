@@ -105,4 +105,10 @@ Android 14 QPR2 から利用できる、部分的な画面共有に対応しま�
 画面全体ではなく、指定したアプリの部分だけミラーリングが可能になりました。\n
 ステータスバーや通知は映り込みません！
     </string>
+    <string name="permission_screen_title">権限をください</string>
+    <string name="permission_screen_button">権限を付与する</string>
+    <string name="permission_screen_description">
+このアプリはミラーリングアプリです。\n
+同じ Wi-Fi（LAN）に接続された他の端末から、この端末の画面を表示することができます。\n
+そのため、本アプリには LAN へのアクセス権限が必要です。</string>
 </resources>

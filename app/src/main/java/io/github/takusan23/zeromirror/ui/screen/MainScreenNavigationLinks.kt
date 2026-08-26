@@ -9,7 +9,11 @@ sealed interface MainScreenNavigationLinks : NavKey {
     @Serializable
     data object HomeScreen : MainScreenNavigationLinks
 
-    /** アプリ初回起動時に表示する画面 */
+    /** Android 17 以上。ACCESS_LOCAL_NETWORK 権限を貰う画面 */
+    @Serializable
+    data object PermissionScreen : MainScreenNavigationLinks
+
+    /** アプリの説明画面 */
     @Serializable
     data object HelloScreen : MainScreenNavigationLinks
 

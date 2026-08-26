@@ -104,4 +104,10 @@ Partial screen sharing is now supported starting with Android 14 QPR2.\n
 It is now possible to mirror only the specified app part instead of the entire screen.\n
 Status bar and notifications are not reflected!
     </string>
+    <string name="permission_screen_title">Grant permission</string>
+    <string name="permission_screen_button">Grant permission</string>
+    <string name="permission_screen_description">
+This app is mirroring app. \n
+You can watch this device screen in some Wi-Fi devices (LAN devices).\n
+So, this app required LAN permission.</string>
 </resources>
